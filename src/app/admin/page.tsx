@@ -14,20 +14,20 @@ import {
   TicketStatus,
 } from "@/types/domain";
 import {
-  formatRelativeTime,
-  TicketCategoryBadge,
-  TicketPriorityBadge,
-  TicketStatusBadge,
-} from "@/components/ui/badges";
-import {
+  Activity,
   AlertCircle,
   AlertTriangle,
   ArrowRight,
+  BookOpen,
+  CheckCircle2,
   Clock,
-  Inbox,
+  Layers,
   ShieldCheck,
   Sparkles,
-  UserPlus,
+  Ticket,
+  TrendingUp,
+  UserCheck,
+  Users,
 } from "lucide-react";
 
 interface AdminOverviewResponse {
@@ -62,24 +62,18 @@ export default function AdminOverviewPage() {
 
   if (overviewQuery.error || sessionQuery.error) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full rounded-2xl border border-slate-200 bg-white p-6 text-center space-y-4">
-          <AlertCircle
-            className="h-10 w-10 text-amber-600 mx-auto"
-            aria-hidden="true"
-          />
-          <h1 className="font-serif text-xl font-bold text-slate-900">
+      <div className="min-h-screen bg-[#F9FAF7] flex items-center justify-center p-6">
+        <div className="max-w-md w-full rounded-3xl border border-[#E8EDE6] bg-white p-8 text-center shadow-sm">
+          <AlertCircle className="w-10 h-10 text-amber-600 mx-auto mb-3" />
+          <h2 className="font-serif text-xl font-bold text-slate-900 mb-2">
             Administrator Access Required
-          </h1>
-          <p className="text-sm text-slate-600">
-            {overviewQuery.error ||
-              sessionQuery.error ||
-              "Please sign in with an Admin Operations account."}
+          </h2>
+          <p className="text-xs text-slate-600 mb-4">
+            {overviewQuery.error || sessionQuery.error || "Please sign in as Admin."}
           </p>
           <button
-            type="button"
             onClick={() => router.push("/login")}
-            className="rounded-xl bg-[#0E2842] px-4 py-2.5 text-xs font-semibold text-white cursor-pointer"
+            className="rounded-full bg-[#0F4C3A] px-6 py-2.5 text-xs font-semibold text-white"
           >
             Sign In as Admin
           </button>
@@ -88,286 +82,336 @@ export default function AdminOverviewPage() {
     );
   }
 
-  if (
-    sessionQuery.isLoading ||
-    !sessionQuery.data ||
-    overviewQuery.isLoading ||
-    !overviewQuery.data
-  ) {
+  if (!sessionQuery.data || !overviewQuery.data) {
     return (
-      <div className="p-8 max-w-6xl mx-auto space-y-6">
-        <div className="h-10 w-72 rounded animate-shimmer" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 rounded-xl animate-shimmer" />
-          ))}
+      <div className="min-h-screen bg-[#F9FAF7] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-2 border-[#0F4C3A] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-medium text-slate-500">Loading Support Overview...</p>
         </div>
-        <div className="h-80 rounded-xl animate-shimmer" />
       </div>
     );
   }
 
-  const user = sessionQuery.data.user;
   const { metrics } = overviewQuery.data;
+  const admin = sessionQuery.data.user;
+
+  const total = Math.max(1, metrics.totalTickets);
+  const openPct = Math.round((metrics.byStatus.Open / total) * 100);
+  const inProgPct = Math.round((metrics.byStatus["In Progress"] / total) * 100);
+  const resPct = Math.round((metrics.byStatus.Resolved / total) * 100);
+  const closedPct = Math.round((metrics.byStatus.Closed / total) * 100);
 
   return (
-    <PortalShell
-      user={user}
-      lastSyncedAt={overviewQuery.lastSyncedAt}
-      onManualRefresh={overviewQuery.refresh}
-      isRefreshing={overviewQuery.isRefreshing}
-    >
-      <div className="space-y-8 animate-fade-up">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+    <PortalShell user={admin}>
+      <div className="space-y-8">
+        {/* ================================================================
+            PAGE HEADER (Matches Screen 7: Support Overview)
+            ================================================================ */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8EDE6]">
           <div>
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1B4D7E]">
-              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-              <span>BookLeaf Publishing • Operations Command Center</span>
-            </div>
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900 mt-1">
-              Support Queue & AI Triage Overview
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              Support Overview
             </h1>
-            <p className="text-sm text-slate-600 mt-0.5">
-              Monitoring {metrics.totalAuthors} seeded authors and{" "}
-              {metrics.totalBooks} books with automated Gemini 3.8 Flash
-              classification, priority scoring, and policy-grounded drafts.
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Track ticket performance, team activity and AI triage insights.
             </p>
           </div>
-
           <Link
             href="/admin/tickets"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#0E2842] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-[#163f68] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white text-xs sm:text-sm font-semibold shadow-xs transition"
           >
-            <Inbox className="h-4 w-4 text-sky-300" aria-hidden="true" />
-            Open Full Ticket Queue ({metrics.totalTickets})
+            <Ticket className="w-4 h-4" />
+            <span>Open Tickets Queue</span>
           </Link>
         </div>
 
-        {/* Top KPI Cards */}
+        {/* ================================================================
+            TOP ROW: 4 METRIC CARDS (Matches Screen 7)
+            ================================================================ */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="bg-white rounded-2xl p-5 border border-[#E8EDE6] shadow-xs">
+            <span className="text-xs font-semibold text-slate-500 block mb-1">
               Total Tickets
             </span>
-            <p className="text-3xl font-bold text-slate-900 mt-2">
-              {metrics.totalTickets}
-            </p>
-            <div className="mt-2 flex items-center gap-2 text-xs text-slate-600">
-              <span className="font-medium text-blue-700">
-                {metrics.byStatus.Open} Open
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="font-serif text-3xl font-bold text-slate-900">
+                {metrics.totalTickets}
               </span>
-              <span>•</span>
-              <span className="font-medium text-amber-700">
-                {metrics.byStatus["In Progress"]} In Progress
-              </span>
-              <span>•</span>
-              <span className="font-medium text-emerald-700">
-                {metrics.byStatus.Resolved} Resolved
+              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                +12% this week
               </span>
             </div>
+            <p className="text-[11px] text-slate-400">Across 10 published authors</p>
           </div>
 
-          <div className="rounded-xl border border-red-200 bg-red-50/40 p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-red-800">
-                Critical & High Open
+          <div className="bg-white rounded-2xl p-5 border border-[#E8EDE6] shadow-xs">
+            <span className="text-xs font-semibold text-slate-500 block mb-1">
+              Open Tickets
+            </span>
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="font-serif text-3xl font-bold text-blue-700">
+                {metrics.byStatus.Open}
               </span>
-              <AlertTriangle
-                className="h-4 w-4 text-red-600"
-                aria-hidden="true"
-              />
+              <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
+                {openPct}% of total
+              </span>
             </div>
-            <p className="text-3xl font-bold text-red-900 mt-2">
-              {metrics.highAndCriticalOpen}
-            </p>
-            <p className="mt-2 text-xs text-red-700">
-              Requires 48-hour SLA attention
-            </p>
+            <p className="text-[11px] text-slate-400">{metrics.unassignedTickets} unassigned to agents</p>
           </div>
 
-          <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-900">
-                Unassigned Active
+          <div className="bg-white rounded-2xl p-5 border border-[#E8EDE6] shadow-xs">
+            <span className="text-xs font-semibold text-slate-500 block mb-1">
+              In Progress
+            </span>
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="font-serif text-3xl font-bold text-amber-700">
+                {metrics.byStatus["In Progress"]}
               </span>
-              <UserPlus
-                className="h-4 w-4 text-amber-700"
-                aria-hidden="true"
-              />
+              <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                {inProgPct}% of total
+              </span>
             </div>
-            <p className="text-3xl font-bold text-amber-900 mt-2">
-              {metrics.unassignedTickets}
-            </p>
-            <p className="mt-2 text-xs text-amber-800">
-              Ready for ops specialist assignment
-            </p>
+            <p className="text-[11px] text-slate-400">Under operational review</p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Avg Resolution Time
+          <div className="bg-white rounded-2xl p-5 border border-[#E8EDE6] shadow-xs">
+            <span className="text-xs font-semibold text-slate-500 block mb-1">
+              Resolved
+            </span>
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="font-serif text-3xl font-bold text-emerald-700">
+                {metrics.byStatus.Resolved}
               </span>
-              <Clock className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                {resPct}% rate
+              </span>
             </div>
-            <p className="text-3xl font-bold text-slate-900 mt-2">
-              {metrics.avgResolutionHours !== null
-                ? `${metrics.avgResolutionHours}h`
-                : "N/A"}
-            </p>
-            <p className="mt-2 text-xs text-slate-500">
-              Calculated from resolved tickets
-            </p>
+            <p className="text-[11px] text-slate-400">Avg turnaround: ~24h SLA</p>
           </div>
         </div>
 
-        {/* Urgent & Oldest Unresolved Spotlight Queue */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
+        {/* ================================================================
+            MIDDLE ROW: DONUT BREAKDOWN (Left) + RECENT ACTIVITY (Right)
+            ================================================================ */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Ticket Status Donut Card (Left 6 Cols - Matches Screen 7) */}
+          <div className="lg:col-span-6 bg-white rounded-2xl p-6 border border-[#E8EDE6] shadow-xs">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-serif font-bold text-lg text-slate-900">
+                Ticket Status Breakdown
+              </h3>
+              <span className="text-xs text-slate-400 font-medium">Live Queue</span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-8">
+              {/* SVG Donut */}
+              <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                  {/* Background Circle */}
+                  <path
+                    className="text-slate-100"
+                    strokeWidth="4"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  {/* Resolved arc */}
+                  <path
+                    className="text-[#10B981]"
+                    strokeDasharray={`${resPct}, 100`}
+                    strokeWidth="4"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  {/* In Progress arc */}
+                  <path
+                    className="text-amber-400"
+                    strokeDasharray={`${inProgPct}, 100`}
+                    strokeDashoffset={`-${resPct}`}
+                    strokeWidth="4"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  {/* Open arc */}
+                  <path
+                    className="text-blue-500"
+                    strokeDasharray={`${openPct}, 100`}
+                    strokeDashoffset={`-${resPct + inProgPct}`}
+                    strokeWidth="4"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                </svg>
+                <div className="absolute flex flex-col items-center">
+                  <span className="font-serif text-2xl font-bold text-slate-900">
+                    {metrics.totalTickets}
+                  </span>
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold">
+                    Total
+                  </span>
+                </div>
+              </div>
+
+              {/* Status Legend */}
+              <div className="flex-1 w-full space-y-2 text-xs">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50/50">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                    <span className="text-slate-700 font-medium">Open</span>
+                  </div>
+                  <span className="font-semibold text-slate-900">
+                    {metrics.byStatus.Open} ({openPct}%)
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50/50">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                    <span className="text-slate-700 font-medium">In Progress</span>
+                  </div>
+                  <span className="font-semibold text-slate-900">
+                    {metrics.byStatus["In Progress"]} ({inProgPct}%)
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-50/50">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
+                    <span className="text-slate-700 font-medium">Resolved</span>
+                  </div>
+                  <span className="font-semibold text-slate-900">
+                    {metrics.byStatus.Resolved} ({resPct}%)
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+                    <span className="text-slate-700 font-medium">Closed</span>
+                  </div>
+                  <span className="font-semibold text-slate-900">
+                    {metrics.byStatus.Closed} ({closedPct}%)
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Activity Timeline (Right 6 Cols - Matches Screen 7) */}
+          <div className="lg:col-span-6 bg-white rounded-2xl p-6 border border-[#E8EDE6] shadow-xs flex flex-col justify-between">
             <div>
-              <h2 className="font-serif text-lg font-bold text-slate-900">
-                Most Urgent & Oldest Unresolved Tickets
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-serif font-bold text-lg text-slate-900">
+                  Recent Activity
+                </h3>
+                <span className="text-xs text-[#0F4C3A] font-semibold">Live Audit Trail</span>
+              </div>
+
+              <div className="space-y-3">
+                {metrics.recentActivity.slice(0, 5).map((log) => (
+                  <div
+                    key={log.log_id}
+                    className="flex items-start gap-3 p-2.5 rounded-xl border border-slate-100 hover:bg-[#F9FAF7] transition text-xs"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-[#EBF3EE] text-[#0F4C3A] flex items-center justify-center shrink-0">
+                      <Activity className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold text-slate-900 truncate">
+                          {log.ticket_id} • {log.action.replace(/_/g, " ")}
+                        </span>
+                        <span className="text-[10px] text-slate-400 shrink-0">
+                          {new Date(log.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Actor: {log.actor_name} ({log.actor_role})
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-4 mt-2 border-t border-slate-100 text-right">
+              <Link
+                href="/admin/tickets"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0F4C3A] hover:underline"
+              >
+                <span>View All Tickets in Queue</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* ================================================================
+            LOWER SECTION: URGENT ATTENTION QUEUE (Matches Screen 7)
+            ================================================================ */}
+        <div className="bg-white rounded-2xl border border-[#E8EDE6] shadow-xs p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-serif font-bold text-lg text-slate-900">
+                Urgent Attention Queue
+              </h3>
               <p className="text-xs text-slate-500">
-                Sorted automatically by Priority (Critical → High → Medium →
-                Low) and oldest waiting time first
+                Tickets requiring priority action or high-impact author inquiries.
               </p>
             </div>
             <Link
               href="/admin/tickets"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-[#1B4D7E] hover:underline"
+              className="text-xs font-semibold text-[#0F4C3A] hover:underline"
             >
-              Filter & Search All Tickets
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              Full Queue ({metrics.totalTickets})
             </Link>
           </div>
 
-          <div className="divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden">
+          <div className="divide-y divide-slate-100">
             {metrics.urgentQueue.map((t) => (
-              <Link
+              <div
                 key={t.ticket_id}
-                href={`/admin/tickets/${t.ticket_id}`}
-                className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-4 bg-white hover:bg-sky-50/40 transition-colors cursor-pointer"
+                onClick={() => router.push(`/admin/tickets/${t.ticket_id}`)}
+                className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#F9FAF7] px-2 rounded-xl cursor-pointer transition"
               >
-                <div className="space-y-1.5 min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs font-bold text-[#1B4D7E]">
-                      {t.ticket_id}
-                    </span>
-                    <TicketPriorityBadge priority={t.priority} />
-                    <TicketStatusBadge status={t.status} />
-                    <TicketCategoryBadge category={t.category} />
-                    <span className="inline-flex items-center gap-1 rounded bg-sky-50 border border-sky-200 px-2 py-0.5 text-[10px] font-semibold text-[#1B4D7E]">
-                      <Sparkles className="h-3 w-3" aria-hidden="true" />
-                      AI Draft Ready (-{t.ai_metadata.tokens_saved_pct}% tokens)
-                    </span>
-                  </div>
-                  <p className="text-sm font-bold text-slate-900 truncate">
-                    {t.subject}
-                  </p>
-                  <p className="text-xs text-slate-600">
-                    Author:{" "}
-                    <strong className="text-slate-800">{t.author_name}</strong>{" "}
-                    ({t.author_id}) • Book:{" "}
-                    <strong className="text-slate-800">{t.book_title}</strong>
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-4 shrink-0 text-xs text-slate-500">
-                  <span>
-                    {t.assigned_to ? (
-                      <span className="rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">
-                        Assignee: {t.assigned_to}
-                      </span>
-                    ) : (
-                      <span className="rounded-md bg-amber-50 border border-amber-200 px-2 py-1 font-semibold text-amber-800">
-                        Unassigned
-                      </span>
-                    )}
+                <div className="flex items-center gap-3">
+                  <span className="font-mono text-xs font-bold text-[#0F4C3A] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    {t.ticket_id}
                   </span>
-                  <span>Opened {formatRelativeTime(t.created_at)}</span>
-                  <ArrowRight
-                    className="h-4 w-4 text-[#1B4D7E]"
-                    aria-hidden="true"
-                  />
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Category Breakdown & Recent Audit Trail */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-            <h2 className="font-serif text-lg font-bold text-slate-900">
-              AI Classification Breakdown by Category
-            </h2>
-            <div className="space-y-3">
-              {(
-                Object.entries(metrics.byCategory) as Array<
-                  [TicketCategory, number]
-                >
-              ).map(([cat, count]) => {
-                const pct =
-                  metrics.totalTickets > 0
-                    ? Math.round((count / metrics.totalTickets) * 100)
-                    : 0;
-                return (
-                  <Link
-                    key={cat}
-                    href={`/admin/tickets?category=${encodeURIComponent(cat)}`}
-                    className="block group cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="font-semibold text-slate-800 group-hover:text-[#1B4D7E]">
-                        {cat}
-                      </span>
-                      <span className="font-mono text-slate-500">
-                        {count} ({pct}%)
-                      </span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-[#1B4D7E] transition-all duration-300"
-                        style={{ width: `${Math.max(pct, count > 0 ? 8 : 0)}%` }}
-                      />
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="lg:col-span-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-            <h2 className="font-serif text-lg font-bold text-slate-900">
-              Recent AI & Operations Audit Log
-            </h2>
-            <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-              {metrics.recentActivity.map((log) => (
-                <div
-                  key={log.log_id}
-                  className="rounded-xl border border-slate-200/80 bg-slate-50 p-3 text-xs flex items-start justify-between gap-3"
-                >
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-[#1B4D7E]">
-                        {log.ticket_id}
-                      </span>
-                      <span className="font-semibold text-slate-800">
-                        {log.action.replace(/_/g, " ")}
-                      </span>
-                    </div>
-                    <p className="text-slate-600 mt-0.5">
-                      Actor: <strong>{log.actor_name}</strong> ({log.actor_role})
-                    </p>
+                    <span className="font-semibold text-slate-900 text-sm block">
+                      {t.subject}
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      Author: {t.author_name} ({t.author_id}) • {t.book_title}
+                    </span>
                   </div>
-                  <span className="text-slate-400 shrink-0">
-                    {formatRelativeTime(log.created_at)}
-                  </span>
                 </div>
-              ))}
-            </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded font-semibold ${
+                      t.priority === "Critical"
+                        ? "bg-rose-50 text-rose-800 border border-rose-200"
+                        : "bg-amber-50 text-amber-800 border border-amber-200"
+                    }`}
+                  >
+                    {t.priority}
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-blue-800 font-semibold border border-blue-200">
+                    {t.category}
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-slate-400 ml-2" />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

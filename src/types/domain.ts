@@ -265,6 +265,7 @@ export const AdminSendReplyInputSchema = z.object({
     .min(5, "Reply content must be at least 5 characters")
     .max(5000, "Reply content must be under 5000 characters"),
   status: z.enum(TICKET_STATUSES).optional(),
+  new_status: z.enum(TICKET_STATUSES).optional(),
 });
 
 export const AdminRegenerateDraftInputSchema = z.object({
@@ -280,3 +281,81 @@ export const AIOutputSchema = z.object({
 });
 
 export type AIValidatedOutput = z.infer<typeof AIOutputSchema>;
+
+// ============================================================================
+// Royalty & Withdrawal Types (Real BookLeaf Dashboard parity)
+// ============================================================================
+
+export type WithdrawalStatus =
+  | "PENDING"
+  | "PROCESSING"
+  | "APPROVED"
+  | "TRANSFERRED"
+  | "REJECTED";
+
+export interface RoyaltyWithdrawalRecord {
+  withdrawal_id: string;
+  author_id: string;
+  author_name: string;
+  book_id: string | null;
+  book_title: string;
+  sales_type: "Indian" | "International" | "All";
+  gross_amount: number;
+  tds_amount: number; // 10% under section 194J
+  net_amount: number;
+  account_holder_name: string;
+  account_number: string;
+  ifsc_code: string;
+  bank_name: string;
+  status: WithdrawalStatus;
+  payout_channel: "NEFT" | "IMPS" | "RAZORPAYX";
+  utr_reference: string | null;
+  sla_days: number;
+  created_at: string;
+  processed_at: string | null;
+}
+
+export interface BankAccountRecord {
+  author_id: string;
+  account_holder_name: string;
+  account_number: string;
+  ifsc_code: string;
+  bank_name: string;
+  pan_number?: string;
+  is_verified: boolean;
+  updated_at: string;
+}
+
+export const CreateWithdrawalInputSchema = z.object({
+  book_id: z.string().nullable().optional(),
+  sales_type: z.enum(["Indian", "International", "All"]).default("All"),
+  amount: z
+    .number()
+    .min(1000, "Minimum withdrawal threshold is ₹1,000")
+    .max(500000, "Maximum per transaction is ₹5,00,000"),
+  account_holder_name: z.string().min(2, "Account holder name is required"),
+  account_number: z.string().min(8, "Valid account number is required"),
+  ifsc_code: z.string().min(6, "Valid IFSC code is required"),
+  bank_name: z.string().min(2, "Bank name is required"),
+});
+
+export const SaveBankDetailsInputSchema = z.object({
+  account_holder_name: z.string().min(2, "Account holder name is required"),
+  account_number: z.string().min(8, "Valid account number is required"),
+  ifsc_code: z.string().min(6, "Valid IFSC code is required"),
+  bank_name: z.string().min(2, "Bank name is required"),
+  pan_number: z.string().optional(),
+});
+
+export interface CreateBookInput {
+  title: string;
+  subtitle?: string;
+  author_name: string;
+  language: string;
+  genre: string;
+  trim_size: string;
+  binding: "Paperback" | "Hardcover" | "Both";
+  manuscript_url?: string;
+  blurb?: string;
+  target_mrp: number;
+}

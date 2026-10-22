@@ -1,25 +1,22 @@
 "use client";
 
-import React from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PortalShell } from "@/components/layout/portal-shell";
 import { useFastQuery } from "@/lib/client-cache";
 import { BookRecord, SafeUser } from "@/types/domain";
+import { BookProductionStagePipeline } from "@/components/ui/badges";
 import {
-  BookProductionStagePipeline,
-  formatDateTime,
-  formatINR,
-  formatNullableINR,
-} from "@/components/ui/badges";
-import {
+  AlertCircle,
+  ArrowRight,
   BookOpen,
-  Calendar,
-  ExternalLink,
+  Filter,
   IndianRupee,
   MessageSquarePlus,
-  Printer,
-  Store,
+  Search,
+  SlidersHorizontal,
+  TrendingUp,
 } from "lucide-react";
 
 interface AuthorDashboardResponse {
@@ -30,33 +27,83 @@ interface AuthorDashboardResponse {
 
 export default function AuthorBooksPage() {
   const router = useRouter();
-  const { data, isLoading, isRefreshing, error, lastSyncedAt, refresh } =
-    useFastQuery<AuthorDashboardResponse>(
-      "author:dashboard",
-      "/api/author/dashboard"
-    );
+  const { data, isLoading, error } = useFastQuery<AuthorDashboardResponse>(
+    "author:dashboard",
+    "/api/author/dashboard"
+  );
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [genreFilter, setGenreFilter] = useState("ALL");
+  const [sortBy, setSortBy] = useState("newest");
+
+  const filteredBooks = useMemo(() => {
+    if (!data?.books) return [];
+    let list = [...data.books];
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (b) =>
+          b.title.toLowerCase().includes(q) ||
+          b.isbn.toLowerCase().includes(q) ||
+          b.genre.toLowerCase().includes(q)
+      );
+    }
+
+    if (statusFilter !== "ALL") {
+      if (statusFilter === "PUBLISHED") {
+        list = list.filter((b) => !b.status.toLowerCase().includes("in production"));
+      } else if (statusFilter === "IN_PRODUCTION") {
+        list = list.filter((b) => b.status.toLowerCase().includes("in production"));
+      }
+    }
+
+    if (genreFilter !== "ALL") {
+      list = list.filter((b) => b.genre.toLowerCase() === genreFilter.toLowerCase());
+    }
+
+    list.sort((a, b) => {
+      if (sortBy === "sales") return b.total_copies_sold - a.total_copies_sold;
+      if (sortBy === "royalty") return b.total_royalty_earned - a.total_royalty_earned;
+      return (b.publication_date || "").localeCompare(a.publication_date || "");
+    });
+
+    return list;
+  }, [data?.books, searchQuery, statusFilter, genreFilter, sortBy]);
+
+  const uniqueGenres = useMemo(() => {
+    if (!data?.books) return [];
+    return Array.from(new Set(data.books.map((b) => b.genre)));
+  }, [data?.books]);
 
   if (error) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-sm text-red-600 mb-3">{error}</p>
-        <button
-          type="button"
-          onClick={() => router.push("/login")}
-          className="rounded-xl bg-[#1B4D7E] px-4 py-2 text-xs font-semibold text-white"
-        >
-          Sign In
-        </button>
+      <div className="min-h-screen bg-[#F9FAF7] flex items-center justify-center p-6">
+        <div className="max-w-md w-full rounded-3xl border border-[#E8EDE6] bg-white p-8 text-center shadow-sm">
+          <AlertCircle className="w-10 h-10 text-amber-600 mx-auto mb-3" />
+          <h2 className="font-serif text-xl font-bold text-slate-900 mb-2">
+            Session Expired
+          </h2>
+          <p className="text-xs text-slate-600 mb-4">{error}</p>
+          <button
+            onClick={() => router.push("/login")}
+            className="rounded-full bg-[#0F4C3A] px-6 py-2.5 text-xs font-semibold text-white hover:bg-[#0A3B2D]"
+          >
+            Sign In
+          </button>
+        </div>
       </div>
     );
   }
 
   if (isLoading || !data) {
     return (
-      <div className="p-8 max-w-6xl mx-auto space-y-4">
-        <div className="h-10 w-64 rounded animate-shimmer" />
-        <div className="h-56 rounded-xl animate-shimmer" />
-        <div className="h-56 rounded-xl animate-shimmer" />
+      <div className="min-h-screen bg-[#F9FAF7] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-2 border-[#0F4C3A] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-medium text-slate-500">Loading Books Catalog...</p>
+        </div>
       </div>
     );
   }
@@ -64,219 +111,180 @@ export default function AuthorBooksPage() {
   const { author, books } = data;
 
   return (
-    <PortalShell
-      user={author}
-      lastSyncedAt={lastSyncedAt}
-      onManualRefresh={refresh}
-      isRefreshing={isRefreshing}
-    >
-      <div className="space-y-6 animate-fade-up">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+    <PortalShell user={author}>
+      <div className="space-y-6">
+        {/* ================================================================
+            PAGE HEADER (Matches Screen 3: My Books)
+            ================================================================ */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8EDE6]">
           <div>
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900">
-              My Books & Royalty Ledger
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              My Books
             </h1>
-            <p className="text-sm text-slate-600 mt-1">
-              Complete publication details, ISBN assignments, active retail
-              channels, and 80/20 net-profit royalty figures for{" "}
-              <span className="font-semibold text-slate-900">
-                {author.name}
-              </span>
-              .
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Manage your books and view their details, sales and royalty information.
             </p>
           </div>
           <Link
             href="/author/tickets/new"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#1B4D7E] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white hover:bg-[#163f68] transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white text-xs sm:text-sm font-semibold shadow-xs transition"
           >
-            <MessageSquarePlus className="h-4 w-4" aria-hidden="true" />
-            Ask About a Book
+            <MessageSquarePlus className="w-4 h-4" />
+            <span>Raise Book Ticket</span>
           </Link>
         </div>
 
-        {/* Detailed Book Cards */}
-        <div className="space-y-5">
-          {books.map((book) => {
-            const isProduction = book.status
-              .toLowerCase()
-              .includes("in production");
-            const belowThreshold =
-              !isProduction &&
-              book.royalty_pending > 0 &&
-              book.royalty_pending < 1000;
+        {/* ================================================================
+            FILTER & SEARCH BAR (Matches Screen 3)
+            ================================================================ */}
+        <div className="bg-white rounded-2xl p-4 border border-[#E8EDE6] shadow-xs flex flex-wrap items-center justify-between gap-3">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search books by title, ISBN, or genre..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-[#F9FAF7] text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] transition"
+            />
+          </div>
 
-            return (
-              <div
-                key={book.book_id}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5"
-              >
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                  <div className="space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs font-bold text-slate-700">
-                        {book.book_id}
-                      </span>
-                      <span className="rounded bg-sky-50 border border-sky-200 px-2.5 py-0.5 font-mono text-xs font-semibold text-[#1B4D7E]">
-                        ISBN: {book.isbn}
-                      </span>
-                      <span className="rounded bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                        {book.genre}
-                      </span>
-                    </div>
-                    <h2 className="font-serif text-xl font-bold text-slate-900">
-                      {book.title}
-                    </h2>
-                  </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-slate-200 bg-[#F9FAF7] text-xs font-medium text-slate-700 focus:outline-hidden focus:border-[#0F4C3A]"
+            >
+              <option value="ALL">All Status</option>
+              <option value="PUBLISHED">Published</option>
+              <option value="IN_PRODUCTION">In Production</option>
+            </select>
 
-                  <div className="flex items-center gap-3">
-                    <Link
-                      href={`/author/tickets/new?book_id=${book.book_id}`}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-[#1B4D7E] hover:bg-sky-50 hover:border-sky-200 transition-colors cursor-pointer"
-                    >
-                      <MessageSquarePlus
-                        className="h-3.5 w-3.5"
-                        aria-hidden="true"
-                      />
-                      Raise Ticket for This Book
-                    </Link>
-                  </div>
-                </div>
+            <select
+              value={genreFilter}
+              onChange={(e) => setGenreFilter(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-slate-200 bg-[#F9FAF7] text-xs font-medium text-slate-700 focus:outline-hidden focus:border-[#0F4C3A]"
+            >
+              <option value="ALL">All Genres</option>
+              {uniqueGenres.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
 
-                {/* Production Stage Progress Bar */}
-                <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-4">
-                  <BookProductionStagePipeline status={book.status} />
-                </div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-slate-200 bg-[#F9FAF7] text-xs font-medium text-slate-700 focus:outline-hidden focus:border-[#0F4C3A]"
+            >
+              <option value="newest">Newest First</option>
+              <option value="sales">Highest Sales</option>
+              <option value="royalty">Highest Royalty</option>
+            </select>
+          </div>
+        </div>
 
-                {/* Key Metrics Grid (Null-Safe) */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                  <div className="rounded-xl border border-slate-200 p-3.5">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">
-                      MRP
-                    </span>
-                    <span className="text-base font-bold text-slate-900 mt-1 block">
-                      {formatNullableINR(book.mrp, "TBD (In Prod)")}
-                    </span>
-                  </div>
+        {/* ================================================================
+            BOOKS TABLE & PIPELINE LIST (Matches Screen 3)
+            ================================================================ */}
+        <div className="bg-white rounded-2xl border border-[#E8EDE6] shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-[#F9FAF7] border-b border-[#E8EDE6] text-slate-400 font-semibold uppercase tracking-wider">
+                  <th className="py-3.5 pl-5">Cover & Title</th>
+                  <th className="py-3.5">ISBN</th>
+                  <th className="py-3.5">Status</th>
+                  <th className="py-3.5 text-right">Sales</th>
+                  <th className="py-3.5 text-right">Royalty</th>
+                  <th className="py-3.5 text-right">Published</th>
+                  <th className="py-3.5 text-center pr-5">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {filteredBooks.map((b) => {
+                  const isInProduction = b.status
+                    .toLowerCase()
+                    .includes("in production");
+                  return (
+                    <React.Fragment key={b.book_id}>
+                      <tr className="hover:bg-[#F9FAF7] transition">
+                        <td className="py-4 pl-5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-12 rounded-lg bg-gradient-to-br from-[#0F382C] to-[#1A6B52] text-white flex items-center justify-center font-serif text-[9px] font-bold text-center leading-none p-1 shrink-0 shadow-xs">
+                              {b.title.slice(0, 10)}
+                            </div>
+                            <div>
+                              <span className="font-semibold text-slate-900 block text-sm">
+                                {b.title}
+                              </span>
+                              <span className="text-[11px] text-slate-400">
+                                {b.genre} • {b.book_id}
+                                {b.mrp ? ` • MRP: ₹${b.mrp}` : " • MRP: TBA"}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 font-mono text-[11px] text-slate-600">
+                          {b.isbn || "Not Assigned"}
+                        </td>
+                        <td className="py-4">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                              isInProduction
+                                ? "bg-amber-50 text-amber-800 border border-amber-200"
+                                : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                            }`}
+                          >
+                            {b.status}
+                          </span>
+                        </td>
+                        <td className="py-4 text-right font-medium text-slate-900">
+                          {b.total_copies_sold.toLocaleString()}
+                        </td>
+                        <td className="py-4 text-right font-semibold text-[#0F4C3A]">
+                          ₹ {b.total_royalty_earned.toLocaleString()}
+                        </td>
+                        <td className="py-4 text-right text-slate-500">
+                          {b.publication_date || "In Pipeline"}
+                        </td>
+                        <td className="py-4 text-center pr-5">
+                          <Link
+                            href={`/author/tickets/new?book_id=${b.book_id}`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-[#0F4C3A] hover:bg-[#F2F7F4] text-slate-700 hover:text-[#0F4C3A] text-xs font-medium transition"
+                          >
+                            <MessageSquarePlus className="w-3.5 h-3.5" />
+                            <span>Ask Question</span>
+                          </Link>
+                        </td>
+                      </tr>
 
-                  <div className="rounded-xl border border-slate-200 p-3.5">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">
-                      Royalty / Copy (80%)
-                    </span>
-                    <span className="text-base font-bold text-slate-900 mt-1 block">
-                      {book.author_royalty_per_copy !== null
-                        ? `₹${book.author_royalty_per_copy}/copy`
-                        : "TBD (In Prod)"}
-                    </span>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 p-3.5">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">
-                      Total Copies Sold
-                    </span>
-                    <span className="text-base font-bold text-slate-900 mt-1 block">
-                      {isProduction
-                        ? "Not Live Yet"
-                        : book.total_copies_sold.toLocaleString("en-IN")}
-                    </span>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 p-3.5">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">
-                      Total Royalty Earned
-                    </span>
-                    <span className="text-base font-bold text-slate-900 mt-1 block">
-                      {formatINR(book.total_royalty_earned)}
-                    </span>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 p-3.5">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">
-                      Royalty Paid
-                    </span>
-                    <span className="text-base font-bold text-emerald-700 mt-1 block">
-                      {formatINR(book.royalty_paid)}
-                    </span>
-                  </div>
-
-                  <div className="rounded-xl border border-sky-200 bg-sky-50/50 p-3.5">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[#1B4D7E] block">
-                      Royalty Pending
-                    </span>
-                    <span className="text-base font-bold text-[#1B4D7E] mt-1 block">
-                      {formatINR(book.royalty_pending)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Metadata Footer: Publication Date, Print Partner, Payout Date & Channels */}
-                <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-slate-200 text-xs text-slate-600">
-                  <div className="flex flex-wrap items-center gap-4">
-                    <span className="inline-flex items-center gap-1.5">
-                      <Calendar
-                        className="h-3.5 w-3.5 text-slate-400"
-                        aria-hidden="true"
-                      />
-                      <strong>Published:</strong>{" "}
-                      {book.publication_date
-                        ? formatDateTime(book.publication_date)
-                        : "In Production (Not Yet Released)"}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <Printer
-                        className="h-3.5 w-3.5 text-slate-400"
-                        aria-hidden="true"
-                      />
-                      <strong>Print Partner:</strong>{" "}
-                      {book.print_partner ?? "Assigned at Printing Stage"}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <IndianRupee
-                        className="h-3.5 w-3.5 text-slate-400"
-                        aria-hidden="true"
-                      />
-                      <strong>Last Payout:</strong>{" "}
-                      {book.last_royalty_payout_date
-                        ? formatDateTime(book.last_royalty_payout_date)
-                        : "No payout recorded yet"}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <Store
-                      className="h-3.5 w-3.5 text-slate-400 mr-1"
-                      aria-hidden="true"
-                    />
-                    {book.available_on.length > 0 ? (
-                      book.available_on.map((platform) => (
-                        <span
-                          key={platform}
-                          className="inline-flex items-center gap-1 rounded-md bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-medium text-emerald-800"
-                        >
-                          {platform}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-amber-700 font-medium">
-                        Distribution activates upon publication
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {belowThreshold && (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-                    <strong>Minimum Payout Policy Note:</strong> BookLeaf
-                    disburses royalties quarterly within 45 days of quarter end
-                    once accumulated royalties reach <strong>₹1,000</strong>.
-                    Your current pending balance of{" "}
-                    <strong>{formatINR(book.royalty_pending)}</strong> is ₹
-                    {1000 - book.royalty_pending} away from the threshold and
-                    will roll over automatically.
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                      {/* If In Production: Expandable Production Pipeline Tracker */}
+                      {isInProduction && (
+                        <tr className="bg-amber-50/40">
+                          <td colSpan={7} className="px-5 py-3 border-b border-amber-100">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                              <span className="font-semibold text-amber-900 flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                                Current Production Pipeline Stage:
+                              </span>
+                              <span className="text-[11px] text-amber-800">
+                                Manuscript received → Final Dispatch (8 Stages)
+                              </span>
+                            </div>
+                            <div className="mt-2">
+                              <BookProductionStagePipeline status={b.status} />
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </PortalShell>

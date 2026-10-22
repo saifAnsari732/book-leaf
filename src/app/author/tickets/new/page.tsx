@@ -9,14 +9,16 @@ import { AttachmentItem, BookRecord, SafeUser } from "@/types/domain";
 import {
   AlertCircle,
   ArrowLeft,
+  BookOpen,
   CheckCircle2,
   FileText,
+  Headphones,
+  HelpCircle,
   Image as ImageIcon,
   Paperclip,
-  RefreshCw,
-  Send,
   Sparkles,
   Trash2,
+  UploadCloud,
 } from "lucide-react";
 
 interface AuthorDashboardResponse {
@@ -25,30 +27,27 @@ interface AuthorDashboardResponse {
   books: BookRecord[];
 }
 
-const SAMPLE_TEMPLATES = [
+const QUICK_TEMPLATES = [
   {
-    label: "Royalty Delay / Payout Question",
-    subject: "I published my book months ago and haven't received my pending royalty",
+    title: "Royalty Inquiry",
+    category: "Royalty & Payments",
+    subject: "Quarterly royalty status verification",
     description:
-      "Hi BookLeaf Support, I checked my dashboard and saw that I have pending royalties accumulated from my book sales, but I haven't received the bank payout yet. Could you please check my payout schedule and confirm when the transfer will be processed?",
+      "Hello BookLeaf Support Team, I am writing to inquire about my pending royalty balance. I would like to verify whether my account details are confirmed for the upcoming settlement cycle.",
   },
   {
-    label: "ISBN Mismatch on Amazon",
-    subject: "My book is showing a different ISBN on Amazon than what's on the physical copy",
+    title: "ISBN Mismatch on Amazon",
+    category: "ISBN & Metadata Issues",
+    subject: "ISBN on Amazon does not match physical copy",
     description:
-      "Hello team, my readers noticed that the Amazon listing for my book displays a different ISBN compared to the barcode printed on the physical copy. Please escalate this to the production team urgently.",
+      "Hello, readers have informed me that the ISBN displayed on the Amazon listing differs from the ISBN printed on the physical copies. Please escalate this to the metadata team for catalog correction.",
   },
   {
-    label: "Print Quality Defect (Free Reprint)",
-    subject: "Received author copies with blurry cover images and misaligned interior pages",
+    title: "Defective Author Copies",
+    category: "Printing & Quality",
+    subject: "Received author copies with printing alignment issues",
     description:
-      "Hi Support, I received my author copies yesterday and the print quality has issues—the cover graphics look blurry and several interior pages are misaligned. I am attaching photos of the defective copy for verification so we can arrange a reprint.",
-  },
-  {
-    label: "Amazon 'Currently Unavailable'",
-    subject: "My book is published & live but showing as 'Currently Unavailable' on Amazon",
-    description:
-      "Hi team, my book is marked as Published & Live in my BookLeaf portal, but on Amazon India it currently says 'Currently Unavailable'. Can you trigger a stock re-sync?",
+      "Hi Support, I received my author copies and noticed that interior pages have printing alignment flaws. I am uploading photos for verification to request a complimentary reprint under BookLeaf quality policy.",
   },
 ];
 
@@ -64,6 +63,8 @@ function NewSupportTicketContent() {
 
   const [selectedBookId, setSelectedBookId] = useState<string>(initialBookId);
   const [subject, setSubject] = useState("");
+  const [category, setCategory] = useState("Royalty & Payments");
+  const [priority, setPriority] = useState("Medium");
   const [description, setDescription] = useState("");
   const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
@@ -98,12 +99,12 @@ function NewSupportTicketContent() {
 
         const base64Data = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
-          reader.onload = () => resolve(String(reader.result || ""));
-          reader.onerror = () => reject(new Error("Could not read file"));
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
           reader.readAsDataURL(file);
         });
 
-        const res = await fetch("/api/upload/imagekit", {
+        const uploadRes = await fetch("/api/upload/imagekit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -112,53 +113,63 @@ function NewSupportTicketContent() {
             base64Data,
           }),
         });
-        const json = await res.json();
-        if (!res.ok || !json.success) {
-          throw new Error(json.error || "Attachment upload failed");
+
+        const uploadJson = await uploadRes.json();
+        if (!uploadRes.ok || !uploadJson.success) {
+          throw new Error(uploadJson.error || "Failed to upload file");
         }
-        setAttachments((prev) => [...prev, json.attachment]);
+
+        setAttachments((prev) => [...prev, uploadJson.attachment]);
       }
     } catch (err) {
-      setFormError(
-        err instanceof Error ? err.message : "Failed to attach file"
-      );
+      setFormError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setIsUploadingFile(false);
       e.target.value = "";
     }
   }
 
-  function removeAttachment(idx: number) {
-    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+  function removeAttachment(fileId?: string, index?: number) {
+    setAttachments((prev) =>
+      prev.filter((att, i) => (att.fileId ? att.fileId !== fileId : i !== index))
+    );
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
-    setIsSubmitting(true);
 
+    if (subject.trim().length < 5) {
+      setFormError("Subject must be at least 5 characters long.");
+      return;
+    }
+    if (description.trim().length < 15) {
+      setFormError("Please provide a detailed description (at least 15 characters).");
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       const res = await fetch("/api/author/tickets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           book_id: selectedBookId === "GENERAL" ? null : selectedBookId,
-          subject,
-          description,
+          subject: subject.trim(),
+          description: description.trim(),
           attachments,
         }),
       });
+
       const json = await res.json();
       if (!res.ok || !json.success) {
-        const detailMsg = json.details
-          ?.map((d: { message: string }) => d.message)
-          .join(", ");
-        setFormError(detailMsg || json.error || "Could not submit ticket");
+        setFormError(json.error || "Failed to submit support ticket.");
         return;
       }
 
-      invalidateClientCache("author:");
-      invalidateClientCache("admin:");
+      invalidateClientCache("author:tickets:ALL");
+      invalidateClientCache("author:dashboard");
+
       router.push(`/author/tickets/${json.ticket.ticket_id}`);
     } catch {
       setFormError("Network error while creating ticket. Please try again.");
@@ -169,23 +180,30 @@ function NewSupportTicketContent() {
 
   if (error) {
     return (
-      <div className="p-8 text-center">
-        <button
-          type="button"
-          onClick={() => router.push("/login")}
-          className="rounded-xl bg-[#1B4D7E] px-4 py-2 text-xs font-semibold text-white"
-        >
-          Sign In
-        </button>
+      <div className="min-h-screen bg-[#F9FAF7] flex items-center justify-center p-6">
+        <div className="max-w-md w-full rounded-3xl border border-[#E8EDE6] bg-white p-8 text-center shadow-sm">
+          <AlertCircle className="w-10 h-10 text-amber-600 mx-auto mb-3" />
+          <h2 className="font-serif text-xl font-bold text-slate-900 mb-2">
+            Session Expired
+          </h2>
+          <button
+            onClick={() => router.push("/login")}
+            className="rounded-full bg-[#0F4C3A] px-6 py-2.5 text-xs font-semibold text-white"
+          >
+            Sign In
+          </button>
+        </div>
       </div>
     );
   }
 
   if (isLoading || !data) {
     return (
-      <div className="p-8 max-w-4xl mx-auto space-y-4">
-        <div className="h-10 w-64 rounded animate-shimmer" />
-        <div className="h-96 rounded-xl animate-shimmer" />
+      <div className="min-h-screen bg-[#F9FAF7] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-2 border-[#0F4C3A] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-medium text-slate-500">Loading Ticket Creator...</p>
+        </div>
       </div>
     );
   }
@@ -194,254 +212,266 @@ function NewSupportTicketContent() {
 
   return (
     <PortalShell user={author}>
-      <div className="max-w-3xl mx-auto space-y-6 animate-fade-up">
+      <div className="space-y-6">
+        {/* ================================================================
+            PAGE HEADER (Matches Screen 6: Create Support Ticket)
+            ================================================================ */}
         <div>
           <Link
             href="/author/tickets"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 mb-3"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0F4C3A] hover:underline mb-3"
           >
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-            Back to My Tickets
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to My Tickets</span>
           </Link>
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900">
-            Submit a Support Query
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+            Create Support Ticket
           </h1>
-          <p className="text-sm text-slate-600 mt-1">
-            Select the book your query is about (or General / Account Level).
-            Our AI triage assistant will immediately route your ticket to the
-            right BookLeaf specialist.
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Tell us what you need help with. Our team is here to assist you.
           </p>
         </div>
 
-        {/* Quick Sample Query Fillers for Fast Testing */}
-        <div className="rounded-2xl border border-sky-200 bg-sky-50/60 p-4 space-y-2.5">
-          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#1B4D7E]">
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            1-Click Sample Query Templates (For Fast Evaluator Testing):
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {SAMPLE_TEMPLATES.map((tpl) => (
-              <button
-                key={tpl.label}
-                type="button"
-                onClick={() => {
-                  setSubject(tpl.subject);
-                  setDescription(tpl.description);
-                }}
-                className="rounded-lg border border-sky-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#1B4D7E] hover:text-[#1B4D7E] transition-colors cursor-pointer"
-              >
-                + {tpl.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Main Ticket Creation Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-5"
-        >
-          {formError && (
-            <div
-              role="alert"
-              className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-medium text-red-800"
-            >
-              <AlertCircle
-                className="h-4 w-4 text-red-600 shrink-0 mt-0.5"
-                aria-hidden="true"
-              />
-              <span>{formError}</span>
-            </div>
-          )}
-
-          {/* Book Dropdown */}
-          <div>
-            <label
-              htmlFor="ticket-book"
-              className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5"
-            >
-              Which book is this query about?{" "}
-              <span className="text-red-600">*</span>
-            </label>
-            <select
-              id="ticket-book"
-              name="book_id"
-              value={selectedBookId}
-              onChange={(e) => setSelectedBookId(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-[#1B4D7E] focus:outline-none focus:ring-2 focus:ring-[#1B4D7E]/20"
-            >
-              {books.map((b) => (
-                <option key={b.book_id} value={b.book_id}>
-                  {b.title} ({b.book_id} • {b.status} • Pending: ₹
-                  {b.royalty_pending.toLocaleString("en-IN")})
-                </option>
-              ))}
-              <option value="GENERAL">
-                General / Account Level (Not tied to a single book)
-              </option>
-            </select>
-          </div>
-
-          {/* Subject Line */}
-          <div>
-            <label
-              htmlFor="ticket-subject"
-              className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5"
-            >
-              Subject Line <span className="text-red-600">*</span>
-            </label>
-            <input
-              id="ticket-subject"
-              name="subject"
-              type="text"
-              required
-              minLength={5}
-              maxLength={180}
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="e.g., Question regarding pending quarterly royalty payout"
-              className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-[#1B4D7E] focus:outline-none focus:ring-2 focus:ring-[#1B4D7E]/20"
-            />
-          </div>
-
-          {/* Detailed Description */}
-          <div>
-            <label
-              htmlFor="ticket-description"
-              className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5"
-            >
-              Detailed Description <span className="text-red-600">*</span>
-            </label>
-            <textarea
-              id="ticket-description"
-              name="description"
-              rows={6}
-              required
-              minLength={15}
-              maxLength={4000}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Please describe your question or issue in detail (minimum 15 characters)..."
-              className="w-full rounded-xl border border-slate-300 bg-white p-4 text-sm text-slate-900 focus:border-[#1B4D7E] focus:outline-none focus:ring-2 focus:ring-[#1B4D7E]/20"
-            />
-          </div>
-
-          {/* Optional File Attachment Upload (ImageKit.io Cloud Integration) */}
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="ticket-attachments"
-                className="block text-xs font-semibold uppercase tracking-wider text-slate-700"
-              >
-                Optional Attachments (Defective Print Photos, Screenshots, PDF)
-              </label>
-              <span className="text-[11px] font-medium text-slate-500">
-                Powered by ImageKit Storage • Max 5MB (JPG, PNG, WEBP, PDF, TXT)
-              </span>
-            </div>
-
-            <label
-              htmlFor="ticket-attachments"
-              className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/70 px-4 py-5 text-center hover:border-[#1B4D7E] hover:bg-sky-50/30 transition-colors cursor-pointer"
-            >
-              <Paperclip
-                className="h-5 w-5 text-[#1B4D7E] mb-1.5"
-                aria-hidden="true"
-              />
-              <span className="text-xs font-semibold text-slate-800">
-                {isUploadingFile
-                  ? "Verifying signature & uploading to ImageKit..."
-                  : "Click to attach files (up to 3 files)"}
-              </span>
-              <span className="text-[11px] text-slate-500 mt-0.5">
-                Helpful when reporting printing defects or ISBN mismatches
-              </span>
-              <input
-                id="ticket-attachments"
-                type="file"
-                accept=".jpg,.jpeg,.png,.webp,.pdf,.txt"
-                multiple
-                onChange={handleFileSelect}
-                disabled={isUploadingFile}
-                className="sr-only"
-              />
-            </label>
-
-            {attachments.length > 0 && (
-              <div className="space-y-2 pt-1">
-                {attachments.map((att, idx) => (
-                  <div
-                    key={`${att.name}-${idx}`}
-                    className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {att.type.startsWith("image/") ? (
-                        <ImageIcon
-                          className="h-4 w-4 text-emerald-600 shrink-0"
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <FileText
-                          className="h-4 w-4 text-[#1B4D7E] shrink-0"
-                          aria-hidden="true"
-                        />
-                      )}
-                      <span className="font-semibold text-slate-800 truncate">
-                        {att.name}
-                      </span>
-                      <span className="text-slate-400">
-                        ({Math.max(1, Math.round(att.size / 1024))} KB)
-                      </span>
-                      <span className="inline-flex items-center gap-1 rounded bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800">
-                        <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
-                        {att.provider === "imagekit"
-                          ? "ImageKit CDN"
-                          : "Verified"}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeAttachment(idx)}
-                      className="text-slate-400 hover:text-red-600 p-1 cursor-pointer"
-                      aria-label={`Remove ${att.name}`}
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  </div>
-                ))}
+        {/* ================================================================
+            TWO COLUMN LAYOUT: FORM (Left) + NEED HELP PANEL (Right)
+            ================================================================ */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Form Card (Left 8 Cols - Matches Screen 6) */}
+          <div className="lg:col-span-8 bg-white rounded-2xl border border-[#E8EDE6] shadow-xs p-6 sm:p-8">
+            {formError && (
+              <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{formError}</span>
               </div>
             )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Select Book */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Select Book (Optional)
+                </label>
+                <select
+                  value={selectedBookId}
+                  onChange={(e) => setSelectedBookId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-[#F9FAF7] text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-hidden focus:border-[#0F4C3A]"
+                >
+                  <option value="GENERAL">General / Account Level Query (No Specific Book)</option>
+                  {books.map((b) => (
+                    <option key={b.book_id} value={b.book_id}>
+                      {b.title} ({b.book_id}) — {b.status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Subject */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Subject *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter ticket subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  required
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-[#F9FAF7] text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:border-[#0F4C3A]"
+                />
+              </div>
+
+              {/* Category & Priority Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Category *
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-[#F9FAF7] text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-hidden focus:border-[#0F4C3A]"
+                  >
+                    <option value="Royalty & Payments">Royalty & Payments</option>
+                    <option value="ISBN & Metadata Issues">ISBN & Metadata Issues</option>
+                    <option value="Printing & Quality">Printing & Quality</option>
+                    <option value="Distribution & Availability">Distribution & Availability</option>
+                    <option value="Book Status & Production Updates">Book Status & Production Updates</option>
+                    <option value="General Inquiry">General Inquiry</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Priority *
+                  </label>
+                  <select
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-[#F9FAF7] text-xs sm:text-sm text-slate-900 focus:bg-white focus:outline-hidden focus:border-[#0F4C3A]"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Description *
+                </label>
+                <textarea
+                  rows={5}
+                  placeholder="Please describe your issue in detail..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  required
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-[#F9FAF7] text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:border-[#0F4C3A]"
+                />
+              </div>
+
+              {/* Drag & Drop Attachments (Matches Screen 6) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Attachments (Optional)
+                </label>
+                <label className="border-2 border-dashed border-[#C4DDD0] hover:border-[#0F4C3A] bg-[#F9FAF7] hover:bg-[#F2F7F4] rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition text-center block">
+                  <UploadCloud className="w-8 h-8 text-[#0F4C3A] mb-2" />
+                  <span className="text-xs font-semibold text-slate-800">
+                    {isUploadingFile ? "Uploading to ImageKit CDN..." : "Drag & drop files here or click to upload"}
+                  </span>
+                  <span className="text-[11px] text-slate-500 mt-1">
+                    PDF, JPG, PNG (Max 5MB per file)
+                  </span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/png,image/jpeg,image/webp,application/pdf"
+                    onChange={handleFileSelect}
+                    disabled={isUploadingFile}
+                    className="hidden"
+                  />
+                </label>
+
+                {/* Uploaded File Badges */}
+                {attachments.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {attachments.map((att, i) => (
+                      <div
+                        key={att.fileId || i}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-800 shadow-2xs"
+                      >
+                        <Paperclip className="w-3.5 h-3.5 text-[#0F4C3A]" />
+                        <span className="truncate max-w-[150px]">{att.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeAttachment(att.fileId, i)}
+                          className="text-slate-400 hover:text-rose-500"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Form Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => router.push("/author/tickets")}
+                  className="px-5 py-2.5 rounded-full border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || isUploadingFile}
+                  className="px-7 py-2.5 rounded-full bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white text-xs font-semibold shadow-xs transition disabled:opacity-50"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Ticket"}
+                </button>
+              </div>
+            </form>
           </div>
 
-          <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-200">
-            <Link
-              href="/author/tickets"
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={isSubmitting || isUploadingFile}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#1B4D7E] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-[#163f68] disabled:opacity-60 transition-all cursor-pointer"
-            >
-              {isSubmitting ? (
-                <>
-                  <RefreshCw
-                    className="h-4 w-4 animate-spin"
-                    aria-hidden="true"
+          {/* Need Help? Side Card (Right 4 Cols - Matches Screen 6) */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white rounded-2xl border border-[#E8EDE6] shadow-xs p-6 space-y-5">
+              <h3 className="font-serif font-bold text-base text-slate-900">
+                Need Help?
+              </h3>
+
+              <div className="space-y-3">
+                <Link
+                  href="/#faq"
+                  className="flex items-start gap-3 p-3 rounded-xl border border-slate-100 hover:border-[#0F4C3A] hover:bg-[#F9FAF7] transition group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-800 flex items-center justify-center shrink-0 border border-emerald-200">
+                    <HelpCircle className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 group-hover:text-[#0F4C3A]">
+                      Check our FAQ
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Find quick answers to common questions
+                    </p>
+                  </div>
+                </Link>
+
+                <div className="p-3 rounded-xl border border-slate-100 bg-[#F9FAF7] space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#0F4C3A]">
+                    <Sparkles className="w-4 h-4 text-[#10B981]" />
+                    <span>Quick Prompt Templates</span>
+                  </div>
+                  <div className="space-y-1.5 pt-1">
+                    {QUICK_TEMPLATES.map((tmpl) => (
+                      <button
+                        key={tmpl.title}
+                        type="button"
+                        onClick={() => {
+                          setSubject(tmpl.subject);
+                          setDescription(tmpl.description);
+                          setCategory(tmpl.category);
+                        }}
+                        className="w-full text-left p-2 rounded-lg bg-white border border-slate-200 hover:border-[#0F4C3A] text-[11px] text-slate-700 font-medium transition"
+                      >
+                        {tmpl.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-xl border border-slate-100">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-800 flex items-center justify-center shrink-0 border border-emerald-200">
+                    <Headphones className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">
+                      Contact Support
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Our operations team replies within 24–48 hours
+                    </p>
+                  </div>
+                </div>
+
+                {/* Support Books & Plant Illustration (Matches Screen 6) */}
+                <div className="rounded-2xl overflow-hidden border border-slate-100 shadow-2xs pt-2">
+                  <img
+                    src="/images/support-books-plant.jpg"
+                    alt="BookLeaf Author Support"
+                    className="w-full h-36 object-cover"
                   />
-                  <span>Submitting & Running AI Triage...</span>
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4" aria-hidden="true" />
-                  <span>Submit Support Ticket</span>
-                </>
-              )}
-            </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </form>
+        </div>
       </div>
     </PortalShell>
   );
@@ -451,9 +481,8 @@ export default function NewSupportTicketPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-8 max-w-4xl mx-auto space-y-4">
-          <div className="h-10 w-64 rounded animate-shimmer" />
-          <div className="h-96 rounded-xl animate-shimmer" />
+        <div className="min-h-screen bg-[#F9FAF7] flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-[#0F4C3A] border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >

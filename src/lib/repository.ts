@@ -9,6 +9,9 @@ import {
   TicketMessageRecord,
   InternalNoteRecord,
   AuditLogRecord,
+  RoyaltyWithdrawalRecord,
+  BankAccountRecord,
+  CreateBookInput,
   SafeUser,
   TicketCategory,
   TicketPriority,
@@ -23,6 +26,8 @@ import {
   TicketMessageModel,
   InternalNoteModel,
   AuditLogModel,
+  RoyaltyWithdrawalModel,
+  BankAccountModel,
 } from "@/models/schemas";
 import {
   deterministicClassifyAndPrioritize,
@@ -30,6 +35,7 @@ import {
 } from "@/lib/ai-service";
 import { getSlicedKnowledgeBaseContext } from "@/lib/knowledge-base";
 import { toSafeUser } from "@/lib/auth";
+import { invalidateTicketCaches } from "@/lib/redis";
 
 interface SampleBookRaw {
   book_id: string;
@@ -70,6 +76,8 @@ interface LocalDatabaseState {
   messages: TicketMessageRecord[];
   internal_notes: InternalNoteRecord[];
   audit_logs: AuditLogRecord[];
+  withdrawals: RoyaltyWithdrawalRecord[];
+  bank_accounts: BankAccountRecord[];
   seeded_at: string;
 }
 
@@ -88,12 +96,38 @@ const SAMPLE_JSON_PATH = path.join(
   "bookleaf_sample_data.json"
 );
 
+function getConfiguredMongoUri(): string | undefined {
+  if (process.env.MONGODB_URI?.trim()) {
+    return process.env.MONGODB_URI.trim();
+  }
+  // Also check .env.local when invoked from standalone CLI scripts (e.g., npm run seed)
+  try {
+    const envLocalPath = path.join(process.cwd(), ".env.local");
+    if (fs.existsSync(envLocalPath)) {
+      const content = fs.readFileSync(envLocalPath, "utf-8");
+      for (const line of content.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("MONGODB_URI=")) {
+          const val = trimmed.slice("MONGODB_URI=".length).trim().replace(/^["']|["']$/g, "");
+          if (val) {
+            process.env.MONGODB_URI = val;
+            return val;
+          }
+        }
+      }
+    }
+  } catch {
+    // Ignore file read errors
+  }
+  return undefined;
+}
+
 /**
  * Checks whether a live MongoDB connection is active or can be established.
  * Reuses the connection across Next.js HMR reloads in development.
  */
-async function ensureDatabaseReady(): Promise<"mongo" | "local"> {
-  const uri = process.env.MONGODB_URI?.trim();
+export async function ensureDatabaseReady(): Promise<"mongo" | "local"> {
+  const uri = getConfiguredMongoUri();
   if (uri && process.env.NODE_ENV !== "test") {
     if (
       globalThis.__bookleafMongoConnected &&
@@ -103,7 +137,8 @@ async function ensureDatabaseReady(): Promise<"mongo" | "local"> {
     }
     try {
       await mongoose.connect(uri, {
-        serverSelectionTimeoutMS: 4000,
+        dbName: "bookleaf_support",
+        serverSelectionTimeoutMS: 10000,
       });
       globalThis.__bookleafMongoConnected = true;
       await seedMongoDatabaseIfNeeded();
@@ -408,6 +443,74 @@ function buildInitialSeedState(): LocalDatabaseState {
     });
   }
 
+  const bank_accounts: BankAccountRecord[] = [
+    {
+      author_id: "AUTH001",
+      account_holder_name: "Priya Sharma",
+      account_number: "50100492817291",
+      ifsc_code: "HDFC0001234",
+      bank_name: "HDFC Bank Ltd., Fort Branch",
+      pan_number: "ABCPS1234F",
+      is_verified: true,
+      updated_at: nowIso,
+    },
+    {
+      author_id: "AUTH002",
+      account_holder_name: "Rohit Kapoor",
+      account_number: "002101569824",
+      ifsc_code: "ICIC0000021",
+      bank_name: "ICICI Bank Ltd., Connaught Place",
+      pan_number: "XYZPK9876R",
+      is_verified: true,
+      updated_at: nowIso,
+    },
+  ];
+
+  const withdrawals: RoyaltyWithdrawalRecord[] = [
+    {
+      withdrawal_id: "WDR-8921",
+      author_id: "AUTH001",
+      author_name: "Priya Sharma",
+      book_id: "BK001",
+      book_title: "Whispers of the Ganges",
+      sales_type: "Indian",
+      gross_amount: 5000,
+      tds_amount: 500,
+      net_amount: 4500,
+      account_holder_name: "Priya Sharma",
+      account_number: "50100492817291",
+      ifsc_code: "HDFC0001234",
+      bank_name: "HDFC Bank Ltd.",
+      status: "TRANSFERRED",
+      payout_channel: "NEFT",
+      utr_reference: "NEFT-HDFC-89102451",
+      sla_days: 12,
+      created_at: new Date(Date.now() - 40 * 86400000).toISOString(),
+      processed_at: new Date(Date.now() - 32 * 86400000).toISOString(),
+    },
+    {
+      withdrawal_id: "WDR-9410",
+      author_id: "AUTH001",
+      author_name: "Priya Sharma",
+      book_id: "BK001",
+      book_title: "Whispers of the Ganges",
+      sales_type: "Indian",
+      gross_amount: 3400,
+      tds_amount: 340,
+      net_amount: 3060,
+      account_holder_name: "Priya Sharma",
+      account_number: "50100492817291",
+      ifsc_code: "HDFC0001234",
+      bank_name: "HDFC Bank Ltd.",
+      status: "TRANSFERRED",
+      payout_channel: "IMPS",
+      utr_reference: "IMPS-CMS-94812033",
+      sla_days: 12,
+      created_at: new Date(Date.now() - 15 * 86400000).toISOString(),
+      processed_at: new Date(Date.now() - 8 * 86400000).toISOString(),
+    },
+  ];
+
   return {
     users,
     books,
@@ -415,6 +518,8 @@ function buildInitialSeedState(): LocalDatabaseState {
     messages,
     internal_notes,
     audit_logs,
+    withdrawals,
+    bank_accounts,
     seeded_at: nowIso,
   };
 }
@@ -434,6 +539,12 @@ async function ensureLocalStateSeeded(): Promise<LocalDatabaseState> {
         Array.isArray(loaded.books) &&
         loaded.books.length === 18
       ) {
+        if (!Array.isArray(loaded.withdrawals)) {
+          loaded.withdrawals = buildInitialSeedState().withdrawals;
+        }
+        if (!Array.isArray(loaded.bank_accounts)) {
+          loaded.bank_accounts = buildInitialSeedState().bank_accounts;
+        }
         globalThis.__bookleafLocalState = loaded;
         return loaded;
       }
@@ -499,11 +610,14 @@ export async function resetAndSeedDatabase(): Promise<{
   ticketsCount: number;
 }> {
   const seed = buildInitialSeedState();
-  const uri = process.env.MONGODB_URI?.trim();
+  const uri = getConfiguredMongoUri();
 
   if (uri && process.env.NODE_ENV !== "test") {
     try {
-      await mongoose.connect(uri, { serverSelectionTimeoutMS: 4000 });
+      await mongoose.connect(uri, {
+        dbName: "bookleaf_support",
+        serverSelectionTimeoutMS: 10000,
+      });
       globalThis.__bookleafMongoConnected = true;
       await seedMongoDatabaseIfNeeded();
       const authorsCount = await UserModel.countDocuments({ role: "AUTHOR" });
@@ -517,8 +631,11 @@ export async function resetAndSeedDatabase(): Promise<{
         booksCount,
         ticketsCount,
       };
-    } catch {
-      // Fallback to local
+    } catch (err) {
+      console.warn(
+        "[BookLeaf Seed] MongoDB connection error, seeding local store instead:",
+        err instanceof Error ? err.message : err
+      );
     }
   }
 
@@ -558,6 +675,39 @@ export async function findUserByAuthorId(
   }
   const state = globalThis.__bookleafLocalState!;
   return state.users.find((u) => u.author_id === authorId) || null;
+}
+
+export async function findUserById(userId: string): Promise<UserRecord | null> {
+  const mode = await ensureDatabaseReady();
+  if (mode === "mongo") {
+    return UserModel.findOne({ user_id: userId }).lean();
+  }
+  const state = globalThis.__bookleafLocalState!;
+  return state.users.find((u) => u.user_id === userId) || null;
+}
+
+export async function updateUserProfile(
+  userId: string,
+  updates: { name?: string; phone?: string | null; city?: string | null }
+): Promise<boolean> {
+  const mode = await ensureDatabaseReady();
+  if (mode === "mongo") {
+    await UserModel.updateOne(
+      { user_id: userId },
+      { $set: { ...updates, updated_at: new Date().toISOString() } }
+    );
+    return true;
+  }
+  const state = globalThis.__bookleafLocalState!;
+  const u = state.users.find((x) => x.user_id === userId);
+  if (u) {
+    if (updates.name) u.name = updates.name;
+    if (updates.phone !== undefined) u.phone = updates.phone;
+    if (updates.city !== undefined) u.city = updates.city;
+    u.updated_at = new Date().toISOString();
+    return true;
+  }
+  return false;
 }
 
 export async function getBooksByAuthorId(
@@ -732,11 +882,19 @@ export async function createAuthorTicket(params: {
 
   let nextNum = 1007;
   if (mode === "mongo") {
-    const count = await TicketModel.countDocuments();
-    nextNum = 1001 + count;
+    const existingIds = await TicketModel.find({}, { ticket_id: 1 }).lean();
+    const maxExisting = existingIds.reduce((max, doc) => {
+      const num = parseInt(String(doc.ticket_id).replace(/^TKT-/, ""), 10);
+      return Number.isFinite(num) && num > max ? num : max;
+    }, 1000);
+    nextNum = maxExisting + 1;
   } else {
     const state = globalThis.__bookleafLocalState!;
-    nextNum = 1001 + state.tickets.length;
+    const maxExisting = state.tickets.reduce((max, doc) => {
+      const num = parseInt(String(doc.ticket_id).replace(/^TKT-/, ""), 10);
+      return Number.isFinite(num) && num > max ? num : max;
+    }, 1000);
+    nextNum = maxExisting + 1;
   }
 
   const ticketId = `TKT-${nextNum}`;
@@ -799,6 +957,12 @@ export async function createAuthorTicket(params: {
     persistLocalState(state);
   }
 
+  // Asynchronously invalidate Redis caches for instant UI updates
+  invalidateTicketCaches({
+    ticketId: newTicket.ticket_id,
+    authorId: newTicket.author_id,
+  }).catch(() => {});
+
   return newTicket;
 }
 
@@ -825,7 +989,7 @@ export async function addAuthorMessageToTicket(params: {
       ticket_id: ticketId,
     });
     const newMsg: TicketMessageRecord = {
-      message_id: `MSG-${ticketId}-${msgCount + 1}`,
+      message_id: `MSG-${ticketId}-${msgCount + 1}-${Date.now()}`,
       ticket_id: ticketId,
       sender_role: "AUTHOR",
       sender_name: author.name,
@@ -841,6 +1005,10 @@ export async function addAuthorMessageToTicket(params: {
       ticket.status = "Open";
     }
     await ticket.save();
+    invalidateTicketCaches({
+      ticketId,
+      authorId: author.author_id || undefined,
+    }).catch(() => {});
     return { status: "OK", message: newMsg };
   }
 
@@ -868,6 +1036,10 @@ export async function addAuthorMessageToTicket(params: {
     ticket.status = "Open";
   }
   persistLocalState(state);
+  invalidateTicketCaches({
+    ticketId,
+    authorId: author.author_id || undefined,
+  }).catch(() => {});
   return { status: "OK", message: newMsg };
 }
 
@@ -1129,6 +1301,11 @@ export async function updateTicketByAdmin(params: {
       created_at: nowIso,
     });
 
+    invalidateTicketCaches({
+      ticketId,
+      authorId: ticket.author_id,
+    }).catch(() => {});
+
     return ticket.toObject();
   }
 
@@ -1171,6 +1348,11 @@ export async function updateTicketByAdmin(params: {
     created_at: nowIso,
   });
   persistLocalState(state);
+
+  invalidateTicketCaches({
+    ticketId,
+    authorId: ticket.author_id,
+  }).catch(() => {});
 
   return ticket;
 }
@@ -1297,6 +1479,11 @@ export async function sendAdminReplyToTicket(params: {
       created_at: nowIso,
     });
 
+    invalidateTicketCaches({
+      ticketId,
+      authorId: ticket.author_id,
+    }).catch(() => {});
+
     return { ticket: ticket.toObject(), message };
   }
 
@@ -1340,6 +1527,11 @@ export async function sendAdminReplyToTicket(params: {
     created_at: nowIso,
   });
   persistLocalState(state);
+
+  invalidateTicketCaches({
+    ticketId,
+    authorId: ticket.author_id,
+  }).catch(() => {});
 
   return { ticket, message };
 }
@@ -1590,4 +1782,287 @@ export async function getAllDemoAccounts(): Promise<
         ? "Full Ops Access • AI Triage, Queue, Internal Notes"
         : edgeTags[u.author_id || ""] || "Author Account",
   }));
+}
+
+// ============================================================================
+// Royalty & Withdrawal Engine (Real BookLeaf Dashboard Parity)
+// ============================================================================
+
+export async function getAuthorRoyaltyDashboard(authorId: string): Promise<{
+  books: BookRecord[];
+  metrics: {
+    totalRoyaltyEarned: number;
+    totalRoyaltyPaid: number;
+    totalRoyaltyPending: number;
+    withdrawableBalance: number;
+    minPayoutThreshold: number;
+  };
+  bankDetails: BankAccountRecord | null;
+  withdrawals: RoyaltyWithdrawalRecord[];
+}> {
+  const mode = await ensureDatabaseReady();
+  let books: BookRecord[] = [];
+  let bankDetails: BankAccountRecord | null = null;
+  let withdrawals: RoyaltyWithdrawalRecord[] = [];
+
+  if (mode === "mongo") {
+    books = await BookModel.find({ author_id: authorId }).lean();
+    bankDetails = await BankAccountModel.findOne({ author_id: authorId }).lean();
+    withdrawals = await RoyaltyWithdrawalModel.find({ author_id: authorId })
+      .sort({ created_at: -1 })
+      .lean();
+  } else {
+    const state = globalThis.__bookleafLocalState!;
+    books = state.books.filter((b) => b.author_id === authorId);
+    bankDetails =
+      state.bank_accounts.find((b) => b.author_id === authorId) || null;
+    withdrawals = state.withdrawals
+      .filter((w) => w.author_id === authorId)
+      .sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+  }
+
+  const totalRoyaltyEarned = books.reduce(
+    (acc, b) => acc + (b.total_royalty_earned || 0),
+    0
+  );
+  const totalRoyaltyPaid = books.reduce(
+    (acc, b) => acc + (b.royalty_paid || 0),
+    0
+  );
+  const totalRoyaltyPending = books.reduce(
+    (acc, b) => acc + (b.royalty_pending || 0),
+    0
+  );
+
+  return {
+    books,
+    metrics: {
+      totalRoyaltyEarned,
+      totalRoyaltyPaid,
+      totalRoyaltyPending,
+      withdrawableBalance: totalRoyaltyPending,
+      minPayoutThreshold: 1000,
+    },
+    bankDetails,
+    withdrawals,
+  };
+}
+
+export async function createWithdrawalRequest(params: {
+  authorId: string;
+  authorName: string;
+  bookId?: string | null;
+  salesType?: "Indian" | "International" | "All";
+  amount: number;
+  accountHolderName: string;
+  accountNumber: string;
+  ifscCode: string;
+  bankName: string;
+}): Promise<RoyaltyWithdrawalRecord> {
+  const mode = await ensureDatabaseReady();
+  const nowIso = new Date().toISOString();
+
+  let bookTitle = "All Published Titles (Consolidated)";
+  if (params.bookId) {
+    if (mode === "mongo") {
+      const b = await BookModel.findOne({ book_id: params.bookId }).lean();
+      if (b) bookTitle = b.title;
+    } else {
+      const b = globalThis.__bookleafLocalState!.books.find(
+        (x) => x.book_id === params.bookId
+      );
+      if (b) bookTitle = b.title;
+    }
+  }
+
+  const tdsAmount = Math.round(params.amount * 0.1); // 10% TDS under Section 194J
+  const netAmount = params.amount - tdsAmount;
+  const withdrawalId = `WDR-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  const newRecord: RoyaltyWithdrawalRecord = {
+    withdrawal_id: withdrawalId,
+    author_id: params.authorId,
+    author_name: params.authorName,
+    book_id: params.bookId || null,
+    book_title: bookTitle,
+    sales_type: params.salesType || "All",
+    gross_amount: params.amount,
+    tds_amount: tdsAmount,
+    net_amount: netAmount,
+    account_holder_name: params.accountHolderName,
+    account_number: params.accountNumber,
+    ifsc_code: params.ifscCode,
+    bank_name: params.bankName,
+    status: "PENDING",
+    payout_channel: "NEFT",
+    utr_reference: null,
+    sla_days: 12,
+    created_at: nowIso,
+    processed_at: null,
+  };
+
+  if (mode === "mongo") {
+    await RoyaltyWithdrawalModel.create(newRecord);
+    await BankAccountModel.findOneAndUpdate(
+      { author_id: params.authorId },
+      {
+        author_id: params.authorId,
+        account_holder_name: params.accountHolderName,
+        account_number: params.accountNumber,
+        ifsc_code: params.ifscCode,
+        bank_name: params.bankName,
+        is_verified: true,
+        updated_at: nowIso,
+      },
+      { upsert: true }
+    );
+  } else {
+    const state = globalThis.__bookleafLocalState!;
+    state.withdrawals.unshift(newRecord);
+
+    const existingBankIdx = state.bank_accounts.findIndex(
+      (b) => b.author_id === params.authorId
+    );
+    const bankRecord: BankAccountRecord = {
+      author_id: params.authorId,
+      account_holder_name: params.accountHolderName,
+      account_number: params.accountNumber,
+      ifsc_code: params.ifscCode,
+      bank_name: params.bankName,
+      is_verified: true,
+      updated_at: nowIso,
+    };
+    if (existingBankIdx >= 0) {
+      state.bank_accounts[existingBankIdx] = bankRecord;
+    } else {
+      state.bank_accounts.push(bankRecord);
+    }
+    persistLocalState(state);
+  }
+
+  return newRecord;
+}
+
+export async function saveAuthorBankDetails(params: {
+  authorId: string;
+  accountHolderName: string;
+  accountNumber: string;
+  ifscCode: string;
+  bankName: string;
+  panNumber?: string;
+}): Promise<BankAccountRecord> {
+  const mode = await ensureDatabaseReady();
+  const nowIso = new Date().toISOString();
+
+  const bankRecord: BankAccountRecord = {
+    author_id: params.authorId,
+    account_holder_name: params.accountHolderName,
+    account_number: params.accountNumber,
+    ifsc_code: params.ifscCode,
+    bank_name: params.bankName,
+    pan_number: params.panNumber,
+    is_verified: true,
+    updated_at: nowIso,
+  };
+
+  if (mode === "mongo") {
+    await BankAccountModel.findOneAndUpdate(
+      { author_id: params.authorId },
+      bankRecord,
+      { upsert: true }
+    );
+  } else {
+    const state = globalThis.__bookleafLocalState!;
+    const idx = state.bank_accounts.findIndex(
+      (b) => b.author_id === params.authorId
+    );
+    if (idx >= 0) {
+      state.bank_accounts[idx] = bankRecord;
+    } else {
+      state.bank_accounts.push(bankRecord);
+    }
+    persistLocalState(state);
+  }
+
+  return bankRecord;
+}
+
+export async function processInstantPayoutSimulation(
+  withdrawalId: string
+): Promise<RoyaltyWithdrawalRecord | null> {
+  const mode = await ensureDatabaseReady();
+  const nowIso = new Date().toISOString();
+  const utr = `RZPX-${Math.floor(10000000 + Math.random() * 90000000)}`;
+
+  if (mode === "mongo") {
+    const w = await RoyaltyWithdrawalModel.findOneAndUpdate(
+      { withdrawal_id: withdrawalId },
+      {
+        status: "TRANSFERRED",
+        utr_reference: utr,
+        processed_at: nowIso,
+      },
+      { new: true }
+    ).lean();
+    return w as RoyaltyWithdrawalRecord | null;
+  } else {
+    const state = globalThis.__bookleafLocalState!;
+    const rec = state.withdrawals.find((w) => w.withdrawal_id === withdrawalId);
+    if (rec) {
+      rec.status = "TRANSFERRED";
+      rec.utr_reference = utr;
+      rec.processed_at = nowIso;
+      persistLocalState(state);
+      return rec;
+    }
+    return null;
+  }
+}
+
+export async function createNewBookForAuthor(
+  authorId: string,
+  authorName: string,
+  input: CreateBookInput
+): Promise<BookRecord> {
+  const mode = await ensureDatabaseReady();
+  const nowIso = new Date().toISOString();
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+  const bookId = `BK-${randomSuffix}`;
+  const isbn = `978-93-5${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(
+    10 + Math.random() * 89
+  )}-${Math.floor(1 + Math.random() * 9)}`;
+
+  const newBook: BookRecord = {
+    book_id: bookId,
+    author_id: authorId,
+    title: input.title,
+    isbn,
+    genre: input.genre,
+    publication_date: null,
+    status: "Manuscript Received / Under Review",
+    mrp: input.target_mrp || 399,
+    author_royalty_per_copy: Math.round((input.target_mrp || 399) * 0.1),
+    total_copies_sold: 0,
+    total_royalty_earned: 0,
+    royalty_paid: 0,
+    royalty_pending: 0,
+    last_royalty_payout_date: null,
+    print_partner: "In-House",
+    available_on: ["BookLeaf Store (Upcoming)"],
+    created_at: nowIso,
+    updated_at: nowIso,
+  };
+
+  if (mode === "mongo") {
+    await BookModel.create(newBook);
+  } else {
+    const state = globalThis.__bookleafLocalState!;
+    state.books.unshift(newBook);
+    persistLocalState(state);
+  }
+
+  return newBook;
 }

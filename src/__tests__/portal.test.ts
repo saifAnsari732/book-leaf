@@ -12,6 +12,9 @@ import {
   resetAndSeedDatabase,
   sendAdminReplyToTicket,
   updateTicketByAdmin,
+  createWithdrawalRequest,
+  getAuthorRoyaltyDashboard,
+  createNewBookForAuthor,
 } from "@/lib/repository";
 import {
   createSessionToken,
@@ -362,5 +365,54 @@ describe("BookLeaf Author Support & Communication Portal — Comprehensive Verif
     const spoofResult = validateAttachmentBuffer(spoofedPng, "image/png");
     expect(spoofResult.valid).toBe(false);
     expect(spoofResult.reason).toContain("signature");
+  });
+
+  it("14. Handles Author Royalty Withdrawal lifecycle: checks threshold, calculates 10% TDS, and stores pending request", async () => {
+    const dataBefore = await getAuthorRoyaltyDashboard("AUTH001");
+    expect(dataBefore.metrics.withdrawableBalance).toBe(3570);
+    expect(dataBefore.books).toHaveLength(2);
+
+    const withdrawal = await createWithdrawalRequest({
+      authorId: "AUTH001",
+      authorName: "Priya Sharma",
+      bookId: "BK001",
+      salesType: "Indian",
+      amount: 2000,
+      accountHolderName: "Priya Sharma",
+      accountNumber: "50100492817291",
+      ifscCode: "HDFC0001234",
+      bankName: "HDFC Bank Ltd.",
+    });
+
+    expect(withdrawal.withdrawal_id).toMatch(/^WDR-\d{4}$/);
+    expect(withdrawal.gross_amount).toBe(2000);
+    expect(withdrawal.tds_amount).toBe(200); // 10% TDS
+    expect(withdrawal.net_amount).toBe(1800);
+    expect(withdrawal.status).toBe("PENDING");
+    expect(withdrawal.sla_days).toBe(12);
+
+    const dataAfter = await getAuthorRoyaltyDashboard("AUTH001");
+    expect(dataAfter.withdrawals.some((w) => w.withdrawal_id === withdrawal.withdrawal_id)).toBe(true);
+  });
+
+  it("15. Handles New Book Creation wizard: creates book record with ISBN and manuscript received status", async () => {
+    const newBook = await createNewBookForAuthor("AUTH001", "Priya Sharma", {
+      title: "Voices Across the Sea",
+      subtitle: "A Collection of Poems",
+      author_name: "Priya Sharma",
+      language: "English",
+      genre: "Poetry",
+      trim_size: "5x8 inches",
+      binding: "Paperback",
+      target_mrp: 299,
+    });
+
+    expect(newBook.book_id).toMatch(/^BK-\d{4}$/);
+    expect(newBook.title).toBe("Voices Across the Sea");
+    expect(newBook.isbn).toMatch(/^978-93-5/);
+    expect(newBook.status).toContain("Manuscript Received");
+
+    const authorBooks = await getBooksByAuthorId("AUTH001");
+    expect(authorBooks.some((b) => b.book_id === newBook.book_id)).toBe(true);
   });
 });

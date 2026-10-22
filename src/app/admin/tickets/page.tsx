@@ -7,24 +7,21 @@ import { PortalShell } from "@/components/layout/portal-shell";
 import { invalidateClientCache, useFastQuery } from "@/lib/client-cache";
 import {
   SafeUser,
-  TICKET_CATEGORIES,
-  TICKET_PRIORITIES,
-  TICKET_STATUSES,
+  TicketCategory,
+  TicketPriority,
   TicketRecord,
+  TicketStatus,
 } from "@/types/domain";
 import {
-  formatDateTime,
-  formatRelativeTime,
-  TicketCategoryBadge,
-  TicketPriorityBadge,
-  TicketStatusBadge,
-} from "@/components/ui/badges";
-import {
+  AlertCircle,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   Filter,
   RotateCcw,
   Search,
   Sparkles,
+  Ticket,
   UserCheck,
 } from "lucide-react";
 
@@ -41,31 +38,13 @@ function AdminTicketQueueContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [searchInput, setSearchInput] = useState(
-    searchParams.get("search") || ""
-  );
+  const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
   const [debouncedSearch, setDebouncedSearch] = useState(searchInput);
   const [status, setStatus] = useState(searchParams.get("status") || "ALL");
-  const [category, setCategory] = useState(
-    searchParams.get("category") || "ALL"
-  );
-  const [priority, setPriority] = useState(
-    searchParams.get("priority") || "ALL"
-  );
-  const [assignee, setAssignee] = useState(
-    searchParams.get("assignee") || "ALL"
-  );
-  const [dateFrom, setDateFrom] = useState(
-    searchParams.get("dateFrom") || ""
-  );
-  const [dateTo, setDateTo] = useState(searchParams.get("dateTo") || "");
-  const [sortBy, setSortBy] = useState<"urgent" | "newest" | "oldest">(
-    "urgent"
-  );
+  const [category, setCategory] = useState(searchParams.get("category") || "ALL");
+  const [priority, setPriority] = useState(searchParams.get("priority") || "ALL");
   const [page, setPage] = useState(1);
-  const [assigningId, setAssigningId] = useState<string | null>(null);
 
-  // Debounce search input (250ms)
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedSearch(searchInput);
@@ -83,409 +62,292 @@ function AdminTicketQueueContent() {
     status,
     category,
     priority,
-    assignee,
-    sortBy,
+    sortBy: "urgent",
     page: String(page),
     limit: "10",
   });
   if (debouncedSearch) queryParams.set("search", debouncedSearch);
-  if (dateFrom) queryParams.set("dateFrom", dateFrom);
-  if (dateTo) queryParams.set("dateTo", dateTo);
 
-  const queryKey = `admin:tickets:${queryParams.toString()}`;
   const queueQuery = useFastQuery<AdminQueueResponse>(
-    queryKey,
+    `admin:tickets:${queryParams.toString()}`,
     `/api/admin/tickets?${queryParams.toString()}`,
     { pollIntervalMs: 4000 }
   );
 
-  async function handleAssignToSelf(e: React.MouseEvent, ticketId: string) {
-    e.preventDefault();
-    e.stopPropagation();
-    setAssigningId(ticketId);
-    try {
-      const res = await fetch(`/api/admin/tickets/${ticketId}/assign`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      if (res.ok) {
-        invalidateClientCache("admin:");
-        queueQuery.refresh();
-      }
-    } finally {
-      setAssigningId(null);
-    }
-  }
-
-  function resetAllFilters() {
+  function resetFilters() {
     setSearchInput("");
     setDebouncedSearch("");
     setStatus("ALL");
     setCategory("ALL");
     setPriority("ALL");
-    setAssignee("ALL");
-    setDateFrom("");
-    setDateTo("");
-    setSortBy("urgent");
     setPage(1);
   }
 
   if (sessionQuery.error || queueQuery.error) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-sm text-red-600 mb-3">
-          {queueQuery.error || sessionQuery.error}
-        </p>
-        <button
-          type="button"
-          onClick={() => router.push("/login")}
-          className="rounded-xl bg-[#0E2842] px-4 py-2 text-xs font-semibold text-white"
-        >
-          Sign In as Admin
-        </button>
+      <div className="min-h-screen bg-[#F9FAF7] flex items-center justify-center p-6">
+        <div className="max-w-md w-full rounded-3xl border border-[#E8EDE6] bg-white p-8 text-center shadow-sm">
+          <AlertCircle className="w-10 h-10 text-amber-600 mx-auto mb-3" />
+          <h2 className="font-serif text-xl font-bold text-slate-900 mb-2">
+            Administrator Access Required
+          </h2>
+          <button
+            onClick={() => router.push("/login")}
+            className="rounded-full bg-[#0F4C3A] px-6 py-2.5 text-xs font-semibold text-white"
+          >
+            Sign In as Admin
+          </button>
+        </div>
       </div>
     );
   }
 
-  if (sessionQuery.isLoading || !sessionQuery.data) {
+  if (!sessionQuery.data || !queueQuery.data) {
     return (
-      <div className="p-8 max-w-6xl mx-auto space-y-4">
-        <div className="h-10 w-64 rounded animate-shimmer" />
-        <div className="h-24 rounded-xl animate-shimmer" />
-        <div className="h-96 rounded-xl animate-shimmer" />
+      <div className="min-h-screen bg-[#F9FAF7] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-2 border-[#0F4C3A] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-medium text-slate-500">Loading Tickets Queue...</p>
+        </div>
       </div>
     );
   }
 
-  const tickets = queueQuery.data?.tickets || [];
-  const total = queueQuery.data?.total || 0;
-  const totalPages = queueQuery.data?.totalPages || 1;
+  const { tickets, total, totalPages } = queueQuery.data;
+  const admin = sessionQuery.data.user;
 
   return (
-    <PortalShell
-      user={sessionQuery.data.user}
-      lastSyncedAt={queueQuery.lastSyncedAt}
-      onManualRefresh={queueQuery.refresh}
-      isRefreshing={queueQuery.isRefreshing}
-    >
-      <div className="space-y-6 animate-fade-up">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+    <PortalShell user={admin}>
+      <div className="space-y-6">
+        {/* ================================================================
+            PAGE HEADER (Matches Screen 8: Ticket Queue)
+            ================================================================ */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8EDE6]">
           <div>
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900">
-              Incoming Author Ticket Queue
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              Ticket Queue
             </h1>
-            <p className="text-sm text-slate-600 mt-1">
-              Filter by status, AI category, priority, assignee, or date. Urgent
-              and oldest unresolved queries are highlighted first.
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Manage and assign support tickets to your team with AI triage assistance.
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-            <span className="rounded-lg bg-white border border-slate-200 px-3 py-1.5">
-              Showing {tickets.length} of {total} ticket(s)
-            </span>
+          <span className="text-xs font-semibold text-[#0F4C3A] bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
+            {total} Active Tickets
+          </span>
+        </div>
+
+        {/* ================================================================
+            FILTER & SEARCH BAR (Matches Screen 8)
+            ================================================================ */}
+        <div className="bg-white rounded-2xl p-4 border border-[#E8EDE6] shadow-xs flex flex-wrap items-center justify-between gap-3">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search by ID, subject, author, or book..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-[#F9FAF7] text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-hidden focus:border-[#0F4C3A]"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setPage(1);
+              }}
+              className="px-3 py-2 rounded-xl border border-slate-200 bg-[#F9FAF7] text-xs font-medium text-slate-700 focus:outline-hidden focus:border-[#0F4C3A]"
+            >
+              <option value="ALL">All Status</option>
+              <option value="Open">Open</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Resolved">Resolved</option>
+              <option value="Closed">Closed</option>
+            </select>
+
+            <select
+              value={priority}
+              onChange={(e) => {
+                setPriority(e.target.value);
+                setPage(1);
+              }}
+              className="px-3 py-2 rounded-xl border border-slate-200 bg-[#F9FAF7] text-xs font-medium text-slate-700 focus:outline-hidden focus:border-[#0F4C3A]"
+            >
+              <option value="ALL">All Priority</option>
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+
+            <select
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                setPage(1);
+              }}
+              className="px-3 py-2 rounded-xl border border-slate-200 bg-[#F9FAF7] text-xs font-medium text-slate-700 focus:outline-hidden focus:border-[#0F4C3A]"
+            >
+              <option value="ALL">All Categories</option>
+              <option value="Royalty & Payments">Royalty & Payments</option>
+              <option value="ISBN & Metadata Issues">ISBN & Metadata</option>
+              <option value="Printing & Quality">Printing & Quality</option>
+              <option value="Distribution & Availability">Distribution</option>
+              <option value="Book Status & Production Updates">Book Status</option>
+              <option value="General Inquiry">General Inquiry</option>
+            </select>
+
+            <button
+              onClick={resetFilters}
+              title="Reset Filters"
+              className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-500"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        {/* Filter Bar */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-            {/* Search Input */}
-            <div className="md:col-span-5 relative">
-              <Search
-                className="h-4 w-4 text-slate-400 absolute left-3.5 top-3"
-                aria-hidden="true"
-              />
-              <input
-                type="search"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search by Ticket ID, Subject, Author, or Book..."
-                aria-label="Search tickets"
-                className="w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 py-2 text-xs sm:text-sm text-slate-900 focus:border-[#1B4D7E] focus:outline-none"
-              />
+        {/* ================================================================
+            QUEUE TABLE (Matches Screen 8)
+            ================================================================ */}
+        <div className="bg-white rounded-2xl border border-[#E8EDE6] shadow-xs overflow-hidden">
+          {tickets.length === 0 ? (
+            <div className="p-12 text-center text-slate-500 text-xs">
+              No tickets matched the active filters.
             </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="bg-[#F9FAF7] border-b border-[#E8EDE6] text-slate-400 font-semibold uppercase tracking-wider">
+                    <th className="py-3.5 pl-5">Ticket ID</th>
+                    <th className="py-3.5">Subject</th>
+                    <th className="py-3.5">Author</th>
+                    <th className="py-3.5">Category</th>
+                    <th className="py-3.5">Priority</th>
+                    <th className="py-3.5">Status</th>
+                    <th className="py-3.5">Assigned To</th>
+                    <th className="py-3.5 text-right pr-5">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700">
+                  {tickets.map((t) => (
+                    <tr
+                      key={t.ticket_id}
+                      onClick={() => router.push(`/admin/tickets/${t.ticket_id}`)}
+                      className="hover:bg-[#F9FAF7] cursor-pointer transition"
+                    >
+                      <td className="py-4 pl-5 font-mono font-bold text-[#0F4C3A]">
+                        #{t.ticket_id}
+                      </td>
 
-            {/* Status Filter */}
-            <div className="md:col-span-2">
-              <select
-                aria-label="Filter by status"
-                value={status}
-                onChange={(e) => {
-                  setStatus(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm text-slate-800"
-              >
-                <option value="ALL">All Statuses</option>
-                {TICKET_STATUSES.map((st) => (
-                  <option key={st} value={st}>
-                    Status: {st}
-                  </option>
-                ))}
-              </select>
+                      <td className="py-4">
+                        <span className="font-semibold text-slate-900 block text-sm max-w-xs truncate">
+                          {t.subject}
+                        </span>
+                        <span className="text-[11px] text-slate-400 truncate block max-w-xs">
+                          {t.book_title}
+                        </span>
+                      </td>
+
+                      <td className="py-4">
+                        <span className="font-medium text-slate-900 block">{t.author_name}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">{t.author_id}</span>
+                      </td>
+
+                      <td className="py-4 text-slate-600 font-medium">{t.category}</td>
+
+                      <td className="py-4">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                            t.priority === "Critical"
+                              ? "bg-rose-50 text-rose-800 border border-rose-200"
+                              : t.priority === "High"
+                              ? "bg-amber-50 text-amber-800 border border-amber-200"
+                              : t.priority === "Medium"
+                              ? "bg-blue-50 text-blue-800 border border-blue-200"
+                              : "bg-slate-100 text-slate-600 border border-slate-200"
+                          }`}
+                        >
+                          {t.priority}
+                        </span>
+                      </td>
+
+                      <td className="py-4">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                            t.status === "Resolved"
+                              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                              : t.status === "In Progress"
+                              ? "bg-blue-50 text-blue-800 border border-blue-200"
+                              : t.status === "Closed"
+                              ? "bg-slate-100 text-slate-600 border border-slate-200"
+                              : "bg-amber-50 text-amber-800 border border-amber-200"
+                          }`}
+                        >
+                          {t.status}
+                        </span>
+                      </td>
+
+                      <td className="py-4 text-slate-600">
+                        {t.assigned_to || (
+                          <span className="text-slate-400 italic">Unassigned</span>
+                        )}
+                      </td>
+
+                      <td className="py-4 text-right pr-5">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#0F4C3A] hover:underline">
+                          <span>Triage</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+          )}
 
-            {/* Priority Filter */}
-            <div className="md:col-span-2">
-              <select
-                aria-label="Filter by priority"
-                value={priority}
-                onChange={(e) => {
-                  setPriority(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm text-slate-800"
-              >
-                <option value="ALL">All Priorities</option>
-                {TICKET_PRIORITIES.map((p) => (
-                  <option key={p} value={p}>
-                    Priority: {p}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Category Filter */}
-            <div className="md:col-span-3">
-              <select
-                aria-label="Filter by category"
-                value={category}
-                onChange={(e) => {
-                  setCategory(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm text-slate-800"
-              >
-                <option value="ALL">All 6 AI Categories</option>
-                {TICKET_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100 text-xs">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-1 font-semibold text-slate-600">
-                <Filter className="h-3.5 w-3.5" aria-hidden="true" />
-                Queue Controls:
+          {/* Pagination Controls (Matches Screen 8) */}
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-[#E8EDE6] bg-[#F9FAF7] flex items-center justify-between text-xs text-slate-600">
+              <span>
+                Page {page} of {totalPages} ({total} tickets)
               </span>
-
-              <select
-                aria-label="Filter by assignee"
-                value={assignee}
-                onChange={(e) => {
-                  setAssignee(e.target.value);
-                  setPage(1);
-                }}
-                className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700"
-              >
-                <option value="ALL">All Assignees</option>
-                <option value="UNASSIGNED">Unassigned Only</option>
-                <option value={sessionQuery.data.user.name}>
-                  Assigned to Me
-                </option>
-              </select>
-
-              <select
-                aria-label="Sort tickets"
-                value={sortBy}
-                onChange={(e) =>
-                  setSortBy(e.target.value as "urgent" | "newest" | "oldest")
-                }
-                className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700"
-              >
-                <option value="urgent">
-                  Sort: Most Urgent & Oldest Unresolved
-                </option>
-                <option value="newest">Sort: Newest Created First</option>
-                <option value="oldest">Sort: Oldest Created First</option>
-              </select>
-
               <div className="flex items-center gap-1.5">
-                <span className="text-slate-500">From:</span>
-                <input
-                  type="date"
-                  aria-label="Date from"
-                  value={dateFrom}
-                  onChange={(e) => {
-                    setDateFrom(e.target.value);
-                    setPage(1);
-                  }}
-                  className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs"
-                />
-                <span className="text-slate-500">To:</span>
-                <input
-                  type="date"
-                  aria-label="Date to"
-                  value={dateTo}
-                  onChange={(e) => {
-                    setDateTo(e.target.value);
-                    setPage(1);
-                  }}
-                  className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs"
-                />
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
+                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-white disabled:opacity-40"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setPage(i + 1)}
+                    className={`w-7 h-7 rounded-lg font-semibold transition ${
+                      page === i + 1
+                        ? "bg-[#0F4C3A] text-white"
+                        : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() => setPage(page + 1)}
+                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-white disabled:opacity-40"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={resetAllFilters}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
-            >
-              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-              Reset Filters
-            </button>
-          </div>
+          )}
         </div>
-
-        {/* Ticket Queue Table / Cards */}
-        {queueQuery.isLoading && !queueQuery.data ? (
-          <div className="space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 rounded-xl animate-shimmer" />
-            ))}
-          </div>
-        ) : tickets.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center space-y-3">
-            <p className="text-base font-bold text-slate-900">
-              No tickets match your active filters
-            </p>
-            <p className="text-xs text-slate-500">
-              Try clearing your search query or resetting the category/priority
-              filters.
-            </p>
-            <button
-              type="button"
-              onClick={resetAllFilters}
-              className="rounded-xl bg-[#1B4D7E] px-4 py-2 text-xs font-semibold text-white cursor-pointer"
-            >
-              Reset All Filters
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {tickets.map((t) => {
-              const isUrgentUnresolved =
-                (t.priority === "Critical" || t.priority === "High") &&
-                (t.status === "Open" || t.status === "In Progress");
-
-              return (
-                <Link
-                  key={t.ticket_id}
-                  href={`/admin/tickets/${t.ticket_id}`}
-                  className={`block rounded-2xl border p-5 transition-all cursor-pointer ${
-                    isUrgentUnresolved
-                      ? "border-red-200 bg-white hover:border-red-300 shadow-sm"
-                      : "border-slate-200 bg-white hover:border-sky-300 shadow-sm"
-                  }`}
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div className="space-y-1.5 min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-[#1B4D7E]">
-                          {t.ticket_id}
-                        </span>
-                        <TicketPriorityBadge priority={t.priority} />
-                        <TicketStatusBadge status={t.status} />
-                        <TicketCategoryBadge category={t.category} />
-                        <span className="inline-flex items-center gap-1 rounded bg-sky-50 border border-sky-200 px-2 py-0.5 text-[10px] font-semibold text-[#1B4D7E]">
-                          <Sparkles className="h-3 w-3" aria-hidden="true" />
-                          {t.ai_metadata.human_overridden
-                            ? "Admin Overridden"
-                            : `AI Classified (${t.ai_metadata.status})`}
-                        </span>
-                      </div>
-
-                      <h2 className="text-base font-bold text-slate-900">
-                        {t.subject}
-                      </h2>
-
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
-                        <span>
-                          Author:{" "}
-                          <strong className="text-slate-900">
-                            {t.author_name}
-                          </strong>{" "}
-                          ({t.author_id})
-                        </span>
-                        <span>•</span>
-                        <span>
-                          Book:{" "}
-                          <strong className="text-slate-900">
-                            {t.book_title}
-                          </strong>
-                        </span>
-                        <span>•</span>
-                        <span>Created: {formatDateTime(t.created_at)}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between lg:justify-end gap-3 shrink-0 border-t lg:border-t-0 pt-3 lg:pt-0 border-slate-100">
-                      {t.assigned_to ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-medium text-slate-700">
-                          <UserCheck
-                            className="h-3.5 w-3.5 text-emerald-600"
-                            aria-hidden="true"
-                          />
-                          {t.assigned_to}
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={(e) => handleAssignToSelf(e, t.ticket_id)}
-                          disabled={assigningId === t.ticket_id}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100 transition-colors cursor-pointer"
-                        >
-                          {assigningId === t.ticket_id
-                            ? "Assigning..."
-                            : "Assign to Me"}
-                        </button>
-                      )}
-
-                      <span className="text-xs text-slate-400">
-                        {formatRelativeTime(t.updated_at)}
-                      </span>
-
-                      <span className="inline-flex items-center gap-1 rounded-xl bg-[#0E2842] px-3 py-1.5 text-xs font-semibold text-white">
-                        Open & Review AI Draft
-                        <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between pt-2">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50 cursor-pointer"
-            >
-              Previous Page
-            </button>
-            <span className="text-xs font-medium text-slate-600">
-              Page {page} of {totalPages}
-            </span>
-            <button
-              type="button"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50 cursor-pointer"
-            >
-              Next Page
-            </button>
-          </div>
-        )}
       </div>
     </PortalShell>
   );
@@ -495,10 +357,8 @@ export default function AdminTicketQueuePage() {
   return (
     <Suspense
       fallback={
-        <div className="p-8 max-w-6xl mx-auto space-y-4">
-          <div className="h-10 w-64 rounded animate-shimmer" />
-          <div className="h-24 rounded-xl animate-shimmer" />
-          <div className="h-96 rounded-xl animate-shimmer" />
+        <div className="min-h-screen bg-[#F9FAF7] flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-[#0F4C3A] border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >

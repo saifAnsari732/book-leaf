@@ -6,6 +6,8 @@ import {
   TicketMessageRecord,
   InternalNoteRecord,
   AuditLogRecord,
+  RoyaltyWithdrawalRecord,
+  BankAccountRecord,
   TICKET_CATEGORIES,
   TICKET_PRIORITIES,
   TICKET_STATUSES,
@@ -239,3 +241,64 @@ export const InternalNoteModel: Model<InternalNoteRecord> =
 export const AuditLogModel: Model<AuditLogRecord> =
   mongoose.models.AuditLog ||
   mongoose.model<AuditLogRecord>("AuditLog", AuditLogSchema);
+
+// ============================================================================
+// 7. Royalty Withdrawal Schema
+// ============================================================================
+const RoyaltyWithdrawalSchema = new Schema<RoyaltyWithdrawalRecord>(
+  {
+    withdrawal_id: { type: String, required: true, unique: true, index: true },
+    author_id: { type: String, required: true, index: true },
+    author_name: { type: String, required: true },
+    book_id: { type: String, default: null },
+    book_title: { type: String, required: true },
+    sales_type: { type: String, default: "All" },
+    gross_amount: { type: Number, required: true },
+    tds_amount: { type: Number, required: true },
+    net_amount: { type: Number, required: true },
+    account_holder_name: { type: String, required: true },
+    account_number: { type: String, required: true },
+    ifsc_code: { type: String, required: true },
+    bank_name: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ["PENDING", "PROCESSING", "APPROVED", "TRANSFERRED", "REJECTED"],
+      default: "PENDING",
+      index: true,
+    },
+    payout_channel: { type: String, default: "NEFT" },
+    utr_reference: { type: String, default: null },
+    sla_days: { type: Number, default: 12 },
+    created_at: { type: String, required: true, index: true },
+    processed_at: { type: String, default: null },
+  },
+  { versionKey: false }
+);
+
+export const RoyaltyWithdrawalModel: Model<RoyaltyWithdrawalRecord> =
+  mongoose.models.RoyaltyWithdrawal ||
+  mongoose.model<RoyaltyWithdrawalRecord>(
+    "RoyaltyWithdrawal",
+    RoyaltyWithdrawalSchema
+  );
+
+// ============================================================================
+// 8. Bank Account Details Schema
+// ============================================================================
+const BankAccountSchema = new Schema<BankAccountRecord>(
+  {
+    author_id: { type: String, required: true, unique: true, index: true },
+    account_holder_name: { type: String, required: true },
+    account_number: { type: String, required: true },
+    ifsc_code: { type: String, required: true },
+    bank_name: { type: String, required: true },
+    pan_number: { type: String, default: null },
+    is_verified: { type: Boolean, default: true },
+    updated_at: { type: String, required: true },
+  },
+  { versionKey: false }
+);
+
+export const BankAccountModel: Model<BankAccountRecord> =
+  mongoose.models.BankAccount ||
+  mongoose.model<BankAccountRecord>("BankAccount", BankAccountSchema);

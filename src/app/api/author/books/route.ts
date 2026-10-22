@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { getBooksByAuthorId } from "@/lib/repository";
+import { redisGet, redisSet, REDIS_KEYS } from "@/lib/redis";
 
 export async function GET() {
   try {
@@ -21,13 +22,27 @@ export async function GET() {
       );
     }
 
+    const cacheKey = REDIS_KEYS.authorBooks(user.author_id);
+    const cached = await redisGet<unknown[]>(cacheKey);
+    if (cached) {
+      return NextResponse.json({
+        success: true,
+        author_id: user.author_id,
+        count: cached.length,
+        books: cached,
+        cached: true,
+      });
+    }
+
     const books = await getBooksByAuthorId(user.author_id);
+    await redisSet(cacheKey, books, 120); // 2 mins TTL
 
     return NextResponse.json({
       success: true,
       author_id: user.author_id,
       count: books.length,
       books,
+      cached: false,
     });
   } catch {
     return NextResponse.json(
@@ -36,3 +51,4 @@ export async function GET() {
     );
   }
 }
+

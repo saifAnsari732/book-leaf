@@ -46,7 +46,7 @@ export async function POST(
       ticketId,
       admin: user,
       content: parsed.data.content,
-      newStatus: parsed.data.status,
+      newStatus: parsed.data.status ?? parsed.data.new_status,
     });
 
     if (!result) {

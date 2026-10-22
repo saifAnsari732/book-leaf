@@ -103,6 +103,19 @@ export async function getSessionUser(): Promise<SafeUser | null> {
   }
 }
 
+export async function getCurrentUserFromRequest(
+  req?: any
+): Promise<SafeUser | null> {
+  if (req?.cookies?.get) {
+    const c = req.cookies.get(SESSION_COOKIE_NAME)?.value;
+    if (c) {
+      const v = await verifySessionToken(c);
+      if (v) return v;
+    }
+  }
+  return getSessionUser();
+}
+
 // ============================================================================
 // In-Memory Sliding Window Rate Limiter (for Login & Sensitive AI Endpoints)
 // ============================================================================

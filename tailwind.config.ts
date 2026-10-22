@@ -9,6 +9,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        bookleaf: {
+          50: "#F2F7F4",
+          100: "#E1EDE6",
+          200: "#C4DDCF",
+          300: "#9EC7B3",
+          400: "#6FA990",
+          500: "#44896E",
+          600: "#1A6B52",
+          700: "#0F4C3A",
+          800: "#0A3B2D",
+          900: "#062A22",
+          950: "#031813",
+        },
         brand: {
           50: "#f0f5fa",
           100: "#dce8f3",
@@ -23,16 +36,16 @@ const config: Config = {
           950: "#091a2c",
         },
         editorial: {
-          bg: "#F8FAFC",
+          bg: "#F9FAF7",
           surface: "#FFFFFF",
-          border: "#E2E8F0",
-          text: "#0F172A",
-          muted: "#475569",
+          border: "#E7EBE4",
+          text: "#1E293B",
+          muted: "#64748B",
         },
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "Public Sans", "Inter", "system-ui", "sans-serif"],
-        serif: ["var(--font-serif)", "Libre Bodoni", "Georgia", "serif"],
+        sans: ["var(--font-sans)", "Plus Jakarta Sans", "Inter", "system-ui", "sans-serif"],
+        serif: ["var(--font-serif)", "Playfair Display", "Georgia", "serif"],
       },
     },
   },

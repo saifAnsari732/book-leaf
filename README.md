@@ -10,12 +10,15 @@ BookLeaf Publishing processes **1,200+ books monthly** across a catalog of **22,
 
 This application solves that operational bottleneck through two role-isolated portals powered by a **2-Stage Context-Sliced AI Engine**:
 
-1. **Author Portal (`/author/*`)**:
+1. **Author Portal (`/author/*` and `/author-dashboard`)**:
    - Email/password authentication with HTTP-only signed JWT sessions.
-   - **Author Dashboard**: Real-time summary of published books, books in production, total copies sold, and earned/paid/pending royalties.
-   - **My Books & Royalty Ledger**: Displays each book's ISBN, genre, 8-stage production pipeline progress bar, MRP, 80% net-profit royalty per copy, copies sold, payout history, print partner, and active retail platforms. Gracefully handles `null` fields on *In Production* books (`BK013`, `BK015`) and highlights balances below the **₹1,000 minimum quarterly payout threshold** (`BK016` — ₹850).
-   - **Submit a Support Query**: Book selector (or *"General / Account Level"*), subject, description, 1-click test templates, and **ImageKit.io** cloud attachment support with magic-byte file signature validation.
-   - **My Tickets & Live Conversation Thread**: Real-time automatic background revalidation (every 3–4 seconds without page refresh) so admin replies and status changes appear live.
+   - **Official Author Dashboard (`/author-dashboard?menu=Royalty%20Withdrawal`)**: Replicates and elevates the BookLeaf live author dashboard with real-time wallet balance, 10% TDS withholding breakdown, bank account verification with auto-IFSC bank detection (HDFC, SBI, ICICI, Axis, Kotak), withdrawal request submission with a 12-day SLA badge, and an instant RazorpayX UTR test simulator.
+   - **5-Stage "Start a New Book" Wizard (`/create_book`)**: Full publishing intake wizard covering Book Information, Design & Genre, Interior Formatting, Cover Selection, and Retail Distribution with multi-language support (English, Hindi, Hinglish, Tamil, Marathi, Spanish, French).
+   - **Printing Cost & Royalty Calculator (`/printing-cost-royalty-calculator`)**: Interactive engine implementing BookLeaf's exact mathematical formula `(Pages × ₹0.60) + ₹12` + packaging & QC, Amazon/Flipkart 30% commission, and net profit royalty calculations for 80% Standard and 100% Bestseller Breakthrough packages.
+   - **My Books & Royalty Ledger (`/author/books`)**: Displays each book's ISBN, genre, 8-stage production pipeline progress bar, MRP, 80% net-profit royalty per copy, copies sold, payout history, print partner, and active retail platforms. Gracefully handles `null` fields on *In Production* books (`BK013`, `BK015`) and highlights balances below the **₹1,000 minimum quarterly payout threshold** (`BK016` — ₹850).
+   - **Submit a Support Query (`/author/tickets/new`)**: Book selector (or *"General / Account Level"*), subject, description, 1-click test templates, and **ImageKit.io** cloud attachment support with magic-byte file signature validation.
+   - **My Tickets & Live Conversation Thread (`/author/tickets`)**: Real-time automatic background revalidation (every 3–4 seconds without page refresh) so admin replies and status changes appear live.
+   - **Interactive Nishtha Support Assistant**: Embedded AI concierge with official BookLeaf support hours (10 AM–6 PM IST, Mon–Sat) and 1-click WhatsApp handoff.
 
 2. **Admin Support Dashboard (`/admin/*`)**:
    - **Operations Overview**: Total tickets, unassigned queue, Critical/High SLA backlog, average resolution time, category distribution, and live AI/ops audit log.
@@ -32,6 +35,7 @@ This application solves that operational bottleneck through two role-isolated po
 | :--- | :--- | :--- |
 | **Framework** | **Next.js 14 (App Router) + React 18 + TypeScript (Strict Mode)** | Unified modular monolith combining fast UI rendering, clean REST Route Handlers (`/api/*`), and seamless single-URL deployment. |
 | **Database & Models** | **MongoDB + Mongoose (`src/models/schemas.ts`) + Auto-Seeded Local Persistent Fallback (`.data/bookleaf-db.json`)** | Full Mongoose schemas, compound indexes, and validation for MongoDB Atlas, paired with an automatic persistent local document store when `MONGODB_URI` is omitted so evaluators can run `npm run dev` with zero external database setup friction. |
+| **Distributed Cache & Speed** | **Upstash Redis (`ioredis` via `REDIS_URL`)** | Sub-millisecond distributed in-memory cache for Author dashboards, book catalogs, and Admin overview KPIs with automatic cache invalidation on ticket mutations. |
 | **AI / LLM** | **Google Gemini (`gemini-3.8-flash` via `@google/genai`) + Deterministic Policy Fallback Engine** | Sub-second structured JSON output (`response_format`), low cost, and 100% uptime via automatic circuit-breaker fallback when offline or rate-limited. |
 | **Authentication & Security** | **`jose` (HS256 JWT in HTTP-Only Cookies) + `bcryptjs` + Sliding-Window Rate Limiter** | Prevents XSS token theft, enforces server-side RBAC (`AUTHOR` vs `ADMIN`) and resource ownership, and protects login/AI routes from abuse. |
 | **Validation** | **Zod (`src/types/domain.ts`)** | Validates every incoming REST payload and every AI JSON response before persistence—returning structured `400` errors instead of generic `500`s. |
@@ -138,6 +142,12 @@ Interactive OpenAPI 3.0 documentation is available in-app at **`/api-docs`** and
 | `GET` | `/api/author/tickets/[ticketId]` | `AUTHOR` | Get single owned ticket + external messages (no internal notes) |
 | `POST` | `/api/author/tickets/[ticketId]/messages` | `AUTHOR` | Post author follow-up message |
 | `POST` | `/api/upload/imagekit` | `AUTHOR` | Validate magic-bytes & upload attachment to ImageKit |
+| `GET` | `/api/author/royalty` | `AUTHOR` | Fetch author withdrawable balance, bank details & withdrawal history |
+| `POST` | `/api/author/royalty` | `AUTHOR` | Request royalty withdrawal (with 10% TDS calculation and balance checks) |
+| `POST` | `/api/author/royalty/bank-details` | `AUTHOR` | Save or update verified bank account and IFSC details |
+| `POST` | `/api/author/royalty/simulate-payout` | `AUTHOR` | Instant payout testing engine with live RazorpayX UTR generation |
+| `POST` | `/api/author/books/create` | `AUTHOR` | Create new manuscript record via 5-Stage Publishing Wizard |
+| `GET` | `/api/author/sales` | `AUTHOR` | Channel-wise sales report (Amazon, Flipkart, BookLeaf Store) |
 | `GET` | `/api/admin/dashboard` | `ADMIN` | Global queue metrics, SLA backlog & audit trail |
 | `GET` | `/api/admin/tickets` | `ADMIN` | Search, filter, sort & paginate all author tickets |
 | `GET` | `/api/admin/tickets/[ticketId]` | `ADMIN` | Full ticket context + AI draft + internal notes + audit logs |

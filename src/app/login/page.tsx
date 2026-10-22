@@ -8,11 +8,10 @@ import {
   ArrowRight,
   BookOpen,
   CheckCircle2,
-  KeyRound,
   Lock,
   Mail,
-  RefreshCw,
   ShieldCheck,
+  Sparkles,
   UserCheck,
 } from "lucide-react";
 
@@ -28,11 +27,14 @@ interface DemoAccount {
 
 export default function LoginPage() {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<"AUTHOR" | "ADMIN">("AUTHOR");
   const [email, setEmail] = useState("priya.sharma@email.com");
   const [password, setPassword] = useState("author123");
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [demoAccounts, setDemoAccounts] = useState<DemoAccount[]>([]);
+  const [showMatrix, setShowMatrix] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/demo-accounts")
@@ -42,6 +44,18 @@ export default function LoginPage() {
       })
       .catch(() => {});
   }, []);
+
+  const handleTabChange = (tab: "AUTHOR" | "ADMIN") => {
+    setActiveTab(tab);
+    setError(null);
+    if (tab === "ADMIN") {
+      setEmail("admin@bookleafpub.com");
+      setPassword("admin123");
+    } else {
+      setEmail("priya.sharma@email.com");
+      setPassword("author123");
+    }
+  };
 
   async function performLogin(loginEmail: string, loginPass: string) {
     setError(null);
@@ -73,6 +87,7 @@ export default function LoginPage() {
   }
 
   function selectDemoAccount(acc: DemoAccount) {
+    setActiveTab(acc.role);
     const pass = acc.role === "ADMIN" ? "admin123" : "author123";
     setEmail(acc.email);
     setPassword(pass);
@@ -80,250 +95,267 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-between py-8 px-4 sm:px-8">
-      <div className="max-w-6xl w-full mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-3 group cursor-pointer"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1B4D7E] text-white shadow-sm">
-              <BookOpen className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <div>
-              <span className="font-serif text-lg font-bold text-slate-900 block leading-none">
+    <div className="min-h-screen bg-[#F9FAF7] flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8 selection:bg-[#0F4C3A] selection:text-white">
+      {/* Top Navbar Brand Link */}
+      <div className="max-w-5xl w-full mx-auto mb-8 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <div className="w-9 h-9 rounded-xl bg-[#0F4C3A] text-white flex items-center justify-center shadow-xs">
+            <svg
+              className="w-5 h-5 text-emerald-200"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+            >
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+            </svg>
+          </div>
+          <div>
+            <span className="font-serif text-lg font-bold text-slate-900 leading-tight block">
+              BookLeaf Publishing
+            </span>
+            <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
+              Author Support Portal
+            </span>
+          </div>
+        </Link>
+
+        <Link
+          href="/"
+          className="text-xs font-semibold text-[#0F4C3A] hover:text-[#0A3B2D] transition flex items-center gap-1"
+        >
+          <span>Back to Home</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
+      {/* Main Split Container (Screen 1 in Design System) */}
+      <div className="max-w-5xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 bg-white rounded-3xl border border-[#E8EDE6] shadow-sm overflow-hidden">
+        {/* Left Brand Panel */}
+        <div className="lg:col-span-5 bg-gradient-to-br from-[#0F3D30] via-[#0A2F25] to-[#062019] text-white p-8 sm:p-10 flex flex-col justify-between relative">
+          {/* Subtle Ambient Glow */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div>
+            <div className="flex items-center gap-2 mb-8">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-emerald-300">
+                <BookOpen className="w-4 h-4" />
+              </div>
+              <span className="font-serif font-bold text-base tracking-wide text-white">
                 BookLeaf Publishing
               </span>
-              <span className="text-xs text-slate-500">
-                Author Support & Operations Portal
+            </div>
+
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight mb-4">
+              Better Support for Better Stories
+            </h2>
+
+            <p className="text-emerald-100/75 text-sm leading-relaxed mb-6">
+              We&apos;re here to support our authors at every step of their publishing
+              journey — from royalty inquiries to production updates.
+            </p>
+          </div>
+
+          {/* Book Mockup Visual Image (Matches Screen 1 in Design System) */}
+          <div className="relative rounded-2xl overflow-hidden border border-white/20 shadow-lg group">
+            <img
+              src="/images/login-books-desk.jpg"
+              alt="BookLeaf Publishing Cozy Author Desk"
+              className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#062019]/90 via-[#0A2F25]/40 to-transparent flex flex-col justify-end p-4">
+              <span className="font-serif italic text-xs text-emerald-200">
+                “Stories create a better tomorrow.”
+              </span>
+              <span className="text-[10px] uppercase tracking-wider text-emerald-400/90 font-semibold mt-0.5">
+                BookLeaf Publishing • Official Author Support
               </span>
             </div>
-          </Link>
-          <Link
-            href="/api-docs"
-            className="text-xs font-semibold text-[#1B4D7E] hover:underline"
-          >
-            View REST API Documentation →
-          </Link>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left: Email/Password Login Card */}
-          <div className="lg:col-span-5 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm animate-fade-up">
-            <div className="mb-6">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 border border-sky-200 px-3 py-1 text-xs font-semibold text-[#1B4D7E] mb-3">
-                <Lock className="h-3.5 w-3.5" aria-hidden="true" />
-                Role-Based Portal Authentication
-              </span>
-              <h1 className="font-serif text-2xl font-bold text-slate-900">
-                Sign in to your account
-              </h1>
-              <p className="text-sm text-slate-600 mt-1">
-                Authors view their personal books, royalties, and live tickets.
-                Admins access the global queue and AI response workbench.
-              </p>
+        {/* Right Form Panel */}
+        <div className="lg:col-span-7 p-8 sm:p-10 flex flex-col justify-between bg-white">
+          <div>
+            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900 mb-1.5">
+              Welcome Back
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 mb-6">
+              Sign in to your account to continue
+            </p>
+
+            {/* Segmented Control: Author vs Admin */}
+            <div className="p-1 rounded-xl bg-[#F2F6F3] border border-[#E2ECE5] flex items-center gap-1 mb-6">
+              <button
+                type="button"
+                onClick={() => handleTabChange("AUTHOR")}
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
+                  activeTab === "AUTHOR"
+                    ? "bg-[#0F4C3A] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Author
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTabChange("ADMIN")}
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
+                  activeTab === "ADMIN"
+                    ? "bg-[#0F4C3A] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Admin
+              </button>
             </div>
 
+            {/* Error Banner */}
             {error && (
-              <div
-                role="alert"
-                className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-medium text-red-800"
-              >
-                <AlertCircle
-                  className="h-4 w-4 text-red-600 shrink-0 mt-0.5"
-                  aria-hidden="true"
-                />
+              <div className="mb-6 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
                 <span>{error}</span>
               </div>
             )}
 
+            {/* Login Form */}
             <form onSubmit={handleFormSubmit} className="space-y-4">
               <div>
-                <label
-                  htmlFor="login-email"
-                  className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5"
-                >
-                  Email Address <span className="text-red-600">*</span>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Email Address
                 </label>
                 <div className="relative">
-                  <Mail
-                    className="h-4 w-4 text-slate-400 absolute left-3.5 top-3"
-                    aria-hidden="true"
-                  />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
-                    id="login-email"
-                    name="email"
                     type="email"
-                    required
-                    autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="priya.sharma@email.com"
-                    className="w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-900 focus:border-[#1B4D7E] focus:outline-none focus:ring-2 focus:ring-[#1B4D7E]/20"
+                    required
+                    placeholder="you@example.com"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-[#F9FAF7] text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-1 focus:ring-[#0F4C3A] transition"
                   />
                 </div>
               </div>
 
               <div>
-                <label
-                  htmlFor="login-password"
-                  className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5"
-                >
-                  Password <span className="text-red-600">*</span>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Password
                 </label>
                 <div className="relative">
-                  <KeyRound
-                    className="h-4 w-4 text-slate-400 absolute left-3.5 top-3"
-                    aria-hidden="true"
-                  />
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
-                    id="login-password"
-                    name="password"
                     type="password"
-                    required
-                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-900 focus:border-[#1B4D7E] focus:outline-none focus:ring-2 focus:ring-[#1B4D7E]/20"
+                    required
+                    placeholder="Enter your password"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-[#F9FAF7] text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-1 focus:ring-[#0F4C3A] transition"
                   />
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                <label className="flex items-center gap-2 cursor-pointer text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="rounded text-[#0F4C3A] focus:ring-[#0F4C3A] border-slate-300"
+                  />
+                  <span>Remember me</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setError(
+                      "Demo password hint: 'author123' for Authors or 'admin123' for Admin."
+                    )
+                  }
+                  className="text-[#0F4C3A] hover:underline font-medium"
+                >
+                  Forgot password?
+                </button>
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#1B4D7E] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#163f68] disabled:opacity-60 transition-all cursor-pointer"
+                className="w-full py-3 rounded-xl bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white font-semibold text-sm shadow-sm transition active:scale-[0.99] flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
-                  <>
-                    <RefreshCw
-                      className="h-4 w-4 animate-spin"
-                      aria-hidden="true"
-                    />
-                    <span>Signing in...</span>
-                  </>
+                  <span>Signing In...</span>
                 ) : (
                   <>
-                    <span>Sign In to Portal</span>
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    <span>Sign In</span>
+                    <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </form>
-
-            <div className="mt-6 pt-5 border-t border-slate-200 text-xs text-slate-500 space-y-1.5">
-              <p className="font-semibold text-slate-700">
-                Default Seeded Credentials:
-              </p>
-              <p>
-                • <strong>Admin Portal:</strong>{" "}
-                <code className="font-mono text-slate-800">
-                  admin@bookleafpub.com
-                </code>{" "}
-                / <code className="font-mono text-slate-800">admin123</code>
-              </p>
-              <p>
-                • <strong>All 10 Authors:</strong>{" "}
-                <code className="font-mono text-slate-800">
-                  &lt;author-email&gt;
-                </code>{" "}
-                / <code className="font-mono text-slate-800">author123</code>
-              </p>
-            </div>
           </div>
 
-          {/* Right: 1-Click Evaluator Switchboard for All Seeded Accounts */}
-          <div className="lg:col-span-7 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm animate-fade-up delay-75">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="font-serif text-xl font-bold text-slate-900">
-                  1-Click Evaluator Quick-Login Matrix
-                </h2>
-                <p className="text-xs text-slate-600 mt-0.5">
-                  Click any seeded account from{" "}
-                  <code className="font-mono">bookleaf_sample_data.json</code>{" "}
-                  to sign in immediately and test its specific data state.
-                </p>
-              </div>
-              <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs font-semibold text-emerald-800">
-                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                10 Authors + 1 Admin
-              </span>
-            </div>
-
-            <div className="space-y-2.5 max-h-[540px] overflow-y-auto pr-1">
-              {demoAccounts.map((acc) => {
-                const isAdmin = acc.role === "ADMIN";
-                return (
-                  <button
-                    key={acc.email}
-                    type="button"
-                    onClick={() => selectDemoAccount(acc)}
-                    disabled={isSubmitting}
-                    className={`w-full text-left rounded-xl border p-3.5 transition-all flex items-center justify-between gap-3 cursor-pointer ${
-                      isAdmin
-                        ? "border-amber-300 bg-amber-50/60 hover:bg-amber-100/70"
-                        : "border-slate-200 bg-slate-50/60 hover:bg-sky-50/70 hover:border-sky-300"
-                    }`}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                            isAdmin
-                              ? "bg-[#0E2842] text-amber-300"
-                              : "bg-[#1B4D7E] text-white"
-                          }`}
-                        >
-                          {isAdmin ? (
-                            <ShieldCheck
-                              className="h-3 w-3"
-                              aria-hidden="true"
-                            />
-                          ) : (
-                            <UserCheck
-                              className="h-3 w-3"
-                              aria-hidden="true"
-                            />
-                          )}
-                          {acc.role}
-                        </span>
-                        {acc.author_id && (
-                          <span className="font-mono text-xs font-semibold text-slate-600">
-                            {acc.author_id}
-                          </span>
-                        )}
-                        <span className="text-sm font-bold text-slate-900">
-                          {acc.name}
-                        </span>
-                        {acc.city && (
-                          <span className="text-xs text-slate-500">
-                            ({acc.city})
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
-                        <span className="font-mono text-[11px] text-slate-500">
-                          {acc.email}
-                        </span>
-                        <span>•</span>
-                        <span className="font-medium text-slate-800">
-                          {acc.edge_case_tag}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-white border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-[#1B4D7E] shadow-sm">
-                      Launch
-                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+            <p>
+              Don&apos;t have an account?{" "}
+              <Link href="/" className="text-[#0F4C3A] font-semibold hover:underline">
+                Contact support
+              </Link>
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowMatrix(!showMatrix)}
+              className="text-[#0F4C3A] font-medium hover:underline flex items-center gap-1"
+            >
+              <span>{showMatrix ? "Hide Quick Accounts" : "Quick Evaluator Accounts (11)"}</span>
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Quick Evaluator Matrix (Collapsible) */}
+      {showMatrix && (
+        <div className="max-w-5xl w-full mx-auto mt-6 bg-white rounded-2xl p-6 border border-[#E8EDE6] shadow-xs">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Instant 1-Click Login Matrix (10 Authors + 1 Admin)
+            </h4>
+            <span className="text-[11px] text-slate-500">
+              Click any account to authenticate instantly
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {demoAccounts.map((acc) => (
+              <button
+                key={acc.email}
+                type="button"
+                onClick={() => selectDemoAccount(acc)}
+                className="p-3 rounded-xl border border-slate-200 hover:border-[#0F4C3A] hover:bg-[#F2F7F4] text-left transition flex items-center justify-between group"
+              >
+                <div className="min-w-0 pr-2">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="font-bold text-xs text-slate-900 group-hover:text-[#0F4C3A]">
+                      {acc.name}
+                    </span>
+                    <span
+                      className={`text-[9px] px-1.5 py-0.2 rounded font-semibold uppercase ${
+                        acc.role === "ADMIN"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-emerald-100 text-emerald-800"
+                      }`}
+                    >
+                      {acc.author_id || acc.role}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 truncate">{acc.email}</p>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0F4C3A] shrink-0" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

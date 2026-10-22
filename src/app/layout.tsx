@@ -1,23 +1,39 @@
 import type { Metadata } from "next";
-import { Public_Sans, Libre_Bodoni } from "next/font/google";
+import { Plus_Jakarta_Sans, Playfair_Display, Jost, Lato } from "next/font/google";
 import "./globals.css";
 
-const publicSans = Public_Sans({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
 });
 
-const libreBodoni = Libre_Bodoni({
+const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-serif",
   display: "swap",
 });
 
+const jost = Jost({
+  subsets: ["latin"],
+  variable: "--font-jost",
+  display: "swap",
+});
+
+const lato = Lato({
+  subsets: ["latin"],
+  weight: ["300", "400", "700"],
+  variable: "--font-lato",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "BookLeaf Publishing — Author Support & Communication Portal",
+  title: "BookLeaf Publishing — World's #1 Self-Publishing Platform | Author Support",
   description:
     "AI-Assisted Author Support & Operations Portal for BookLeaf Publishing. Manage books, royalty inquiries, production stages, and policy-grounded support responses.",
+  icons: {
+    icon: "/images/bookleaf/Slice_1pic.png",
+  },
 };
 
 export default function RootLayout({
@@ -28,9 +44,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${publicSans.variable} ${libreBodoni.variable}`}
+      className={`${plusJakartaSans.variable} ${playfairDisplay.variable} ${jost.variable} ${lato.variable}`}
     >
-      <body className="min-h-screen bg-slate-50 font-sans text-slate-900 antialiased selection:bg-[#1B4D7E] selection:text-white">
+      <body className="min-h-screen bg-[#F9FAF7] font-sans text-slate-800 antialiased selection:bg-[#0F4C3A] selection:text-white">
         {children}
       </body>
     </html>

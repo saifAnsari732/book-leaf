@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { getAdminOverviewMetrics } from "@/lib/repository";
+import { redisGet, redisSet, REDIS_KEYS } from "@/lib/redis";
 
 export async function GET() {
   try {
@@ -21,10 +22,23 @@ export async function GET() {
       );
     }
 
+    const cached = await redisGet<unknown>(REDIS_KEYS.adminMetrics);
+    if (cached) {
+      return NextResponse.json({
+        success: true,
+        metrics: cached,
+        cached: true,
+        serverTimestamp: new Date().toISOString(),
+      });
+    }
+
     const metrics = await getAdminOverviewMetrics();
+    await redisSet(REDIS_KEYS.adminMetrics, metrics, 20); // 20s TTL
+
     return NextResponse.json({
       success: true,
       metrics,
+      cached: false,
       serverTimestamp: new Date().toISOString(),
     });
   } catch {
@@ -34,3 +48,4 @@ export async function GET() {
     );
   }
 }
+

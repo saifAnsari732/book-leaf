@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { getAuthorTickets, getBooksByAuthorId } from "@/lib/repository";
+import { redisGet, redisSet, REDIS_KEYS } from "@/lib/redis";
 
 export async function GET() {
   try {
@@ -19,6 +20,15 @@ export async function GET() {
         },
         { status: 403 }
       );
+    }
+
+    const cacheKey = REDIS_KEYS.authorDashboard(user.author_id);
+    const cached = await redisGet<Record<string, unknown>>(cacheKey);
+    if (cached) {
+      return NextResponse.json({
+        ...cached,
+        cached: true,
+      });
     }
 
     const [books, tickets] = await Promise.all([
@@ -51,7 +61,7 @@ export async function GET() {
       (t) => t.status === "Open" || t.status === "In Progress"
     ).length;
 
-    return NextResponse.json({
+    const payload = {
       success: true,
       author: user,
       metrics: {
@@ -67,6 +77,13 @@ export async function GET() {
       },
       books,
       recentTickets: tickets.slice(0, 5),
+    };
+
+    await redisSet(cacheKey, payload, 30); // 30s TTL
+
+    return NextResponse.json({
+      ...payload,
+      cached: false,
     });
   } catch {
     return NextResponse.json(
@@ -75,3 +92,4 @@ export async function GET() {
     );
   }
 }
+
