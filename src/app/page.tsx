@@ -957,49 +957,49 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Top Brand Coral Accent Bar matching Screenshot */}
-      <div className="h-2 bg-[#F05262]" />
+      {/* Top Brand Coral Accent Bar */}
+      <div className="h-1 bg-gradient-to-r from-[#F05262] via-[#F26979] to-rose-400" />
 
       {/* ====================================================================
-          FOOTER (Clean 4-Column Layout, Deep Navy-Slate - NOT Black)
+          FOOTER (Clean 4-Column Layout, Modern Light Slate & White Aesthetic)
           ==================================================================== */}
-      <footer className="bg-gradient-to-b from-[#10243E] via-[#0E2038] to-[#0B1A2D] text-slate-200 pt-14 pb-10 border-t border-[#1B3557]">
+      <footer className="bg-slate-50 border-t border-slate-200 text-slate-700 pt-14 pb-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Main 4-Column Grid matching User Uploaded Screenshot */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10 pb-12 border-b border-slate-700/60">
+          {/* Main 4-Column Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10 pb-12 border-b border-slate-200">
             {/* Column 1: Links */}
             <div className="lg:col-span-3 space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#F05262]">
                 Explore
               </h4>
-              <ul className="space-y-2 text-xs sm:text-sm text-slate-300">
+              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-600">
                 <li>
-                  <a href="#publishing-packages" className="hover:text-white hover:underline transition">
+                  <a href="#publishing-packages" className="hover:text-[#F05262] transition-colors">
                     Packages and Pricing
                   </a>
                 </li>
                 <li>
-                  <a href="#bookstore" className="hover:text-white hover:underline transition">
+                  <a href="#bookstore" className="hover:text-[#F05262] transition-colors">
                     Bookstore
                   </a>
                 </li>
                 <li>
-                  <Link href="/login" className="hover:text-white hover:underline transition">
+                  <Link href="/login" className="hover:text-[#F05262] transition-colors">
                     Writing Challenges
                   </Link>
                 </li>
                 <li>
-                  <Link href="/login" className="hover:text-white hover:underline transition">
+                  <Link href="/login" className="hover:text-[#F05262] transition-colors">
                     About BookLeaf
                   </Link>
                 </li>
                 <li>
-                  <Link href="/login" className="hover:text-white hover:underline transition">
+                  <Link href="/login" className="hover:text-[#F05262] transition-colors">
                     Privacy &amp; Refund Policy
                   </Link>
                 </li>
                 <li>
-                  <Link href="/login" className="hover:text-white hover:underline transition">
+                  <Link href="/login" className="hover:text-[#F05262] transition-colors">
                     Terms and Conditions
                   </Link>
                 </li>
@@ -1011,25 +1011,25 @@ export default function HomePage() {
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#F05262]">
                 Support &amp; Help
               </h4>
-              <div className="space-y-3 text-xs sm:text-sm text-slate-300">
+              <div className="space-y-3 text-xs sm:text-sm text-slate-600">
                 <div>
                   <span className="text-slate-400 block text-xs">Email / Phone:</span>
                   <a
                     href="mailto:support@bookleafpub.com"
-                    className="hover:text-white hover:underline font-medium text-slate-200 block"
+                    className="hover:text-[#F05262] font-semibold text-slate-800 transition-colors block"
                   >
                     support@bookleafpub.com
                   </a>
                   <a
                     href="tel:+911943550930"
-                    className="hover:text-white hover:underline text-xs text-slate-300 block mt-0.5"
+                    className="hover:text-[#F05262] text-xs text-slate-600 transition-colors block mt-0.5"
                   >
                     +91 194 355 0930
                   </a>
                 </div>
 
                 <div>
-                  <a href="#faq" className="hover:text-white hover:underline block">
+                  <a href="#faq" className="hover:text-[#F05262] transition-colors block">
                     Frequently Asked Questions
                   </a>
                 </div>
@@ -1037,7 +1037,7 @@ export default function HomePage() {
                 <div className="pt-1">
                   <Link
                     href="/author/tickets/new"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#F05262] hover:text-[#ff7482] transition group"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#F05262] hover:text-[#d94151] transition-colors group"
                   >
                     <span>Click here to raise a ticket</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -1051,12 +1051,12 @@ export default function HomePage() {
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#F05262]">
                 Company
               </h4>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                BookLeaf Publishing (Global) is a subsidiary of <strong className="text-white font-medium">Libresco Feeds Pvt Ltd.</strong> (CIN: <span className="font-mono text-slate-300">U22100JK2019PTC010936</span>).
+              <p className="text-xs text-slate-600 leading-relaxed">
+                BookLeaf Publishing (Global) is a subsidiary of <strong className="text-slate-900 font-semibold">Libresco Feeds Pvt Ltd.</strong> (CIN: <span className="font-mono text-slate-700">U22100JK2019PTC010936</span>).
               </p>
 
-              <div className="text-xs text-slate-400 space-y-1 pt-1">
-                <span className="text-slate-300 font-semibold block text-[11px] uppercase tracking-wide">
+              <div className="text-xs text-slate-500 space-y-1 pt-1">
+                <span className="text-slate-700 font-semibold block text-[11px] uppercase tracking-wide">
                   Regd. Offices:
                 </span>
                 <p>• 1603 Capitol Ave., Suite 310, Cheyenne, WY 82001, USA</p>
@@ -1064,13 +1064,13 @@ export default function HomePage() {
               </div>
 
               {/* Security & DMCA Trust Badges */}
-              <div className="pt-2 flex items-center gap-2">
-                <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#132B47] border border-slate-700/80 text-[11px] text-emerald-400 font-medium">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <div className="pt-2 flex items-center gap-2 flex-wrap">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800 font-semibold shadow-2xs">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>DMCA Protected</span>
                 </div>
-                <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#132B47] border border-slate-700/80 text-[11px] text-sky-400 font-medium">
-                  <Lock className="w-3 h-3 text-sky-400 shrink-0" />
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 border border-sky-200 text-[11px] text-sky-800 font-semibold shadow-2xs">
+                  <Lock className="w-3 h-3 text-sky-600 shrink-0" />
                   <span>256-bit SSL</span>
                 </div>
               </div>
@@ -1079,17 +1079,17 @@ export default function HomePage() {
             {/* Column 4: Community, Logo & Payment Trust Badges */}
             <div className="lg:col-span-3 flex flex-col justify-between space-y-5">
               <div className="space-y-3">
-                <p className="text-xs sm:text-sm font-semibold text-white">
+                <p className="text-xs sm:text-sm font-semibold text-slate-900">
                   Join our community of 25K+ writers and readers:
                 </p>
 
-                {/* 5 Scraped Social Media Buttons matching Screenshot */}
+                {/* 5 Scraped Social Media Buttons */}
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <a
                     href="https://instagram.com/bookleafpublishing/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-white text-slate-900 hover:bg-[#F05262] hover:text-white transition flex items-center justify-center shadow-md hover:scale-110"
+                    className="w-9 h-9 rounded-full bg-white text-slate-700 hover:bg-[#F05262] hover:text-white transition-all flex items-center justify-center border border-slate-200 shadow-xs hover:scale-105"
                     aria-label="Instagram"
                     title="Follow on Instagram"
                   >
@@ -1100,7 +1100,7 @@ export default function HomePage() {
                     href="http://www.facebook.com/bookleafpublishing"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-white text-slate-900 hover:bg-[#F05262] hover:text-white transition flex items-center justify-center shadow-md hover:scale-110"
+                    className="w-9 h-9 rounded-full bg-white text-slate-700 hover:bg-[#F05262] hover:text-white transition-all flex items-center justify-center border border-slate-200 shadow-xs hover:scale-105"
                     aria-label="Facebook"
                     title="Follow on Facebook"
                   >
@@ -1111,7 +1111,7 @@ export default function HomePage() {
                     href="https://twitter.com/bookleafpub"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-white text-slate-900 hover:bg-[#F05262] hover:text-white transition flex items-center justify-center shadow-md hover:scale-110"
+                    className="w-9 h-9 rounded-full bg-white text-slate-700 hover:bg-[#F05262] hover:text-white transition-all flex items-center justify-center border border-slate-200 shadow-xs hover:scale-105"
                     aria-label="Twitter / X"
                     title="Follow on Twitter / X"
                   >
@@ -1122,7 +1122,7 @@ export default function HomePage() {
                     href="https://www.youtube.com/channel/UCJAAi_L1JH8OZSTbtYZW3OQ"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-white text-slate-900 hover:bg-[#F05262] hover:text-white transition flex items-center justify-center shadow-md hover:scale-110"
+                    className="w-9 h-9 rounded-full bg-white text-slate-700 hover:bg-[#F05262] hover:text-white transition-all flex items-center justify-center border border-slate-200 shadow-xs hover:scale-105"
                     aria-label="YouTube"
                     title="Subscribe on YouTube"
                   >
@@ -1133,7 +1133,7 @@ export default function HomePage() {
                     href="https://in.linkedin.com/company/bookleaf-publishing"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-white text-slate-900 hover:bg-[#F05262] hover:text-white transition flex items-center justify-center shadow-md hover:scale-110"
+                    className="w-9 h-9 rounded-full bg-white text-slate-700 hover:bg-[#F05262] hover:text-white transition-all flex items-center justify-center border border-slate-200 shadow-xs hover:scale-105"
                     aria-label="LinkedIn"
                     title="Connect on LinkedIn"
                   >
@@ -1142,24 +1142,24 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Official Inverted Footer Logo matching Screenshot */}
+              {/* Official Footer Logo */}
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-slate-900 shadow-sm">
-                  <span className="font-sans text-2xl font-light leading-none -rotate-12 select-none text-slate-900">
+                <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xs">
+                  <span className="font-sans text-2xl font-light leading-none -rotate-12 select-none text-white">
                     /
                   </span>
                 </div>
                 <div className="flex flex-col text-left">
-                  <span className="font-serif text-xl font-bold tracking-tight text-white leading-tight">
+                  <span className="font-serif text-xl font-bold tracking-tight text-slate-900 leading-tight">
                     BookLeaf
                   </span>
-                  <span className="text-xs font-normal tracking-tight text-slate-300 -mt-1">
+                  <span className="text-xs font-normal tracking-tight text-slate-500 -mt-0.5">
                     Publishing
                   </span>
                 </div>
               </div>
 
-              {/* Payment Acceptance Chips matching Screenshot */}
+              {/* Payment Acceptance Chips */}
               <div className="pt-1 flex items-center gap-2 flex-wrap">
                 <span className="px-2 py-0.5 rounded bg-white text-[#1A1F71] text-[10px] font-extrabold tracking-wider border border-slate-200 shadow-2xs">
                   VISA
@@ -1173,7 +1173,7 @@ export default function HomePage() {
                 <span className="px-2 py-0.5 rounded bg-white text-[#097939] text-[10px] font-extrabold tracking-wider border border-slate-200 shadow-2xs">
                   RuPay
                 </span>
-                <span className="px-2 py-0.5 rounded bg-emerald-900/60 text-emerald-300 text-[10px] font-semibold border border-emerald-700/60 shadow-2xs">
+                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[10px] font-semibold border border-emerald-200 shadow-2xs">
                   SSL Secure
                 </span>
               </div>
@@ -1181,18 +1181,18 @@ export default function HomePage() {
           </div>
 
           {/* Bottom Copyright & Disclaimer */}
-          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
             <p>
               &copy; 2026 BookLeaf Publishing. A division of Libresco Feeds Pvt Ltd. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
-              <Link href="/api-docs" className="hover:text-slate-200 transition">
+              <Link href="/api-docs" className="hover:text-[#F05262] transition-colors">
                 API Docs
               </Link>
-              <Link href="/login" className="hover:text-slate-200 transition">
+              <Link href="/login" className="hover:text-[#F05262] transition-colors">
                 Privacy Policy
               </Link>
-              <Link href="/login" className="hover:text-slate-200 transition">
+              <Link href="/login" className="hover:text-[#F05262] transition-colors">
                 Terms and Conditions
               </Link>
             </div>
