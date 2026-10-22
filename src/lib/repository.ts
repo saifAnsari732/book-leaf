@@ -18,6 +18,7 @@ import {
   TicketStatus,
   AttachmentItem,
   AIMetadata,
+  ProcessedPaymentRecord,
 } from "@/types/domain";
 import {
   UserModel,
@@ -28,6 +29,7 @@ import {
   AuditLogModel,
   RoyaltyWithdrawalModel,
   BankAccountModel,
+  ProcessedPaymentModel,
 } from "@/models/schemas";
 import {
   deterministicClassifyAndPrioritize,
@@ -78,6 +80,7 @@ interface LocalDatabaseState {
   audit_logs: AuditLogRecord[];
   withdrawals: RoyaltyWithdrawalRecord[];
   bank_accounts: BankAccountRecord[];
+  processed_payments?: ProcessedPaymentRecord[];
   seeded_at: string;
 }
 
@@ -710,6 +713,72 @@ export async function updateUserProfile(
   return false;
 }
 
+export async function registerAuthorUser(params: {
+  name: string;
+  email: string;
+  password_hash: string;
+  phone?: string | null;
+  city?: string | null;
+}): Promise<UserRecord> {
+  const mode = await ensureDatabaseReady();
+  const normalizedEmail = params.email.trim().toLowerCase();
+  const nowIso = new Date().toISOString();
+
+  let maxNum = 10;
+  if (mode === "mongo") {
+    const existingAuthors = await UserModel.find(
+      { role: "AUTHOR", author_id: { $ne: null } },
+      { author_id: 1 }
+    ).lean();
+    for (const doc of existingAuthors) {
+      const m = doc.author_id?.match(/^AUTH(\d+)$/);
+      if (m) {
+        const num = parseInt(m[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    }
+  } else {
+    const state = globalThis.__bookleafLocalState!;
+    for (const doc of state.users) {
+      if (doc.role === "AUTHOR" && doc.author_id) {
+        const m = doc.author_id.match(/^AUTH(\d+)$/);
+        if (m) {
+          const num = parseInt(m[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      }
+    }
+  }
+
+  const nextNum = maxNum + 1;
+  const authorId = `AUTH${String(nextNum).padStart(3, "0")}`;
+  const userId = `USR-${authorId}`;
+
+  const newUser: UserRecord = {
+    user_id: userId,
+    author_id: authorId,
+    name: params.name.trim(),
+    email: normalizedEmail,
+    password_hash: params.password_hash,
+    role: "AUTHOR",
+    phone: params.phone?.trim() || null,
+    city: params.city?.trim() || "India",
+    joined_date: nowIso,
+    created_at: nowIso,
+    updated_at: nowIso,
+  };
+
+  if (mode === "mongo") {
+    await UserModel.create(newUser);
+  } else {
+    const state = globalThis.__bookleafLocalState!;
+    state.users.push(newUser);
+    persistLocalState(state);
+  }
+
+  return newUser;
+}
+
 export async function getBooksByAuthorId(
   authorId: string
 ): Promise<BookRecord[]> {
@@ -760,6 +829,8 @@ export async function getAuthorTickets(
     Omit<TicketRecord, "ai_metadata"> & {
       message_count: number;
       last_reply_by: "AUTHOR" | "ADMIN" | null;
+      latest_admin_reply: string | null;
+      latest_admin_reply_at: string | null;
     }
   >
 > {
@@ -798,12 +869,16 @@ export async function getAuthorTickets(
   return tickets.map((t) => {
     const msgs = allMessages.filter((m) => m.ticket_id === t.ticket_id);
     const lastMsg = msgs[msgs.length - 1];
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { ai_metadata, ...publicTicket } = t;
+    const adminMsgs = msgs.filter((m) => m.sender_role === "ADMIN");
+    const lastAdminMsg = adminMsgs[adminMsgs.length - 1];
+    const publicTicket = { ...t };
+    delete (publicTicket as Record<string, any>).ai_metadata;
     return {
       ...publicTicket,
       message_count: msgs.length,
       last_reply_by: lastMsg ? lastMsg.sender_role : null,
+      latest_admin_reply: lastAdminMsg ? lastAdminMsg.content : null,
+      latest_admin_reply_at: lastAdminMsg ? lastAdminMsg.created_at : null,
     };
   });
 }
@@ -856,8 +931,8 @@ export async function getAuthorTicketDetail(
     ? await getBookByIdForAuthor(authorId, ticket.book_id)
     : null;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { ai_metadata, ...safeTicket } = ticket;
+  const safeTicket = { ...ticket };
+  delete (safeTicket as Record<string, any>).ai_metadata;
 
   return {
     status: "OK",
@@ -2065,4 +2140,34 @@ export async function createNewBookForAuthor(
   }
 
   return newBook;
+}
+
+// ============================================================================
+// Processed Payments Ledger (Zero-Loophole Replay Attack Defense)
+// ============================================================================
+
+export async function isPaymentAlreadyProcessed(paymentId: string): Promise<boolean> {
+  if (!paymentId) return false;
+  const mode = await ensureDatabaseReady();
+  if (mode === "mongo") {
+    const doc = await ProcessedPaymentModel.findOne({ payment_id: paymentId }).lean();
+    return Boolean(doc);
+  }
+  const state = globalThis.__bookleafLocalState!;
+  if (!state.processed_payments) state.processed_payments = [];
+  return state.processed_payments.some((p) => p.payment_id === paymentId);
+}
+
+export async function saveProcessedPayment(
+  record: ProcessedPaymentRecord
+): Promise<void> {
+  const mode = await ensureDatabaseReady();
+  if (mode === "mongo") {
+    await ProcessedPaymentModel.create(record);
+  } else {
+    const state = globalThis.__bookleafLocalState!;
+    if (!state.processed_payments) state.processed_payments = [];
+    state.processed_payments.unshift(record);
+    persistLocalState(state);
+  }
 }

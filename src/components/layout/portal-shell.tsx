@@ -10,10 +10,12 @@ import {
   FileCode2,
   Headphones,
   HelpCircle,
+  Home,
   IndianRupee,
   Layers,
   LayoutDashboard,
   LogOut,
+  Mail,
   Menu,
   MessageSquare,
   PlusCircle,
@@ -24,6 +26,7 @@ import {
   Ticket,
   User,
   UserCheck,
+  Users,
   Wallet,
   BarChart3,
   X,
@@ -56,26 +59,32 @@ export function PortalShell({
     ? [
         {
           href: "/admin",
-          label: "Dashboard",
-          icon: LayoutDashboard,
+          label: "Overview",
+          icon: Home,
           exact: true,
         },
         {
           href: "/admin/tickets",
-          label: "Tickets Queue",
-          icon: Ticket,
+          label: "Ticket Queue",
+          icon: MessageSquare,
           exact: false,
         },
         {
-          href: "/admin/ai-assistant",
-          label: "AI Co-Pilot",
-          icon: Sparkles,
+          href: "/admin/profile",
+          label: "Authors",
+          icon: Users,
           exact: false,
         },
         {
           href: "/admin/knowledge-base",
-          label: "Knowledge Base",
-          icon: Layers,
+          label: "Books",
+          icon: BookOpen,
+          exact: false,
+        },
+        {
+          href: "/admin/ai-assistant",
+          label: "Reports",
+          icon: BarChart3,
           exact: false,
         },
         {
@@ -84,28 +93,16 @@ export function PortalShell({
           icon: Settings,
           exact: false,
         },
-        {
-          href: "/api-docs",
-          label: "REST API Docs",
-          icon: FileCode2,
-          exact: false,
-        },
       ]
     : [
         {
-          href: "/author",
-          label: "Dashboard",
-          icon: LayoutDashboard,
-          exact: true,
-        },
-        {
           href: "/author-dashboard?menu=Royalty%20Withdrawal",
-          label: "Royalty & Wallet",
-          icon: Wallet,
+          label: "Dashboard & Wallet",
+          icon: LayoutDashboard,
           exact: false,
         },
         {
-          href: "/author/books",
+          href: "/author-dashboard?menu=Books",
           label: "My Books",
           icon: BookOpen,
           exact: false,
@@ -117,19 +114,25 @@ export function PortalShell({
           exact: false,
         },
         {
-          href: "/author/tickets",
+          href: "/author-dashboard?menu=Support%20Tickets",
           label: "Support Tickets",
           icon: Ticket,
-          exact: true,
+          exact: false,
         },
         {
-          href: "/author/tickets/new",
-          label: "Create Ticket",
+          href: "/author-dashboard?menu=Email%20Box",
+          label: "Email Activity Box",
+          icon: Mail,
+          exact: false,
+        },
+        {
+          href: "/author-dashboard?menu=Raise%20a%20Query",
+          label: "Raise a Query",
           icon: PlusCircle,
           exact: false,
         },
         {
-          href: "/author/profile",
+          href: "/author-dashboard?menu=Settings",
           label: "Profile & Settings",
           icon: User,
           exact: false,
@@ -209,18 +212,20 @@ export function PortalShell({
 
         {/* Bottom User Card in Sidebar */}
         <div className="p-4 border-t border-slate-800/80">
-          <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-full bg-emerald-900 text-emerald-200 font-bold text-xs flex items-center justify-center shrink-0 border border-emerald-700">
+          <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800/90 flex items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="w-9 h-9 rounded-full bg-emerald-900/80 text-emerald-200 font-bold text-xs flex items-center justify-center shrink-0 border border-emerald-600/40">
                 {user.name
                   .split(" ")
                   .map((n) => n[0])
                   .join("")
                   .slice(0, 2)}
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-white truncate">{user.name}</p>
-                <p className="text-[10px] text-emerald-400 uppercase font-semibold">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-white truncate" title={user.name}>
+                  {user.name}
+                </p>
+                <p className="text-[10px] text-emerald-400 uppercase font-semibold tracking-wider truncate">
                   {user.author_id || user.role}
                 </p>
               </div>
@@ -230,10 +235,20 @@ export function PortalShell({
               onClick={handleLogout}
               disabled={isLoggingOut}
               title="Sign Out"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 transition shrink-0"
+              className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 transition shrink-0"
             >
               <LogOut className="w-4 h-4" />
             </button>
+          </div>
+
+          {/* Literary Branding Quote matching Screenshot 1 */}
+          <div className="pt-3 pb-1 text-left px-3">
+            <span className="font-serif italic text-xs text-slate-400 block leading-tight">
+              Great Books.
+            </span>
+            <span className="font-serif italic text-xs text-slate-400 block leading-tight">
+              Brighter Readers.
+            </span>
           </div>
         </div>
       </aside>
@@ -270,7 +285,7 @@ export function PortalShell({
           {/* Right Header Icons & User Pill */}
           <div className="flex items-center gap-3 sm:gap-4">
             <Link
-              href="/author/tickets"
+              href={isAdmin ? "/admin/tickets" : "/author-dashboard?menu=Support%20Tickets"}
               className="p-2 rounded-full text-slate-500 hover:bg-slate-100 transition relative"
               title="Support Alerts"
             >

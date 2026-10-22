@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useToast } from "@/context/ToastContext";
 import {
   BookOpen,
   Check,
@@ -11,9 +12,11 @@ import {
   Image as ImageIcon,
   IndianRupee,
   Layers,
+  Loader2,
   Palette,
   Sparkles,
   UploadCloud,
+  Wand2,
   X,
 } from "lucide-react";
 
@@ -30,6 +33,7 @@ export function CreateBookModal({
   onBookCreated,
   defaultAuthorName = "Priya Sharma",
 }: CreateBookModalProps) {
+  const toast = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -48,6 +52,75 @@ export function CreateBookModal({
   const [blurb, setBlurb] = useState("");
   const [targetMrp, setTargetMrp] = useState(399);
   const [agreedToTerms, setAgreedToTerms] = useState(true);
+
+  // Gemini AI Assisted Drafting State
+  const [isAiGeneratingTitle, setIsAiGeneratingTitle] = useState(false);
+  const [isAiGeneratingBlurb, setIsAiGeneratingBlurb] = useState(false);
+  const [suggestedTitles, setSuggestedTitles] = useState<string[]>([]);
+
+  async function handleAiGenerateTitles() {
+    setIsAiGeneratingTitle(true);
+    try {
+      const res = await fetch("/api/ai/write-book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "titles",
+          topic: title || `${genre} book`,
+          genre,
+          tone: "inspiring and bestselling",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to generate titles");
+      }
+      const rawText: string = data.content || "";
+      const lines = rawText
+        .split("\n")
+        .map((l) => l.replace(/^[-*•\d.)\s"]+/, "").replace(/"$/, "").trim())
+        .filter((l) => l.length > 3 && l.length < 80)
+        .slice(0, 5);
+
+      setSuggestedTitles(lines.length > 0 ? lines : [rawText.slice(0, 60)]);
+      toast.info("Gemini AI Titles Ready", "Click any suggestion below to set your title.");
+    } catch (err: any) {
+      toast.error("AI Generation Error", err?.message || "Could not generate titles.");
+    } finally {
+      setIsAiGeneratingTitle(false);
+    }
+  }
+
+  async function handleAiGenerateBlurb() {
+    if (!title.trim()) {
+      toast.warning("Title Required", "Please enter a book title first so Gemini AI can craft your blurb.");
+      return;
+    }
+    setIsAiGeneratingBlurb(true);
+    try {
+      const res = await fetch("/api/ai/write-book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "blurb",
+          title,
+          genre,
+          topic: subtitle || title,
+          tone: "captivating and professional",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to generate blurb");
+      }
+      setBlurb(data.content.trim());
+      toast.success("AI Blurb Generated", "Gemini 3.8 created a captivating back cover blurb!");
+    } catch (err: any) {
+      toast.error("AI Generation Error", err?.message || "Could not generate blurb.");
+    } finally {
+      setIsAiGeneratingBlurb(false);
+    }
+  }
 
   if (!isOpen) return null;
 
@@ -106,11 +179,16 @@ export function CreateBookModal({
       }
 
       setSuccessMessage(data.message);
+      toast.success(
+        "Book Created Successfully!",
+        `"${title}" has been registered and submitted to editorial review.`
+      );
       if (onBookCreated) {
         onBookCreated();
       }
     } catch (err: any) {
       setErrorMessage(err.message || "An unexpected error occurred");
+      toast.error("Book Creation Failed", err.message || "Could not create book.");
     } finally {
       setIsSubmitting(false);
     }
@@ -267,9 +345,29 @@ export function CreateBookModal({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Book Title *
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Book Title *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleAiGenerateTitles}
+                        disabled={isAiGeneratingTitle}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#F05262] hover:text-[#d43f4f] bg-[#FFF0F2] hover:bg-[#FFE3E7] px-2.5 py-1 rounded-lg border border-[#FCD0D6] transition shadow-xs"
+                      >
+                        {isAiGeneratingTitle ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span>Crafting Titles...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3 h-3 text-[#F05262]" />
+                            <span>✨ Suggest Titles with Gemini AI</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                     <input
                       type="text"
                       value={title}
@@ -277,6 +375,32 @@ export function CreateBookModal({
                       placeholder="Enter Book Title"
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#F05262] text-sm"
                     />
+
+                    {/* Gemini Suggested Titles Pille */}
+                    {suggestedTitles.length > 0 && (
+                      <div className="mt-2.5 p-3 bg-gradient-to-r from-rose-50/80 to-amber-50/80 rounded-xl border border-rose-100 animate-fade-in">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-rose-800 mb-1.5 flex items-center gap-1">
+                          <Wand2 className="w-3 h-3 text-[#F05262]" />
+                          Gemini 3.8 Suggested Titles (Click to apply):
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {suggestedTitles.map((t, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                setTitle(t);
+                                toast.info("Applied Title", `Title set to "${t}"`);
+                              }}
+                              className="text-xs bg-white hover:bg-[#F05262] hover:text-white text-slate-800 border border-rose-200 px-2.5 py-1 rounded-lg transition font-medium shadow-2xs text-left"
+                            >
+                              {t}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <p className="text-[11px] text-amber-600 mt-1">
                       If the title is in any regional language, please enter it in English letters. Example: कहानियाँ → Kahaaniyan.
                     </p>
@@ -397,15 +521,35 @@ export function CreateBookModal({
               {currentStep === 4 && (
                 <div className="space-y-5 animate-fade-in">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Back Cover Blurb / Synopsis
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Back Cover Blurb / Synopsis
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleAiGenerateBlurb}
+                        disabled={isAiGeneratingBlurb}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg border border-indigo-200 transition shadow-xs"
+                      >
+                        {isAiGeneratingBlurb ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span>Drafting Blurb...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3 h-3 text-indigo-600" />
+                            <span>✨ Auto-Draft with Gemini AI</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                     <textarea
-                      rows={4}
+                      rows={5}
                       value={blurb}
                       onChange={(e) => setBlurb(e.target.value)}
-                      placeholder="Enter a compelling 100-200 word summary that will appear on the back cover of your book..."
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#F05262] text-sm"
+                      placeholder="Enter a compelling 100-200 word summary that will appear on the back cover of your book, or click 'Auto-Draft with Gemini AI'..."
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#F05262] text-sm leading-relaxed"
                     />
                   </div>
 

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Playfair_Display, Jost, Lato } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
+import { ToastProvider } from "@/context/ToastContext";
+import { FloatingAgentChat } from "@/components/support/floating-agent-chat";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -47,7 +50,12 @@ export default function RootLayout({
       className={`${plusJakartaSans.variable} ${playfairDisplay.variable} ${jost.variable} ${lato.variable}`}
     >
       <body className="min-h-screen bg-[#F9FAF7] font-sans text-slate-800 antialiased selection:bg-[#0F4C3A] selection:text-white">
-        {children}
+        <AuthProvider>
+          <ToastProvider>
+            {children}
+            <FloatingAgentChat />
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );

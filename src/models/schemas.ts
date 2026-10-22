@@ -8,6 +8,7 @@ import {
   AuditLogRecord,
   RoyaltyWithdrawalRecord,
   BankAccountRecord,
+  ProcessedPaymentRecord,
   TICKET_CATEGORIES,
   TICKET_PRIORITIES,
   TICKET_STATUSES,
@@ -302,3 +303,34 @@ const BankAccountSchema = new Schema<BankAccountRecord>(
 export const BankAccountModel: Model<BankAccountRecord> =
   mongoose.models.BankAccount ||
   mongoose.model<BankAccountRecord>("BankAccount", BankAccountSchema);
+
+// ============================================================================
+// 9. Processed Payments Schema (Double Spend & Replay Attack Defense)
+// ============================================================================
+const ProcessedPaymentSchema = new Schema<ProcessedPaymentRecord>(
+  {
+    payment_id: { type: String, required: true, unique: true, index: true },
+    order_id: { type: String, required: true, index: true },
+    signature: { type: String, required: true },
+    amount: { type: Number, required: true },
+    currency: { type: String, required: true, default: "INR" },
+    plan_id: { type: String, default: null },
+    plan_name: { type: String, required: true },
+    invoice_number: { type: String, required: true, unique: true, index: true },
+    author_email: { type: String, required: true, index: true },
+    author_name: { type: String, required: true },
+    author_phone: { type: String, default: null },
+    gstin: { type: String, default: null },
+    status: { type: String, required: true, default: "SUCCESS" },
+    verified_at: { type: String, required: true },
+    created_at: { type: String, required: true, index: true },
+  },
+  { versionKey: false }
+);
+
+export const ProcessedPaymentModel: Model<ProcessedPaymentRecord> =
+  mongoose.models.ProcessedPayment ||
+  mongoose.model<ProcessedPaymentRecord>(
+    "ProcessedPayment",
+    ProcessedPaymentSchema
+  );

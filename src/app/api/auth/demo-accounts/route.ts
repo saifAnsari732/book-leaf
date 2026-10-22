@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { getAllDemoAccounts } from "@/lib/repository";
 import { redisGet, redisSet, REDIS_KEYS } from "@/lib/redis";

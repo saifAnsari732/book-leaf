@@ -179,6 +179,39 @@ export const LoginInputSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+export const RegisterInputSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Full name must be at least 2 characters")
+    .max(100, "Full name cannot exceed 100 characters"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email address is required")
+    .email("Please enter a valid email address")
+    .transform((v) => v.toLowerCase()),
+  password: z
+    .string()
+    .min(6, "Password must be at least 6 characters"),
+  phone: z
+    .string()
+    .trim()
+    .min(10, "Phone number must be at least 10 digits")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
+  city: z
+    .string()
+    .trim()
+    .min(2, "City name must be at least 2 characters")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
+});
+
+export type RegisterInput = z.infer<typeof RegisterInputSchema>;
+
 export const AttachmentSchema = z.object({
   name: z.string().trim().min(1).max(200),
   size: z
@@ -359,3 +392,40 @@ export interface CreateBookInput {
   blurb?: string;
   target_mrp: number;
 }
+
+// ============================================================================
+// Razorpay Advanced Payment Entity & Schemas (Zero-Loophole Security)
+// ============================================================================
+
+export interface ProcessedPaymentRecord {
+  payment_id: string;
+  order_id: string;
+  signature: string;
+  amount: number;
+  currency: string;
+  plan_id?: string;
+  plan_name: string;
+  invoice_number: string;
+  author_email: string;
+  author_name: string;
+  author_phone?: string;
+  gstin?: string;
+  status: "SUCCESS" | "FAILED" | "REFUNDED";
+  verified_at: string;
+  created_at: string;
+}
+
+export const VerifyPaymentInputSchema = z.object({
+  razorpay_order_id: z.string().min(5, "Valid order ID required"),
+  razorpay_payment_id: z.string().min(5, "Valid payment ID required"),
+  razorpay_signature: z.string().min(10, "Valid signature required"),
+  planId: z.string().optional(),
+  planName: z.string().min(1).default("Publishing Package"),
+  amount: z.number().positive(),
+  authorName: z.string().optional(),
+  authorEmail: z.string().email().optional(),
+  authorPhone: z.string().optional(),
+  gstin: z.string().optional(),
+});
+
+export type VerifyPaymentInput = z.infer<typeof VerifyPaymentInputSchema>;

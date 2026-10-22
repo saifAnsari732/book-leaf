@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromRequest } from "@/lib/auth";
 import { getBooksByAuthorId } from "@/lib/repository";
+import { redisGet, redisSet, REDIS_KEYS } from "@/lib/redis";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,6 +20,16 @@ export async function GET(req: NextRequest) {
         { success: false, error: "Only authors can access sales reports" },
         { status: 403 }
       );
+    }
+
+    // Fast Tiered Cache lookup
+    const cacheKey = REDIS_KEYS.authorSales(user.author_id);
+    const cached = await redisGet<Record<string, unknown>>(cacheKey);
+    if (cached) {
+      return NextResponse.json({
+        ...cached,
+        fromCache: true,
+      });
     }
 
     const books = await getBooksByAuthorId(user.author_id);
@@ -129,7 +142,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    return NextResponse.json({
+    const responsePayload = {
       success: true,
       books,
       summary: {
@@ -140,7 +153,12 @@ export async function GET(req: NextRequest) {
       transactions: transactions.sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       ),
-    });
+    };
+
+    // Store in Tiered L1 + L2 Redis for 30 seconds
+    await redisSet(cacheKey, responsePayload, 30);
+
+    return NextResponse.json(responsePayload);
   } catch (error) {
     console.error("[API Sales GET] Error:", error);
     return NextResponse.json(

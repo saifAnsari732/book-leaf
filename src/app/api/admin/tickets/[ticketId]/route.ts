@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { AdminUpdateTicketInputSchema } from "@/types/domain";
@@ -5,6 +6,7 @@ import {
   getAdminTicketDetail,
   updateTicketByAdmin,
 } from "@/lib/repository";
+import { redisGet, redisSet, REDIS_KEYS, invalidateTicketCaches } from "@/lib/redis";
 
 export async function GET(
   _req: NextRequest,
@@ -29,6 +31,19 @@ export async function GET(
     }
 
     const { ticketId } = await Promise.resolve(context.params);
+
+    // Fast Tiered Cache lookup
+    const cacheKey = REDIS_KEYS.ticketDetail(ticketId);
+    const cached = await redisGet<Record<string, unknown>>(cacheKey);
+    if (cached) {
+      return NextResponse.json({
+        success: true,
+        ...cached,
+        fromCache: true,
+        serverTimestamp: new Date().toISOString(),
+      });
+    }
+
     const detail = await getAdminTicketDetail(ticketId);
     if (!detail) {
       return NextResponse.json(
@@ -36,6 +51,9 @@ export async function GET(
         { status: 404 }
       );
     }
+
+    // Cache in Tiered L1 + L2 for 20s
+    await redisSet(cacheKey, detail, 20);
 
     return NextResponse.json({
       success: true,
@@ -101,6 +119,12 @@ export async function PATCH(
         { status: 404 }
       );
     }
+
+    // Instant Tiered Cache invalidation
+    await invalidateTicketCaches({
+      ticketId,
+      authorId: updated.author_id,
+    });
 
     return NextResponse.json({
       success: true,

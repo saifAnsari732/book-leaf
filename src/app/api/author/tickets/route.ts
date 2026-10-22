@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, getSessionUser } from "@/lib/auth";
 import { CreateTicketInputSchema } from "@/types/domain";
@@ -8,6 +9,9 @@ import {
   getBooksByAuthorId,
 } from "@/lib/repository";
 import { analyzeTicketWithAI } from "@/lib/ai-service";
+import { dispatchActivityEmail } from "@/lib/email";
+import { applySecurityHeaders } from "@/lib/security";
+import { redisGet, redisSet, REDIS_KEYS, invalidateTicketCaches } from "@/lib/redis";
 
 export async function GET(req: NextRequest) {
   try {
@@ -30,7 +34,24 @@ export async function GET(req: NextRequest) {
 
     const statusFilter =
       req.nextUrl.searchParams.get("status") || "ALL";
+
+    // Fast Tiered Cache lookup
+    const cacheKey = `${REDIS_KEYS.authorTickets(user.author_id)}:${statusFilter}`;
+    const cached = await redisGet<{ tickets: unknown[]; count: number }>(cacheKey);
+    if (cached) {
+      return NextResponse.json({
+        success: true,
+        count: cached.count,
+        tickets: cached.tickets,
+        fromCache: true,
+        serverTimestamp: new Date().toISOString(),
+      });
+    }
+
     const tickets = await getAuthorTickets(user.author_id, statusFilter);
+
+    // Cache in Tiered L1 + L2 for 30s
+    await redisSet(cacheKey, { tickets, count: tickets.length }, 30);
 
     return NextResponse.json({
       success: true,
@@ -130,20 +151,44 @@ export async function POST(req: NextRequest) {
     });
 
     // Strip internal AI draft reply before returning to author
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { ai_metadata, ...publicTicket } = createdTicket;
+    const publicTicket = { ...createdTicket };
+    delete (publicTicket as Record<string, any>).ai_metadata;
 
-    return NextResponse.json(
+    // Send confirmation email
+    dispatchActivityEmail("TICKET", {
+      name: user.name,
+      email: user.email,
+      userId: user.user_id,
+      authorId: user.author_id,
+      ticketId: createdTicket.ticket_id,
+      subject: createdTicket.subject,
+      status: createdTicket.status,
+      priority: createdTicket.priority,
+      messagePreview: description.slice(0, 200),
+      actorName: user.name,
+      actorRole: "Author",
+      timestamp: new Date().toISOString(),
+    }).catch(() => {});
+
+    // Instant Tiered Cache invalidation for fresh data
+    await invalidateTicketCaches({
+      ticketId: createdTicket.ticket_id,
+      authorId: user.author_id,
+    });
+
+    const resp = NextResponse.json(
       {
         success: true,
         ticket: publicTicket,
       },
       { status: 201 }
     );
+    return applySecurityHeaders(resp, { isApiRoute: true });
   } catch {
-    return NextResponse.json(
+    const errResp = NextResponse.json(
       { success: false, error: "Failed to create support ticket" },
       { status: 500 }
     );
+    return applySecurityHeaders(errResp, { isApiRoute: true });
   }
 }

@@ -1,7 +1,9 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { AdminSendReplyInputSchema } from "@/types/domain";
 import { sendAdminReplyToTicket } from "@/lib/repository";
+import { invalidateTicketCaches } from "@/lib/redis";
 
 export async function POST(
   req: NextRequest,
@@ -55,6 +57,11 @@ export async function POST(
         { status: 404 }
       );
     }
+
+    await invalidateTicketCaches({
+      ticketId,
+      authorId: result.ticket.author_id,
+    });
 
     return NextResponse.json(
       {

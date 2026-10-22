@@ -1,5 +1,6 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
+import { getSessionUser, toSafeUser } from "@/lib/auth";
 import { findUserById, updateUserProfile } from "@/lib/repository";
 
 export async function GET() {
@@ -13,9 +14,13 @@ export async function GET() {
     }
 
     const fullUser = await findUserById(session.user_id);
+
+    // Security Hardening: Never leak password_hash to the client
+    const safeUser = fullUser ? toSafeUser(fullUser) : session;
+
     return NextResponse.json({
       success: true,
-      user: fullUser || session,
+      user: safeUser,
     });
   } catch (error) {
     return NextResponse.json(
@@ -38,10 +43,15 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const { name, phone, city } = body;
 
+    // Sanitize text inputs
+    const sanitizedName = typeof name === "string" ? name.trim().slice(0, 100) : undefined;
+    const sanitizedPhone = typeof phone === "string" ? phone.trim().slice(0, 20) : null;
+    const sanitizedCity = typeof city === "string" ? city.trim().slice(0, 80) : null;
+
     const success = await updateUserProfile(session.user_id, {
-      name,
-      phone,
-      city,
+      name: sanitizedName,
+      phone: sanitizedPhone,
+      city: sanitizedCity,
     });
 
     return NextResponse.json({

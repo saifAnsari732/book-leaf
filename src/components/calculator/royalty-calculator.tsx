@@ -192,7 +192,8 @@ export function RoyaltyCalculator() {
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                <span>🇮🇳 India (₹)</span>
+                <IndianRupee className="w-3.5 h-3.5" />
+                <span>India (₹)</span>
               </button>
               <button
                 type="button"
@@ -206,7 +207,8 @@ export function RoyaltyCalculator() {
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                <span>🌍 Global ($)</span>
+                <Globe className="w-3.5 h-3.5" />
+                <span>Global ($)</span>
               </button>
             </div>
           </div>
@@ -314,71 +316,83 @@ export function RoyaltyCalculator() {
           </div>
         </div>
 
-        {/* Live Output Highlight Cards */}
+        {/* Live Output Highlight Cards - Senior Editorial Polish */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Card 1: BookLeaf Store */}
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white shadow-lg space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-100 flex items-center justify-between">
-              <span>BookLeaf Store</span>
-              <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-[9px] font-extrabold">
-                HIGHEST
+          <div className="p-5 rounded-2xl bg-white border-2 border-emerald-500/80 shadow-md hover:shadow-lg transition-all space-y-1 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-bl-full -z-0 pointer-events-none" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 flex items-center justify-between relative z-10">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>BookLeaf Store</span>
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-extrabold">
+                100% SPLIT
               </span>
             </span>
-            <div className="flex items-baseline gap-1 py-1">
-              <span className="text-xl font-light">{isIndia ? "₹" : "$"}</span>
-              <span className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            <div className="flex items-baseline gap-1 py-1 relative z-10">
+              <span className="text-xl font-medium text-emerald-700">{isIndia ? "₹" : "$"}</span>
+              <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
                 {storeRoyalty}
               </span>
-              <span className="text-xs text-emerald-100">/ copy</span>
+              <span className="text-xs font-semibold text-emerald-700">/ copy</span>
             </div>
-            <p className="text-[11px] text-emerald-100 leading-tight">
-              0% Amazon commission deducted. 100% direct readers.
+            <p className="text-[11px] text-slate-500 leading-tight relative z-10">
+              0% marketplace commission. Direct 100% royalty on every reader sale.
             </p>
           </div>
 
           {/* Card 2: Amazon Marketplace */}
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-[#F05262] to-[#D93D4D] text-white shadow-lg space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-100 flex items-center justify-between">
-              <span>Amazon &amp; Flipkart</span>
-              <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-[9px] font-extrabold">
-                GLOBAL
+          <div className="p-5 rounded-2xl bg-white border-2 border-[#F05262]/80 shadow-md hover:shadow-lg transition-all space-y-1 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-[#FFF5F6] rounded-bl-full -z-0 pointer-events-none" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#F05262] flex items-center justify-between relative z-10">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#F05262]" />
+                <span>Amazon &amp; Flipkart</span>
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-[#FFE7E9] text-[#F05262] text-[9px] font-extrabold">
+                GLOBAL REACH
               </span>
             </span>
-            <div className="flex items-baseline gap-1 py-1">
-              <span className="text-xl font-light">{isIndia ? "₹" : "$"}</span>
-              <span className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+            <div className="flex items-baseline gap-1 py-1 relative z-10">
+              <span className="text-xl font-medium text-[#F05262]">{isIndia ? "₹" : "$"}</span>
+              <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
                 {amazonRoyalty}
               </span>
-              <span className="text-xs text-rose-100">/ copy</span>
+              <span className="text-xs font-semibold text-slate-500">/ copy</span>
             </div>
-            <p className="text-[11px] text-rose-100 leading-tight">
-              Includes 30% standard Amazon &amp; Flipkart marketplace fee.
+            <p className="text-[11px] text-slate-500 leading-tight relative z-10">
+              Standard 30% channel marketplace fee factored in automatically.
             </p>
           </div>
 
           {/* Card 3: Author Copy Price */}
-          <div className="p-5 rounded-2xl bg-[#0F223D] text-white shadow-lg space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between">
-              <span>Author Copy Cost</span>
-              <span className="px-2 py-0.5 rounded-full bg-slate-700 text-slate-200 text-[9px] font-bold">
+          <div className="p-5 rounded-2xl bg-white border-2 border-slate-300 shadow-md hover:shadow-lg transition-all space-y-1 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-bl-full -z-0 pointer-events-none" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between relative z-10">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-slate-500" />
+                <span>Author Copy Cost</span>
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[9px] font-bold">
                 PRINT ONLY
               </span>
             </span>
-            <div className="flex items-baseline gap-1 py-1">
-              <span className="text-xl font-light">{isIndia ? "₹" : "$"}</span>
-              <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+            <div className="flex items-baseline gap-1 py-1 relative z-10">
+              <span className="text-xl font-medium text-slate-500">{isIndia ? "₹" : "$"}</span>
+              <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
                 {format === "paperback" ? authorCopyPrice : "₹0"}
               </span>
-              <span className="text-xs text-slate-400">/ copy</span>
+              <span className="text-xs font-semibold text-slate-500">/ copy</span>
             </div>
-            <p className="text-[11px] text-slate-400 leading-tight">
-              Subsidized wholesale rate when ordering author copies.
+            <p className="text-[11px] text-slate-500 leading-tight relative z-10">
+              Wholesale subsidized print cost when ordering copies for yourself.
             </p>
           </div>
         </div>
 
         {/* Collapsible Full Deduction Breakdown */}
-        <div className="border border-slate-200 rounded-2xl overflow-hidden">
+        <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
           <button
             type="button"
             onClick={() => setShowBreakdown(!showBreakdown)}
@@ -397,7 +411,7 @@ export function RoyaltyCalculator() {
 
           {showBreakdown && (
             <div className="p-5 bg-white divide-y divide-slate-100 text-xs text-slate-700">
-              <div className="py-2 flex justify-between">
+              <div className="py-2.5 flex justify-between">
                 <span>Retail Selling Price (MRP):</span>
                 <strong className="text-slate-900 font-bold">
                   {isIndia ? `₹${effectivePrice}` : `$${effectivePrice}`}
@@ -405,29 +419,29 @@ export function RoyaltyCalculator() {
               </div>
               {format === "paperback" && (
                 <>
-                  <div className="py-2 flex justify-between text-slate-600">
+                  <div className="py-2.5 flex justify-between text-slate-600">
                     <span>Base In-House Printing Cost ({pages} pgs):</span>
                     <span>- {isIndia ? `₹${printCost}` : `$${printCost}`}</span>
                   </div>
-                  <div className="py-2 flex justify-between text-slate-600">
+                  <div className="py-2.5 flex justify-between text-slate-600">
                     <span>QC Inspection &amp; Packaging:</span>
                     <span>- {isIndia ? `₹${handlingFee}` : `$${handlingFee}`}</span>
                   </div>
-                  <div className="py-2 flex justify-between text-slate-600">
+                  <div className="py-2.5 flex justify-between text-slate-600">
                     <span>Amazon Channel Commission (30% on Amazon):</span>
                     <span>- {isIndia ? `₹${amazonMarketplaceFee}` : `$${amazonMarketplaceFee}`}</span>
                   </div>
                 </>
               )}
-              <div className="py-2 flex justify-between text-slate-600">
+              <div className="py-2.5 flex justify-between text-slate-600">
                 <span>Author Royalty Share:</span>
                 <span className="font-semibold text-emerald-700">
                   {plan === "breakthrough" ? "100% of Net Revenue" : "80% of Net Revenue"}
                 </span>
               </div>
-              <div className="pt-2 flex justify-between text-slate-900 font-bold">
+              <div className="pt-3 flex justify-between text-slate-900 font-bold border-t border-slate-200">
                 <span>Net Royalty Paid to Author per Amazon Sale:</span>
-                <span className="text-base font-extrabold text-[#F05262]">
+                <span className="text-base font-extrabold text-emerald-600">
                   {isIndia ? `₹${amazonRoyalty}` : `$${amazonRoyalty}`}
                 </span>
               </div>

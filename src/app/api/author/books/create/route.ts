@@ -1,6 +1,10 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromRequest } from "@/lib/auth";
 import { createNewBookForAuthor } from "@/lib/repository";
+import { dispatchActivityEmail } from "@/lib/email";
+import { applySecurityHeaders } from "@/lib/security";
+import { invalidateAuthorCaches } from "@/lib/redis";
 import { z } from "zod";
 
 const CreateBookSchema = z.object({
@@ -51,16 +55,36 @@ export async function POST(req: NextRequest) {
       parsed.data
     );
 
-    return NextResponse.json({
+    // Send Book Publishing Milestone Email via Nodemailer
+    dispatchActivityEmail("BOOK", {
+      name: user.name,
+      email: user.email,
+      userId: user.user_id,
+      authorId: user.author_id,
+      bookTitle: newBook.title,
+      isbn: newBook.isbn,
+      genre: newBook.genre,
+      status: newBook.status,
+      royaltyPerCopy: newBook.author_royalty_per_copy,
+      timestamp: new Date().toISOString(),
+    }).catch(() => {});
+
+    // Invalidate author caches for instant book catalog refresh
+    await invalidateAuthorCaches(user.author_id);
+
+    const response = NextResponse.json({
       success: true,
       book: newBook,
       message: `Congratulations! "${newBook.title}" has been created and submitted to BookLeaf's editorial review queue.`,
     });
+
+    return applySecurityHeaders(response, { isApiRoute: true });
   } catch (error) {
     console.error("[API Create Book POST] Error:", error);
-    return NextResponse.json(
+    const errResponse = NextResponse.json(
       { success: false, error: "Failed to create new book" },
       { status: 500 }
     );
+    return applySecurityHeaders(errResponse, { isApiRoute: true });
   }
 }

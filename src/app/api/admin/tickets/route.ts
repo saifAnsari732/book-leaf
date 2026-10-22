@@ -1,6 +1,8 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { queryAdminTickets } from "@/lib/repository";
+import { redisGet, redisSet, REDIS_KEYS } from "@/lib/redis";
 
 export async function GET(req: NextRequest) {
   try {
@@ -22,6 +24,19 @@ export async function GET(req: NextRequest) {
     }
 
     const sp = req.nextUrl.searchParams;
+
+    // Fast Tiered Cache lookup
+    const cacheKey = `${REDIS_KEYS.adminTickets}:${sp.toString() || "default"}`;
+    const cached = await redisGet<Record<string, unknown>>(cacheKey);
+    if (cached) {
+      return NextResponse.json({
+        success: true,
+        ...cached,
+        fromCache: true,
+        serverTimestamp: new Date().toISOString(),
+      });
+    }
+
     const sortParam = sp.get("sortBy");
     const sortBy =
       sortParam === "newest" || sortParam === "oldest" ? sortParam : "urgent";
@@ -38,6 +53,9 @@ export async function GET(req: NextRequest) {
       page: Number(sp.get("page")) || 1,
       limit: Number(sp.get("limit")) || 12,
     });
+
+    // Cache in Tiered L1 + L2 for 15s
+    await redisSet(cacheKey, result, 15);
 
     return NextResponse.json({
       success: true,

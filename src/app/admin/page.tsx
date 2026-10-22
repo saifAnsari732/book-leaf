@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PortalShell } from "@/components/layout/portal-shell";
 import { useFastQuery } from "@/lib/client-cache";
+import { DashboardSkeleton } from "@/components/ui/skeleton-loaders";
 import {
   AuditLogRecord,
   SafeUser,
@@ -84,11 +85,8 @@ export default function AdminOverviewPage() {
 
   if (!sessionQuery.data || !overviewQuery.data) {
     return (
-      <div className="min-h-screen bg-[#F9FAF7] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-8 h-8 border-2 border-[#0F4C3A] border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-medium text-slate-500">Loading Support Overview...</p>
-        </div>
+      <div className="min-h-screen bg-[#F9FAF7] p-6 lg:p-10 max-w-7xl mx-auto">
+        <DashboardSkeleton />
       </div>
     );
   }

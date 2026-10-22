@@ -1,7 +1,10 @@
+export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
+import { applySecurityHeaders } from "@/lib/security";
 
 export async function GET() {
-  const openApiSpec = {
+  try {
+    const openApiSpec = {
     openapi: "3.0.3",
     info: {
       title: "BookLeaf Publishing — Author Support & Communication Portal API",
@@ -231,5 +234,14 @@ export async function GET() {
     },
   };
 
-  return NextResponse.json(openApiSpec);
+    return applySecurityHeaders(NextResponse.json(openApiSpec), { isApiRoute: true });
+  } catch (err: any) {
+    return applySecurityHeaders(
+      NextResponse.json(
+        { success: false, error: "Failed to render API documentation", details: err?.message },
+        { status: 500 }
+      ),
+      { isApiRoute: true }
+    );
+  }
 }

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromRequest } from "@/lib/auth";
 import {
@@ -5,6 +6,7 @@ import {
   createWithdrawalRequest,
 } from "@/lib/repository";
 import { CreateWithdrawalInputSchema } from "@/types/domain";
+import { redisGet, redisSet, REDIS_KEYS, invalidateAuthorCaches } from "@/lib/redis";
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,12 +25,27 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Fast Tiered Cache lookup
+    const cacheKey = REDIS_KEYS.authorRoyalty(user.author_id);
+    const cached = await redisGet<Record<string, unknown>>(cacheKey);
+    if (cached) {
+      return NextResponse.json({
+        ...cached,
+        fromCache: true,
+      });
+    }
+
     const data = await getAuthorRoyaltyDashboard(user.author_id);
-    return NextResponse.json({
+    const payload = {
       success: true,
       author: user,
       ...data,
-    });
+    };
+
+    // Store in Tiered L1 + L2 for 30s
+    await redisSet(cacheKey, payload, 30);
+
+    return NextResponse.json(payload);
   } catch (error) {
     console.error("[API Royalty GET] Error:", error);
     return NextResponse.json(
@@ -93,6 +110,9 @@ export async function POST(req: NextRequest) {
       ifscCode: parsed.data.ifsc_code,
       bankName: parsed.data.bank_name,
     });
+
+    // Instant Tiered Cache invalidation for fresh balance
+    await invalidateAuthorCaches(user.author_id);
 
     return NextResponse.json({
       success: true,

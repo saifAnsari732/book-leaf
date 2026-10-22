@@ -1,6 +1,10 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserFromRequest } from "@/lib/auth";
-import { processInstantPayoutSimulation } from "@/lib/repository";
+import {
+  processInstantPayoutSimulation,
+  getAuthorRoyaltyDashboard,
+} from "@/lib/repository";
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,6 +23,26 @@ export async function POST(req: NextRequest) {
         { success: false, error: "withdrawalId is required" },
         { status: 400 }
       );
+    }
+
+    // Security Hardening: IDOR / BOLA Prevention Check
+    // If user is an AUTHOR, verify that the withdrawal record belongs to their author account
+    if (user.role === "AUTHOR" && user.author_id) {
+      const dashboard = await getAuthorRoyaltyDashboard(user.author_id);
+      const isOwned = dashboard.withdrawals.some(
+        (w) => w.withdrawal_id === withdrawalId
+      );
+
+      if (!isOwned) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "Access denied. You cannot process or modify payout records belonging to another author.",
+          },
+          { status: 403 }
+        );
+      }
     }
 
     const updated = await processInstantPayoutSimulation(withdrawalId);

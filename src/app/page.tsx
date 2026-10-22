@@ -25,7 +25,6 @@ import {
   Mail,
   Menu,
   MessageCircle,
-  Play,
   Search,
   ShieldCheck,
   Sparkles,
@@ -39,15 +38,25 @@ import {
 } from "lucide-react";
 import { RoyaltyCalculator } from "@/components/calculator/royalty-calculator";
 import { FloatingAgentChat } from "@/components/support/floating-agent-chat";
+import AuthorVideoReel from "@/components/AuthorVideoReel";
+import { RazorpayModal } from "@/components/payment/RazorpayModal";
+import { useAuth } from "@/context/AuthContext";
 
 export default function HomePage() {
   const router = useRouter();
+  const { user, role: currentRole, isAuthenticated } = useAuth();
   const [loggingInAs, setLoggingInAs] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [faqSearchQuery, setFaqSearchQuery] = useState("");
+  const [selectedFaqCategory, setSelectedFaqCategory] = useState<string>("All");
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [sharkModalOpen, setSharkModalOpen] = useState(false);
+  const [checkoutPlan, setCheckoutPlan] = useState<{
+    planId?: string;
+    planName: string;
+    amount: number;
+  } | null>(null);
 
   const handleQuickLogin = async (email: string, role: "AUTHOR" | "ADMIN") => {
     try {
@@ -86,24 +95,68 @@ export default function HomePage() {
 
   const faqs = [
     {
+      id: "faq-timeline",
+      category: "Publishing",
+      categoryLabel: "Timeline & SLA",
       q: "What is the typical book publication timeline at BookLeaf?",
-      a: "Standard Publishing takes 30 to 45 business days from manuscript approval to live retail distribution across Amazon, Flipkart, and the BookLeaf Store. Bestseller Breakthrough packages are fast-tracked to 15 to 20 business days with priority typesetting and proofing.",
+      a: "Standard Publishing takes 30 to 45 business days from final manuscript approval to live retail distribution across Amazon, Flipkart, and the BookLeaf Store. Bestseller Breakthrough packages are fast-tracked to 15 to 20 business days with dedicated priority typesetting, proof generation, and expedited ISBN allocation.",
+      highlights: ["30-45 Days Standard SLA", "15-20 Days Fast-Track Option", "Live Dashboard Proof Tracking"],
     },
     {
-      q: "How are book royalties calculated and paid?",
-      a: "Authors earn 80% to 100% of the net profit on every copy sold (calculated as MRP minus actual printing, platform, and shipping costs). Royalties are paid quarterly directly into your bank account or via instant 24-hour Razorpay payout links once the ₹1,000 threshold is reached.",
+      id: "faq-royalty",
+      category: "Royalties",
+      categoryLabel: "100% Royalty Share",
+      q: "How are book royalties calculated and disbursed to authors?",
+      a: "Authors earn 100% of the net profit on every copy sold (calculated as retail MRP minus transparent print production, retailer fee, and postage). Earnings accrue in real-time in your Author Portal wallet and are paid directly into your verified bank account via automated IMPS or instant Razorpay transfer once the ₹1,000 threshold is reached.",
+      highlights: ["100% Net Profit Share", "Automated IMPS Bank Settlement", "Zero Hidden Platform Deductions"],
     },
     {
-      q: "Do I retain 100% of my copyrights and intellectual property?",
-      a: "Yes! All BookLeaf publishing contracts are completely non-exclusive. You retain 100% copyright, intellectual property, and film/audio adaptation rights over your manuscript, poems, and book title.",
+      id: "faq-copies",
+      category: "Royalties",
+      categoryLabel: "Author Copies",
+      q: "Can I order physical author copies at subsidized printer rates?",
+      a: "Yes! As a registered BookLeaf author, you can order author copies at exclusive subsidized printing rates—up to 60% below retail MRP. There are no mandatory minimum order quantities, and you can order anytime from your dashboard with doorstep courier delivery.",
+      highlights: ["Up to 60% Subsidized Printing Discount", "Order from 10 Copies Onward", "Doorstep Express Courier"],
     },
     {
-      q: "How does the AI Support Co-Pilot help authors?",
-      a: "Our integrated Gemini 3.8 Flash AI Co-Pilot slices BookLeaf's official publishing policies and your live database records to provide instant, factual answers on ISBN tracking, royalties, print quality reprints, and retail stock synchronization in seconds.",
+      id: "faq-copyright",
+      category: "Copyright",
+      categoryLabel: "Legal & IP Ownership",
+      q: "Do I retain 100% of my copyrights, film rights, and intellectual property?",
+      a: "Yes! All BookLeaf publishing contracts are completely non-exclusive. You retain 100% legal copyright, intellectual property, translation rights, and film/audio adaptation rights over your manuscript, poems, and book title.",
+      highlights: ["100% Non-Exclusive Agreement", "Full Film & Audio Rights Retained", "No Lock-in Period"],
     },
     {
-      q: "Can I manage multiple books from a single author account?",
-      a: "Absolutely! Your BookLeaf Author Portal allows you to track all your published titles and in-production manuscripts simultaneously from a unified dashboard, including individual sales metrics, lifetime royalty ledger, and per-title support threads.",
+      id: "faq-isbn",
+      category: "Copyright",
+      categoryLabel: "Official Registration",
+      q: "Will my book receive an official Government-registered ISBN and barcode?",
+      a: "Every published title receives a unique 13-digit ISBN officially registered with Raja Rammohun Roy National Agency (Ministry of Education, Government of India), complete with a high-resolution retail EAN barcode printed on the back cover for worldwide bookstore scanning.",
+      highlights: ["Official Ministry of Education ISBN", "Retail EAN-13 Barcode Included", "Global Bibliographic Cataloged"],
+    },
+    {
+      id: "faq-distribution",
+      category: "Publishing",
+      categoryLabel: "Global Distribution",
+      q: "Where will my book be available for readers to purchase?",
+      a: "Your paperback and hardcover editions are distributed across Amazon India (Prime eligible), Flipkart, and the BookLeaf Global Online Store. International distribution packages also place your paperback on Amazon US, Amazon UK, and IngramSpark global bookstore distribution.",
+      highlights: ["Amazon India Prime", "Flipkart Nationwide Logistics", "Amazon US & UK Global Distribution"],
+    },
+    {
+      id: "faq-ai-copilot",
+      category: "AI Tech",
+      categoryLabel: "Nishtha AI Assistant",
+      q: "How does the Nishtha Gemini AI Co-Pilot assist authors 24/7?",
+      a: "Integrated with Google Gemini, Nishtha is trained on BookLeaf's official publishing guidelines, ISBN databases, and royalty schedules. She answers publishing queries, explains royalty breakdowns, provides book promotion prompts, and assists in raising high-priority support tickets.",
+      highlights: ["24/7 Instant Answers", "Grounded in Official BookLeaf Policies", "Integrated Ticket Escalation"],
+    },
+    {
+      id: "faq-multi-book",
+      category: "AI Tech",
+      categoryLabel: "Author Portal",
+      q: "Can I manage multiple published titles from a single author account?",
+      a: "Yes! Your BookLeaf Author Portal allows you to track all your published titles and in-production manuscripts simultaneously from a unified dashboard, with title-wise sales reports, consolidated wallet balances, and direct author copy orders.",
+      highlights: ["Consolidated Multi-Title Management", "Title-Wise Sales Breakdowns", "Unified KYC & Wallet"],
     },
   ];
 
@@ -112,10 +165,10 @@ export default function HomePage() {
       {/* ====================================================================
           MAIN NAVBAR (Exact Match to User Screenshot 1)
           ==================================================================== */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          {/* Logo (Exact Coral Box with White Slash + BookLeaf Publishing) */}
-          <Link href="/" className="flex items-center gap-3 group">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-2xs hover:shadow-xs transition-all">
+        <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 h-20 flex items-center justify-between">
+          {/* Logo (Clean Editorial Wordmark with BookLeaf Icon) */}
+          <Link href="/" className="flex items-center gap-3 group shrink-0">
             <div className="w-10 h-10 rounded-lg bg-[#F05262] flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
               <span className="font-sans text-2xl font-light leading-none -rotate-12 select-none">
                 /
@@ -125,17 +178,14 @@ export default function HomePage() {
               <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-[#2F2E2E] leading-tight">
                 BookLeaf
               </span>
-              <span className="text-xs sm:text-sm font-medium tracking-tight text-[#2F2E2E] -mt-1">
+              <span className="text-xs sm:text-sm font-semibold tracking-wide text-slate-500 uppercase -mt-0.5">
                 Publishing
-              </span>
-              <span className="text-[10px] text-slate-400 font-mono -mt-0.5 hidden sm:block">
-                www.bookleafpub.com
               </span>
             </div>
           </Link>
 
           {/* Navigation Links from Screenshot */}
-          <nav className="hidden lg:flex items-center gap-8 text-sm font-medium text-slate-700">
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-8 text-sm font-medium text-slate-700">
             <Link href="/" className="text-[#F05262] font-semibold transition">
               Home
             </Link>
@@ -151,19 +201,32 @@ export default function HomePage() {
             <Link href="#portals" className="hover:text-[#F05262] transition">
               Support Portals
             </Link>
+            <Link href="#author-stories" className="hover:text-[#F05262] transition">
+              Author Stories
+            </Link>
             <Link href="#faq" className="hover:text-[#F05262] transition">
               FAQ
             </Link>
           </nav>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="px-5 py-2.5 rounded-full text-sm font-semibold text-[#F05262] border border-[#F05262]/30 hover:bg-[#FFE7E9]/50 transition"
-            >
-              Sign In
-            </Link>
+          <div className="flex items-center gap-3 shrink-0">
+            {isAuthenticated ? (
+              <Link
+                href="/dashboard"
+                className="px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold text-[#0F4C3A] bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 transition flex items-center gap-2 shadow-xs"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Dashboard ({currentRole === "ADMIN" ? "Admin" : "Author"})</span>
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="px-5 py-2.5 rounded-full text-sm font-semibold text-[#F05262] border border-[#F05262]/30 hover:bg-[#FFE7E9]/50 transition"
+              >
+                Sign In
+              </Link>
+            )}
             <Link
               href="/create_book"
               className="hidden sm:inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#F05262] hover:bg-[#e04555] text-white shadow-xs hover:shadow transition"
@@ -238,7 +301,7 @@ export default function HomePage() {
                 Author Dashboard &amp; Royalty Wallet
               </Link>
               <Link
-                href="/author/tickets"
+                href="/author-dashboard?menu=Support%20Tickets"
                 onClick={() => setMobileNavOpen(false)}
                 className="hover:text-[#F05262]"
               >
@@ -275,17 +338,17 @@ export default function HomePage() {
       {/* ====================================================================
           HERO SECTION (Exact Match to User Screenshot 1: "Publishing Made Easy")
           ==================================================================== */}
-      <section className="relative overflow-hidden pt-10 pb-20 md:pt-16 md:pb-28 bg-gradient-to-b from-[#FFF5F6] via-[#FFF9FA] to-white">
+      <section className="relative overflow-hidden pt-8 pb-16 md:pt-14 md:pb-24 bg-gradient-to-b from-[#FFF5F6] via-[#FFF9FA] to-white">
         {/* Soft Organic Rose/Pink Cloud Curve Background */}
         <div className="absolute top-0 right-0 w-3/5 h-full bg-[#FFE7E9]/40 rounded-bl-[140px] pointer-events-none -z-10" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+        <div className="w-full max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left Content Column */}
             <div className="lg:col-span-6 flex flex-col items-start">
-              {/* Main Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#F05262] leading-[1.12] mb-6">
-                Publishing Made Easy
+              {/* Main Headline with Senior Typography & Intentional Coral Accent */}
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.12] mb-6">
+                Publishing <span className="text-[#F05262]">Made Easy</span>
               </h1>
 
               {/* Exact Subtitle from Website */}
@@ -305,7 +368,7 @@ export default function HomePage() {
                   <ArrowRight className="w-4 h-4" />
                 </Link>
 
-                {/* Social Proof Pill from Screenshot 1 */}
+                {/* Social Proof Pill with 5-Star Validation */}
                 <div className="flex items-center gap-3 bg-white px-4 py-2.5 rounded-full border border-slate-200/90 shadow-2xs">
                   <div className="flex -space-x-2 overflow-hidden">
                     <img
@@ -323,11 +386,14 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="text-left">
-                    <div className="flex items-center gap-1 text-xs font-bold text-slate-900 leading-none">
-                      <span>3,300+</span>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 leading-none">
+                      <div className="flex text-amber-400 text-[11px] tracking-tighter">
+                        ★★★★★
+                      </div>
+                      <span className="font-extrabold">4.9/5</span>
                     </div>
-                    <span className="text-[11px] text-slate-500 block">
-                      google reviews
+                    <span className="text-[11px] text-slate-500 block pt-0.5">
+                      3,300+ Google Reviews
                     </span>
                   </div>
                 </div>
@@ -426,29 +492,25 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-black/60 via-transparent to-black/70 sm:to-black/30 pointer-events-none" />
 
           {/* Floating Text Section (UI Float Text) - Positioned neatly in the right aquatic tank zone */}
-          <div className="absolute top-1/2 -translate-y-1/2 right-4 sm:right-8 md:right-12 lg:right-20 xl:right-32 text-center sm:text-left z-10 max-w-md lg:max-w-lg">
-            <div className="space-y-1 sm:space-y-2">
-              <span className="text-lg sm:text-2xl lg:text-[26px] font-bold text-white tracking-normal block drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] font-sans">
+          <div className="absolute top-1/2 -translate-y-1/2 right-4 sm:right-8 md:right-12 lg:right-16 xl:right-24 text-left z-10 max-w-sm sm:max-w-md">
+            <div className="bg-slate-950/70 backdrop-blur-md border border-white/20 p-5 sm:p-7 rounded-3xl shadow-2xl space-y-2">
+              <span className="text-xs sm:text-sm font-bold text-rose-300 tracking-wider uppercase block">
                 As Seen On
               </span>
-              <h2 className="text-2xl sm:text-4xl lg:text-[44px] font-bold text-white uppercase tracking-tight leading-[1.15] drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)] font-sans">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight">
                 SHARK TANK INDIA
               </h2>
+              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed pt-1">
+                Pitching the future of author-first self-publishing on national television with 100% royalties.
+              </p>
 
-              <div className="pt-3 sm:pt-4 flex flex-wrap items-center justify-center sm:justify-start gap-3">
-                <button
-                  onClick={() => setSharkModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/20 hover:bg-white text-white hover:text-slate-900 backdrop-blur-md border border-white/40 font-semibold text-xs tracking-wider uppercase transition-all duration-300 shadow-xl cursor-pointer hover:scale-105"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Watch Pitch Story</span>
-                </button>
+              <div className="pt-3 sm:pt-4 flex items-center gap-3">
                 <Link
                   href="/create_book"
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#F05262] hover:bg-[#d94151] text-white text-xs font-bold transition-all shadow-lg hover:scale-105"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F05262] hover:bg-[#d94151] text-white text-xs sm:text-sm font-bold transition-all shadow-lg hover:shadow-xl hover:scale-105"
                 >
                   <span>Publish My Book</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
             </div>
@@ -461,9 +523,9 @@ export default function HomePage() {
           ==================================================================== */}
       <section id="features" className="py-16 sm:py-20 bg-white border-b border-slate-100 scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12 lg:gap-x-16 lg:gap-y-14">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
             {/* Feature 1: Publish your book faster */}
-            <div className="flex items-start gap-5 sm:gap-6 group">
+            <div className="flex items-start gap-5 sm:gap-6 group bg-slate-50/70 hover:bg-white border border-slate-200/80 hover:border-[#F05262]/30 p-6 sm:p-7 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300">
               <div className="shrink-0 w-20 sm:w-24 transition-transform duration-300 group-hover:scale-105">
                 <img
                   src="/images/bookleaf/scraped/feature-publish-faster.png"
@@ -491,7 +553,7 @@ export default function HomePage() {
             </div>
 
             {/* Feature 2: Unbeatable Pricing */}
-            <div className="flex items-start gap-5 sm:gap-6 group">
+            <div className="flex items-start gap-5 sm:gap-6 group bg-slate-50/70 hover:bg-white border border-slate-200/80 hover:border-[#F05262]/30 p-6 sm:p-7 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300">
               <div className="shrink-0 w-20 sm:w-24 transition-transform duration-300 group-hover:scale-105">
                 <img
                   src="/images/bookleaf/scraped/feature-unbeatable-pricing.png"
@@ -519,7 +581,7 @@ export default function HomePage() {
             </div>
 
             {/* Feature 3: Highest Royalty */}
-            <div className="flex items-start gap-5 sm:gap-6 group">
+            <div className="flex items-start gap-5 sm:gap-6 group bg-slate-50/70 hover:bg-white border border-slate-200/80 hover:border-[#F05262]/30 p-6 sm:p-7 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300">
               <div className="shrink-0 w-20 sm:w-24 transition-transform duration-300 group-hover:scale-105">
                 <img
                   src="/images/bookleaf/scraped/feature-highest-royalty.png"
@@ -547,7 +609,7 @@ export default function HomePage() {
             </div>
 
             {/* Feature 4: Live sales report */}
-            <div className="flex items-start gap-5 sm:gap-6 group">
+            <div className="flex items-start gap-5 sm:gap-6 group bg-slate-50/70 hover:bg-white border border-slate-200/80 hover:border-[#F05262]/30 p-6 sm:p-7 rounded-2xl shadow-xs hover:shadow-md transition-all duration-300">
               <div className="shrink-0 w-20 sm:w-24 transition-transform duration-300 group-hover:scale-105">
                 <img
                   src="/images/bookleaf/scraped/feature-live-sales.png"
@@ -603,12 +665,16 @@ export default function HomePage() {
       <section id="publishing-packages" className="py-20 bg-gradient-to-b from-[#FFF5F6] to-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header Banner */}
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#F05262] tracking-tight mb-3">
+          <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border border-indigo-200 text-indigo-700 text-xs font-bold uppercase tracking-wider shadow-2xs">
+              <Sparkles className="w-4 h-4 text-indigo-600 animate-pulse" />
+              <span>NEW: Powered by Google Gemini AI Publishing Studio</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#F05262] tracking-tight">
               Publishing Packages
             </h2>
             <p className="text-sm sm:text-base text-slate-600">
-              Choose the perfect publishing plan tailored to your book&apos;s goals.
+              Choose the perfect publishing plan tailored to your book&apos;s goals. All packages now include built-in Google Gemini AI writing &amp; support tools.
             </p>
           </div>
 
@@ -617,54 +683,86 @@ export default function HomePage() {
             {/* Package 1: Basic */}
             <div className="bg-white rounded-3xl border-2 border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition flex flex-col justify-between">
               {/* Card Header */}
-              <div className="bg-[#F05262] text-white p-8 text-center">
+              <div className="bg-[#F05262] text-white p-8 text-center relative">
+                <span className="inline-block px-3 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold tracking-wider uppercase mb-1.5">
+                  Gemini AI Enabled
+                </span>
                 <h3 className="text-2xl font-bold">Basic</h3>
-                <p className="text-3xl font-extrabold mt-1">$649</p>
+                <p className="text-3xl font-extrabold mt-1 font-sans">₹3,999</p>
+                <p className="text-[11px] text-white/85 font-medium mt-1">
+                  All inclusive • One-time fee
+                </p>
               </div>
 
               {/* Card Body */}
               <div className="p-8 flex flex-col justify-between flex-1">
-                <ul className="space-y-3.5 text-xs sm:text-sm text-slate-700 mb-8">
+                <ul className="space-y-3 text-xs sm:text-sm text-slate-700 mb-8">
+                  {/* Highlighted Gemini AI Features */}
+                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 text-indigo-950 font-bold shadow-2xs">
+                    <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <span>Gemini AI Book Blurb &amp; Title Generator</span>
+                  </li>
+                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 text-indigo-950 font-bold shadow-2xs">
+                    <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <span>24/7 Nishtha AI Publishing Concierge</span>
+                  </li>
+
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Personal Publishing Manager</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Paperback + eBook Publishing</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Standard Cover Design + Typesetting</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>ISBN + Bar Code</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>eBook and Paperback Distribution</span>
                   </li>
-                  <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                  <li className="flex items-center gap-3 font-semibold text-slate-900">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Sales Reporting and 100% Royalty</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Social Media Marketing Templates</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Post Publishing Support</span>
                   </li>
                 </ul>
 
-                <Link
-                  href="/create_book?plan=basic"
-                  className="block text-center w-full py-3.5 rounded-full bg-[#F05262] hover:bg-[#e04555] text-white font-bold text-sm transition shadow-sm"
-                >
-                  Get Started
-                </Link>
+                <div className="space-y-2.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCheckoutPlan({
+                        planId: "basic",
+                        planName: "Basic Publishing Plan",
+                        amount: 3999,
+                      })
+                    }
+                    className="w-full py-3.5 rounded-full bg-slate-900 hover:bg-[#F05262] text-white font-bold text-xs sm:text-sm transition-all duration-200 shadow-xs flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-white/90" />
+                    <span>Choose Plan</span>
+                  </button>
+                  <Link
+                    href="/create_book?plan=basic"
+                    className="block text-center w-full py-2.5 rounded-full border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition"
+                  >
+                    Start with Basic Form →
+                  </Link>
+                </div>
               </div>
             </div>
 
@@ -672,98 +770,170 @@ export default function HomePage() {
             <div className="bg-white rounded-3xl border-2 border-[#F05262] overflow-hidden shadow-lg hover:shadow-2xl transition flex flex-col justify-between relative transform lg:-translate-y-2">
               <div className="bg-[#F05262] text-white p-8 text-center relative">
                 <span className="absolute top-3 right-4 px-3 py-0.5 rounded-full bg-white text-[#F05262] text-[10px] font-extrabold uppercase tracking-wider">
-                  Most Popular
+                  MOST POPULAR
+                </span>
+                <span className="inline-block px-3 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold tracking-wider uppercase mb-1.5">
+                  Gemini AI Pro Co-Pilot
                 </span>
                 <h3 className="text-2xl font-bold">Premium</h3>
-                <p className="text-3xl font-extrabold mt-1">$899</p>
+                <p className="text-3xl font-extrabold mt-1 font-sans">₹7,999</p>
+                <p className="text-[11px] text-white/90 font-medium mt-1">
+                  All inclusive • 5 Author Copies included
+                </p>
               </div>
 
               <div className="p-8 flex flex-col justify-between flex-1">
-                <ul className="space-y-3.5 text-xs sm:text-sm text-slate-700 mb-8">
+                <ul className="space-y-3 text-xs sm:text-sm text-slate-700 mb-8">
+                  {/* Highlighted Gemini AI Features */}
+                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-rose-50 to-purple-50 border border-rose-200 text-rose-950 font-bold shadow-2xs">
+                    <Sparkles className="w-4 h-4 text-[#F05262] shrink-0" />
+                    <span>Gemini AI Manuscript Polish &amp; Proofreading (Up to 30K words)</span>
+                  </li>
+                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-rose-50 to-purple-50 border border-rose-200 text-rose-950 font-bold shadow-2xs">
+                    <Sparkles className="w-4 h-4 text-[#F05262] shrink-0" />
+                    <span>Gemini AI Chapter Synopsis &amp; Outline Creator</span>
+                  </li>
+                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-rose-50 to-purple-50 border border-rose-200 text-rose-950 font-bold shadow-2xs">
+                    <Sparkles className="w-4 h-4 text-[#F05262] shrink-0" />
+                    <span>Gemini AI 15-Day Amazon Ad Copy &amp; SEO Keywords</span>
+                  </li>
+
                   <li className="flex items-center gap-3 font-semibold text-slate-900">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Everything in Basic</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
-                    <span>Editing & Proof Reading (Up to 30K words)</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Editing &amp; Proof Reading (Up to 30K words)</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Customised Cover Design</span>
                   </li>
-                  <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
-                    <span>5 Complimentary Copies</span>
+                  <li className="flex items-center gap-3 font-semibold text-slate-900">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>5 Complimentary Author Copies</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
-                    <span>Author Interview</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Author Spotlight Interview</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Amazon Ad Campaign (15 Days)</span>
                   </li>
                 </ul>
 
-                <Link
-                  href="/create_book?plan=premium"
-                  className="block text-center w-full py-3.5 rounded-full bg-[#F05262] hover:bg-[#e04555] text-white font-bold text-sm transition shadow-md"
-                >
-                  Get Started
-                </Link>
+                <div className="space-y-2.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCheckoutPlan({
+                        planId: "premium",
+                        planName: "Premium Publishing Plan",
+                        amount: 7999,
+                      })
+                    }
+                    className="w-full py-3.5 rounded-full bg-[#F05262] hover:bg-[#e04555] text-white font-bold text-xs sm:text-sm transition shadow-md flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-white/90" />
+                    <span>Choose Plan</span>
+                  </button>
+                  <Link
+                    href="/create_book?plan=premium"
+                    className="block text-center w-full py-2.5 rounded-full border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition"
+                  >
+                    Start with Premium Form →
+                  </Link>
+                </div>
               </div>
             </div>
 
             {/* Package 3: Professional */}
             <div className="bg-white rounded-3xl border-2 border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition flex flex-col justify-between">
-              <div className="bg-[#F05262] text-white p-8 text-center">
+              <div className="bg-[#F05262] text-white p-8 text-center relative">
+                <span className="inline-block px-3 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold tracking-wider uppercase mb-1.5">
+                  Full Gemini AI Studio
+                </span>
                 <h3 className="text-2xl font-bold">Professional</h3>
-                <p className="text-3xl font-extrabold mt-1">$1449</p>
+                <p className="text-3xl font-extrabold mt-1 font-sans">₹14,999</p>
+                <p className="text-[11px] text-white/85 font-medium mt-1">
+                  All inclusive • 10 Author Copies + Hardcover
+                </p>
               </div>
 
               <div className="p-8 flex flex-col justify-between flex-1">
-                <ul className="space-y-3.5 text-xs sm:text-sm text-slate-700 mb-8">
+                <ul className="space-y-3 text-xs sm:text-sm text-slate-700 mb-8">
+                  {/* Highlighted Gemini AI Features */}
+                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-amber-50 via-purple-50 to-indigo-50 border border-indigo-200 text-slate-900 font-bold shadow-2xs">
+                    <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <span>Full Gemini AI Manuscript Writing Studio (Chapters &amp; Plots)</span>
+                  </li>
+                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-amber-50 via-purple-50 to-indigo-50 border border-indigo-200 text-slate-900 font-bold shadow-2xs">
+                    <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <span>Gemini AI Amazon Ranking &amp; Keyword Optimizer</span>
+                  </li>
+                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-amber-50 via-purple-50 to-indigo-50 border border-indigo-200 text-slate-900 font-bold shadow-2xs">
+                    <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <span>Instant AI Ticket Triage &amp; 2-Hour Priority SLA</span>
+                  </li>
+
                   <li className="flex items-center gap-3 font-semibold text-slate-900">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Everything in Premium</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Customised Pagination + Typesetting</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
-                    <span>Up to 20 B&W Illustrations</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Up to 20 B&amp;W Illustrations</span>
+                  </li>
+                  <li className="flex items-center gap-3 font-semibold text-slate-900">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>10 Complimentary Author Copies</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
-                    <span>10 Complimentary Copies</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Amazon Ad Campaign (30 Days)</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Amazon Ranking Optimisation</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
-                    <span>Amazon Author Page</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Amazon Author Page Setup</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#F05262] shrink-0" />
-                    <span>Book Giveaway Campaign</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>National Press Release Distribution</span>
                   </li>
                 </ul>
 
-                <Link
-                  href="/create_book?plan=professional"
-                  className="block text-center w-full py-3.5 rounded-full bg-[#F05262] hover:bg-[#e04555] text-white font-bold text-sm transition shadow-sm"
-                >
-                  Get Started
-                </Link>
+                <div className="space-y-2.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCheckoutPlan({
+                        planId: "professional",
+                        planName: "Professional Publishing Plan",
+                        amount: 14999,
+                      })
+                    }
+                    className="w-full py-3.5 rounded-full bg-slate-900 hover:bg-[#F05262] text-white font-bold text-xs sm:text-sm transition-all duration-200 shadow-xs flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-white/90" />
+                    <span>Choose Plan</span>
+                  </button>
+                  <Link
+                    href="/create_book?plan=professional"
+                    className="block text-center w-full py-2.5 rounded-full border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition"
+                  >
+                    Start with Professional Form →
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -1009,49 +1179,261 @@ export default function HomePage() {
       </section>
 
       {/* ====================================================================
-          FAQ SECTION
+          REAL STORIES & TESTIMONIALS - AUTHOR VIDEO REEL (YouTube Scraped)
           ==================================================================== */}
-      <section id="faq" className="py-16 bg-[#FFF5F6]/30 border-t border-slate-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <span className="text-xs font-bold text-[#F05262] uppercase tracking-wider block mb-2">
-              Support & Policies
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
+      <AuthorVideoReel />
+
+      {/* ====================================================================
+          FAQ SECTION (Executive Senior Split Layout with Interactive Category Filters)
+          ==================================================================== */}
+      <section id="faq" className="py-20 sm:py-28 bg-[#F9FAF7] border-t border-slate-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#FFF5F6] to-[#FFE7E9] border border-[#F05262]/20 text-[#F05262] text-xs font-bold uppercase tracking-wider shadow-2xs">
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>Support &amp; Author Knowledge Base</span>
+            </div>
+
+            <h2 className="font-serif text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
               Frequently Asked Questions
             </h2>
-            <p className="text-slate-600 text-sm sm:text-base">
-              Clear answers grounded in BookLeaf official policies and Freshdesk SLAs.
+
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+              Clear, transparent answers grounded in BookLeaf official author agreements, 100% royalty standards, and global distribution network.
             </p>
           </div>
 
-          <div className="space-y-4">
-            {faqs.map((faq, idx) => {
-              const isOpen = openFaq === idx;
-              return (
-                <div
-                  key={idx}
-                  className="rounded-2xl border border-slate-200 bg-white overflow-hidden transition"
-                >
-                  <button
-                    onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className="w-full px-6 py-4.5 text-left flex items-center justify-between gap-4 font-semibold text-sm sm:text-base text-slate-900 hover:text-[#F05262] transition"
-                  >
-                    <span>{faq.q}</span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0 ${
-                        isOpen ? "transform rotate-180 text-[#F05262]" : ""
+          {/* 2-Column Split Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left Column: Categories Navigation & Support Concierge (4 cols) */}
+            <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-28">
+              {/* Category Filter Pills */}
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs space-y-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 block mb-2">
+                  Browse by Topic
+                </span>
+
+                {[
+                  { id: "All", label: "All Questions", count: faqs.length, icon: HelpCircle },
+                  { id: "Publishing", label: "Publishing & Timeline", count: faqs.filter(f => f.category === "Publishing").length, icon: BookOpen },
+                  { id: "Royalties", label: "Royalties & Payouts", count: faqs.filter(f => f.category === "Royalties").length, icon: IndianRupee },
+                  { id: "Copyright", label: "Copyright & Legal", count: faqs.filter(f => f.category === "Copyright").length, icon: ShieldCheck },
+                  { id: "AI Tech", label: "AI Co-Pilot & Tech", count: faqs.filter(f => f.category === "AI Tech").length, icon: Sparkles },
+                ].map((cat) => {
+                  const Icon = cat.icon;
+                  const isSelected = selectedFaqCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedFaqCategory(cat.id);
+                        setOpenFaq(null);
+                      }}
+                      className={`w-full h-11 px-3.5 rounded-xl flex items-center justify-between text-xs font-semibold transition-all group ${
+                        isSelected
+                          ? "bg-gradient-to-r from-[#FFF5F6] to-[#FFE7E9] text-[#F05262] font-bold border border-[#F05262]/25 shadow-2xs"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent"
                       }`}
-                    />
-                  </button>
-                  {isOpen && (
-                    <div className="px-6 pb-5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100">
-                      {faq.a}
-                    </div>
-                  )}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Icon
+                          className={`w-4 h-4 transition-colors ${
+                            isSelected ? "text-[#F05262]" : "text-slate-400 group-hover:text-slate-700"
+                          }`}
+                        />
+                        <span>{cat.label}</span>
+                      </div>
+                      <span
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                          isSelected
+                            ? "bg-[#F05262] text-white"
+                            : "bg-slate-100 text-slate-500"
+                        }`}
+                      >
+                        {cat.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Author Support Concierge Card */}
+              <div className="bg-gradient-to-br from-[#FFF5F6] via-white to-[#FFF0F2] rounded-2xl p-6 border border-[#F05262]/20 shadow-2xs space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#F05262] to-rose-400 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                    N
+                  </div>
+                  <div>
+                    <h4 className="font-serif text-base font-bold text-slate-900">
+                      Need Personal Guidance?
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      Our Publishing Concierge is here to help
+                    </p>
+                  </div>
                 </div>
-              );
-            })}
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Have a specific question about your poetry collection, novel manuscript, or royalty breakdown? Speak directly with our editorial team.
+                </p>
+
+                <div className="space-y-2 pt-1">
+                  <a
+                    href="https://wa.me/911943550930?text=Hello%20BookLeaf%20Publishing%20Team,%20I%20have%20a%20question%20about%20publishing%20my%20book."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full h-11 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm hover:shadow"
+                  >
+                    <MessageCircle className="w-4 h-4 fill-white" />
+                    <span>Chat on WhatsApp (+91 194 355 0930)</span>
+                  </a>
+
+                  <Link
+                    href="/author-dashboard?menu=Raise%20a%20Query"
+                    className="w-full h-10 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs transition flex items-center justify-center gap-1.5"
+                  >
+                    <span>Raise a Priority Support Query</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                  </Link>
+                </div>
+
+                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    Live Support Desk
+                  </span>
+                  <span className="font-semibold text-slate-700">&lt; 4 hr turnaround</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Interactive Search & Elevated Accordion (8 cols) */}
+            <div className="lg:col-span-8 space-y-5">
+              {/* Keyword Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={faqSearchQuery}
+                  onChange={(e) => setFaqSearchQuery(e.target.value)}
+                  placeholder="Search questions (e.g. royalty, timeline, copyright, print copies...)"
+                  className="w-full pl-11 pr-10 py-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#F05262] transition"
+                />
+                {faqSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setFaqSearchQuery("")}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {/* Accordion Cards List */}
+              {(() => {
+                const filteredFaqs = faqs.filter((faq) => {
+                  const matchesCategory =
+                    selectedFaqCategory === "All" || faq.category === selectedFaqCategory;
+                  const matchesSearch =
+                    !faqSearchQuery.trim() ||
+                    faq.q.toLowerCase().includes(faqSearchQuery.toLowerCase()) ||
+                    faq.a.toLowerCase().includes(faqSearchQuery.toLowerCase()) ||
+                    faq.categoryLabel.toLowerCase().includes(faqSearchQuery.toLowerCase());
+                  return matchesCategory && matchesSearch;
+                });
+
+                if (filteredFaqs.length === 0) {
+                  return (
+                    <div className="bg-white rounded-2xl border border-slate-200/90 p-10 text-center space-y-3">
+                      <HelpCircle className="w-8 h-8 text-slate-300 mx-auto" />
+                      <p className="text-sm font-bold text-slate-700">No matching questions found</p>
+                      <p className="text-xs text-slate-400">
+                        Try searching with different keywords or switch back to &quot;All Questions&quot;.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFaqSearchQuery("");
+                          setSelectedFaqCategory("All");
+                        }}
+                        className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
+                      >
+                        Reset Search Filters
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-3.5">
+                    {filteredFaqs.map((faq, idx) => {
+                      const isOpen = openFaq === idx;
+                      return (
+                        <div
+                          key={faq.id || idx}
+                          className={`rounded-2xl border bg-white overflow-hidden transition-all duration-200 shadow-2xs ${
+                            isOpen
+                              ? "border-[#F05262]/40 shadow-xs ring-1 ring-[#F05262]/10"
+                              : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setOpenFaq(isOpen ? null : idx)}
+                            className="w-full p-5 sm:p-6 text-left flex items-start justify-between gap-4 group cursor-pointer"
+                          >
+                            <div className="space-y-1.5 flex-1 pr-2">
+                              <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-[#F05262] bg-[#FFF5F6] px-2 py-0.5 rounded-md border border-[#F05262]/20">
+                                {faq.categoryLabel}
+                              </span>
+                              <h3 className="font-serif text-base sm:text-lg font-bold text-slate-900 group-hover:text-[#F05262] transition-colors leading-snug">
+                                {faq.q}
+                              </h3>
+                            </div>
+
+                            <div
+                              className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 ${
+                                isOpen
+                                  ? "bg-[#F05262] text-white shadow-2xs rotate-180"
+                                  : "bg-slate-100 text-slate-500 group-hover:bg-[#FFF5F6] group-hover:text-[#F05262]"
+                              }`}
+                            >
+                              <ChevronDown className="w-4 h-4" />
+                            </div>
+                          </button>
+
+                          {isOpen && (
+                            <div className="px-5 sm:px-6 pb-6 pt-1 space-y-4 border-t border-slate-100 animate-fade-in">
+                              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                {faq.a}
+                              </p>
+
+                              {/* Highlight Badges / Fact Strip */}
+                              {faq.highlights && faq.highlights.length > 0 && (
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                  {faq.highlights.map((h, hIdx) => (
+                                    <span
+                                      key={hIdx}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200/80 text-[11px] font-semibold text-slate-700"
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                      <span>{h}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         </div>
       </section>
@@ -1062,7 +1444,7 @@ export default function HomePage() {
       {/* ====================================================================
           FOOTER (Clean 4-Column Layout, Modern Light Slate & White Aesthetic)
           ==================================================================== */}
-      <footer className="bg-slate-50 border-t border-slate-200 text-slate-700 pt-14 pb-10">
+      <footer className="bg-slate-50 border-t border-slate-200 text-slate-700 pt-16 pb-16 sm:pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Main 4-Column Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10 pb-12 border-b border-slate-200">
@@ -1135,7 +1517,7 @@ export default function HomePage() {
 
                 <div className="pt-1">
                   <Link
-                    href="/author/tickets/new"
+                    href="/author-dashboard?menu=Raise%20a%20Query"
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#F05262] hover:text-[#d94151] transition-colors group"
                   >
                     <span>Click here to raise a ticket</span>
@@ -1182,68 +1564,73 @@ export default function HomePage() {
                   Join our community of 25K+ writers and readers:
                 </p>
 
-                {/* 5 Scraped Social Media Buttons */}
-                <div className="flex items-center gap-2.5 flex-wrap">
+                {/* 5 Scraped Social Media Buttons with Official Brand Backgrounds */}
+                <div className="flex items-center gap-2.5 flex-wrap pt-1">
+                  {/* Instagram */}
                   <a
                     href="https://instagram.com/bookleafpublishing/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-white text-slate-700 hover:bg-[#F05262] hover:text-white transition-all flex items-center justify-center border border-slate-200 shadow-xs hover:scale-105"
+                    className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white flex items-center justify-center shadow-xs hover:shadow-md hover:scale-110 transition-all duration-300"
                     aria-label="Instagram"
                     title="Follow on Instagram"
                   >
-                    <Instagram className="w-4 h-4" />
+                    <Instagram className="w-4 h-4 text-white" />
                   </a>
 
+                  {/* Facebook */}
                   <a
                     href="https://www.facebook.com/bookleafpublishing"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-white text-slate-700 hover:bg-[#F05262] hover:text-white transition-all flex items-center justify-center border border-slate-200 shadow-xs hover:scale-105"
+                    className="w-9 h-9 rounded-full bg-[#1877F2] hover:bg-[#1565cf] text-white flex items-center justify-center shadow-xs hover:shadow-md hover:scale-110 transition-all duration-300"
                     aria-label="Facebook"
                     title="Follow on Facebook"
                   >
-                    <Facebook className="w-4 h-4" />
+                    <Facebook className="w-4 h-4 text-white fill-white" />
                   </a>
 
+                  {/* Twitter / X */}
                   <a
                     href="https://twitter.com/bookleafpub"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-white text-slate-700 hover:bg-[#F05262] hover:text-white transition-all flex items-center justify-center border border-slate-200 shadow-xs hover:scale-105"
+                    className="w-9 h-9 rounded-full bg-slate-900 hover:bg-black text-white flex items-center justify-center shadow-xs hover:shadow-md hover:scale-110 transition-all duration-300"
                     aria-label="Twitter / X"
                     title="Follow on Twitter / X"
                   >
-                    <Twitter className="w-4 h-4" />
+                    <Twitter className="w-4 h-4 text-white fill-white" />
                   </a>
 
+                  {/* YouTube */}
                   <a
                     href="https://www.youtube.com/channel/UCJAAi_L1JH8OZSTbtYZW3OQ"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-white text-slate-700 hover:bg-[#F05262] hover:text-white transition-all flex items-center justify-center border border-slate-200 shadow-xs hover:scale-105"
+                    className="w-9 h-9 rounded-full bg-[#FF0000] hover:bg-[#d90000] text-white flex items-center justify-center shadow-xs hover:shadow-md hover:scale-110 transition-all duration-300"
                     aria-label="YouTube"
                     title="Subscribe on YouTube"
                   >
-                    <Youtube className="w-4 h-4" />
+                    <Youtube className="w-4 h-4 text-white fill-white" />
                   </a>
 
+                  {/* LinkedIn */}
                   <a
                     href="https://in.linkedin.com/company/bookleaf-publishing"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-white text-slate-700 hover:bg-[#F05262] hover:text-white transition-all flex items-center justify-center border border-slate-200 shadow-xs hover:scale-105"
+                    className="w-9 h-9 rounded-full bg-[#0A66C2] hover:bg-[#084e96] text-white flex items-center justify-center shadow-xs hover:shadow-md hover:scale-110 transition-all duration-300"
                     aria-label="LinkedIn"
                     title="Connect on LinkedIn"
                   >
-                    <Linkedin className="w-4 h-4" />
+                    <Linkedin className="w-4 h-4 text-white fill-white" />
                   </a>
                 </div>
               </div>
 
               {/* Official Footer Logo */}
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-[#F05262] flex items-center justify-center text-white shadow-xs">
                   <span className="font-sans text-2xl font-light leading-none -rotate-12 select-none text-white">
                     /
                   </span>
@@ -1300,152 +1687,23 @@ export default function HomePage() {
       </footer>
 
       {/* ====================================================================
-          SHARK TANK INDIA PITCH STORY MODAL
-          ==================================================================== */}
-      {sharkModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200"
-          onClick={() => setSharkModalOpen(false)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="shark-tank-modal-title"
-            className="relative w-full max-w-3xl rounded-3xl bg-slate-900 border border-white/15 text-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/50">
-              <div className="flex items-center gap-3">
-                <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-500/20 text-[#F05262] border border-rose-500/30">
-                  Sony LIV Exclusive
-                </span>
-                <span className="text-xs font-semibold text-slate-300">
-                  Shark Tank India Spotlight
-                </span>
-              </div>
-              <button
-                onClick={() => setSharkModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                aria-label="Close dialog"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 sm:p-8 overflow-y-auto space-y-6">
-              {/* Media Preview */}
-              <div className="relative rounded-2xl overflow-hidden aspect-[16/9] border border-white/15 bg-black shadow-lg group">
-                <img
-                  src="/images/bookleaf/scraped/shark-tank-banner.png"
-                  alt="BookLeaf Publishing Pitch on Shark Tank India"
-                  className="w-full h-full object-cover opacity-90 group-hover:scale-102 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent flex flex-col justify-end p-6">
-                  <div className="inline-flex items-center gap-2 mb-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                    <span className="text-xs font-bold text-emerald-300 uppercase tracking-wider">
-                      National Prime Time Broadcast
-                    </span>
-                  </div>
-                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-white tracking-tight">
-                    &ldquo;Democratizing Self-Publishing for Every Indian Storyteller&rdquo;
-                  </h3>
-                  <p className="text-xs text-slate-300 mt-1">
-                    BookLeaf&apos;s founders presented India&apos;s fastest print-on-demand &amp; 100% author royalty engine to the Sharks.
-                  </p>
-                </div>
-              </div>
-
-              {/* Pitch Highlights Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                  <div className="text-xs font-bold text-[#F05262] uppercase tracking-wider mb-1">
-                    0-Inventory Model
-                  </div>
-                  <div className="text-sm font-semibold text-white">
-                    Automated Print-on-Demand
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Every copy is printed &amp; bound upon reader order, cutting upfront risk.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                  <div className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">
-                    Global Distribution
-                  </div>
-                  <div className="text-sm font-semibold text-white">
-                    Amazon, Flipkart, BookLeaf
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Direct ISBN assignment and worldwide reach across 150+ territories.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                  <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">
-                    Author First
-                  </div>
-                  <div className="text-sm font-semibold text-white">
-                    100% Net Royalty Split
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Transparent formula with automated quarterly bank account settlement.
-                  </p>
-                </div>
-              </div>
-
-              {/* Founder Quote */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-950/30 to-slate-900 border border-[#F05262]/20 flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#F05262]/20 text-[#F05262] flex items-center justify-center shrink-0 mt-0.5">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div className="text-xs text-slate-300 leading-relaxed">
-                  <strong className="text-white">Our Mission:</strong> Publishing a book traditionally required months of gatekeeping and expensive upfront commitments. On Shark Tank India, we showcased how BookLeaf levels the playing field so every poet, novelist, and researcher can publish professionally in under 21 days.
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer CTAs */}
-            <div className="p-6 border-t border-white/10 bg-slate-950/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <a
-                href="https://www.youtube.com/results?search_query=bookleaf+publishing+shark+tank+india"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/15 transition-all"
-              >
-                <Play className="w-3.5 h-3.5 fill-white" />
-                <span>Search Episode on YouTube</span>
-                <ExternalLink className="w-3 h-3 text-slate-400" />
-              </a>
-
-              <div className="w-full sm:w-auto flex items-center gap-2">
-                <button
-                  onClick={() => setSharkModalOpen(false)}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-full text-slate-400 hover:text-white text-xs font-medium transition cursor-pointer"
-                >
-                  Close
-                </button>
-                <Link
-                  href="/create_book"
-                  onClick={() => setSharkModalOpen(false)}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-[#F05262] hover:bg-[#d94151] text-white text-xs font-bold shadow-lg hover:shadow-xl transition-all"
-                >
-                  <span>Start Publishing</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ====================================================================
           INTERACTIVE CUSTOMER SUPPORT CHAT POPUP ("Nishtha" Agent Parity)
           ==================================================================== */}
       <FloatingAgentChat />
+
+      {/* ====================================================================
+          RAZORPAY CHECKOUT MODAL (Secure Payment Gateway)
+          ==================================================================== */}
+      {checkoutPlan && (
+        <RazorpayModal
+          isOpen={Boolean(checkoutPlan)}
+          onClose={() => setCheckoutPlan(null)}
+          planId={checkoutPlan.planId}
+          planName={checkoutPlan.planName}
+          amount={checkoutPlan.amount}
+          purpose="BookLeaf Publishing Package"
+        />
+      )}
     </div>
   );
 }

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, BookOpen, Calculator, Sparkles } from "lucide-react";
 import { RoyaltyCalculator } from "@/components/calculator/royalty-calculator";
-import { FloatingAgentChat } from "@/components/support/floating-agent-chat";
 
 export const metadata: Metadata = {
   title: "Printing Cost & Author Royalty Calculator | BookLeaf Publishing",
@@ -102,9 +101,6 @@ export default function PrintingCostRoyaltyCalculatorPage() {
       <footer className="mt-16 border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
         <p>© 2026 BookLeaf Publishing. All rights reserved.</p>
       </footer>
-
-      {/* Nishtha Support Assistant */}
-      <FloatingAgentChat />
     </div>
   );
 }

@@ -1,7 +1,9 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { AuthorReplyInputSchema } from "@/types/domain";
 import { addAuthorMessageToTicket } from "@/lib/repository";
+import { invalidateTicketCaches } from "@/lib/redis";
 
 export async function POST(
   req: NextRequest,
@@ -70,6 +72,12 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    // Invalidate caches so conversation reflects the new message instantly
+    await invalidateTicketCaches({
+      ticketId,
+      authorId: user.author_id,
+    });
 
     return NextResponse.json(
       {
