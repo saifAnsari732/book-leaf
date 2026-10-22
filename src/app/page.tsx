@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
+  BadgePercent,
+  BarChart3,
   BookOpen,
   Check,
   CheckCircle2,
@@ -23,10 +25,12 @@ import {
   Mail,
   Menu,
   MessageCircle,
+  Play,
   Search,
   ShieldCheck,
   Sparkles,
   Star,
+  TrendingUp,
   Twitter,
   Users,
   X,
@@ -43,6 +47,7 @@ export default function HomePage() {
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [sharkModalOpen, setSharkModalOpen] = useState(false);
 
   const handleQuickLogin = async (email: string, role: "AUTHOR" | "ADMIN") => {
     try {
@@ -138,10 +143,10 @@ export default function HomePage() {
               Get Published
             </Link>
             <Link href="#features" className="hover:text-[#F05262] transition">
-              Writing Challenge UK
+              Why BookLeaf
             </Link>
-            <Link href="#features" className="hover:text-[#F05262] transition">
-              Writing Challenge US
+            <Link href="#calculator" className="hover:text-[#F05262] transition">
+              Royalty Calculator
             </Link>
             <Link href="#portals" className="hover:text-[#F05262] transition">
               Support Portals
@@ -160,7 +165,7 @@ export default function HomePage() {
               Sign In
             </Link>
             <Link
-              href="/author"
+              href="/create_book"
               className="hidden sm:inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#F05262] hover:bg-[#e04555] text-white shadow-xs hover:shadow transition"
             >
               <span>Publish My Book</span>
@@ -293,7 +298,7 @@ export default function HomePage() {
               {/* CTA + Social Proof Row */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 w-full mb-10">
                 <Link
-                  href="/login"
+                  href="/create_book"
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-[#F05262] hover:bg-[#e04555] text-white font-bold text-base shadow-md hover:shadow-lg transition transform active:scale-95"
                 >
                   <span>Publish My Book</span>
@@ -329,7 +334,7 @@ export default function HomePage() {
               </div>
 
               {/* Quick Launch Buttons for Pair Programming Technical Evaluation */}
-              <div className="pt-6 border-t border-slate-200/80 w-full">
+              <div id="portals" className="pt-6 border-t border-slate-200/80 w-full scroll-mt-24">
                 <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-3">
                   1-Click Portal Sandboxes:
                 </span>
@@ -406,27 +411,45 @@ export default function HomePage() {
       </section>
 
       {/* ====================================================================
-          SHARK TANK INDIA FEATURE BANNER (Exact Match to User Screenshot 2)
+          SHARK TANK INDIA PANORAMIC SHOWCASE (Official High-Resolution Banner)
           ==================================================================== */}
-      <section className="py-12 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-3xl overflow-hidden shadow-xl border border-slate-200 relative group">
-            <div className="relative w-full h-72 sm:h-96 md:h-[440px] bg-slate-900">
-              <img
-                src="/images/bookleaf/scraped/shark-tank-banner.png"
-                alt="BookLeaf Publishing As Seen On Shark Tank India"
-                className="w-full h-full object-cover opacity-90 group-hover:scale-102 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-transparent flex flex-col justify-end p-6 sm:p-10">
-                <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-emerald-400 mb-1">
-                  National Television Spotlight
-                </span>
-                <h3 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-                  As Seen On SHARK TANK INDIA
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-200 mt-2 max-w-2xl leading-relaxed">
-                  Founders Musavir Khurshid & Shivangi Verma presenting BookLeaf&apos;s revolution in self-publishing, empowering thousands of budding authors worldwide.
-                </p>
+      <section className="relative w-full bg-slate-950 overflow-hidden border-y border-slate-200/50">
+        <div className="relative w-full h-[320px] sm:h-[400px] md:h-[460px] lg:h-[520px]">
+          {/* Panoramic Full-Width Banner Image matching BookLeaf Official Website */}
+          <img
+            src="/images/bookleaf/scraped/shark-tank-banner.png"
+            alt="BookLeaf Publishing Founders on Shark Tank India"
+            className="w-full h-full object-cover object-[center_center] select-none"
+          />
+
+          {/* Subtle Mobile Overlay to ensure floating text pops on compact screens */}
+          <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-black/60 via-transparent to-black/70 sm:to-black/30 pointer-events-none" />
+
+          {/* Floating Text Section (UI Float Text) - Positioned neatly in the right aquatic tank zone */}
+          <div className="absolute top-1/2 -translate-y-1/2 right-4 sm:right-8 md:right-12 lg:right-20 xl:right-32 text-center sm:text-left z-10 max-w-md lg:max-w-lg">
+            <div className="space-y-1 sm:space-y-2">
+              <span className="text-lg sm:text-2xl lg:text-[26px] font-bold text-white tracking-normal block drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)] font-sans">
+                As Seen On
+              </span>
+              <h2 className="text-2xl sm:text-4xl lg:text-[44px] font-bold text-white uppercase tracking-tight leading-[1.15] drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)] font-sans">
+                SHARK TANK INDIA
+              </h2>
+
+              <div className="pt-3 sm:pt-4 flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                <button
+                  onClick={() => setSharkModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/20 hover:bg-white text-white hover:text-slate-900 backdrop-blur-md border border-white/40 font-semibold text-xs tracking-wider uppercase transition-all duration-300 shadow-xl cursor-pointer hover:scale-105"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>Watch Pitch Story</span>
+                </button>
+                <Link
+                  href="/create_book"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#F05262] hover:bg-[#d94151] text-white text-xs font-bold transition-all shadow-lg hover:scale-105"
+                >
+                  <span>Publish My Book</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
             </div>
           </div>
@@ -434,84 +457,120 @@ export default function HomePage() {
       </section>
 
       {/* ====================================================================
-          FEATURE BOXES GRID (Exact Match to User Screenshot 2)
+          CORE PUBLISHING ADVANTAGES (Official BookLeaf Graphic Media Objects)
           ==================================================================== */}
-      <section id="features" className="py-12 bg-white">
+      <section id="features" className="py-16 sm:py-20 bg-white border-b border-slate-100 scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Box 1: Publish Your Book Faster */}
-            <div className="p-6 rounded-3xl bg-[#FFF5F6] border border-[#F8B2B9]/50 hover:shadow-md transition flex flex-col justify-between">
-              <div>
-                <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center p-2 mb-4 shadow-xs">
-                  <img
-                    src="/images/bookleaf/scraped/feature-publish-faster.png"
-                    alt="Publish your book faster"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <h4 className="text-lg font-bold text-slate-900 mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-12 lg:gap-x-16 lg:gap-y-14">
+            {/* Feature 1: Publish your book faster */}
+            <div className="flex items-start gap-5 sm:gap-6 group">
+              <div className="shrink-0 w-20 sm:w-24 transition-transform duration-300 group-hover:scale-105">
+                <img
+                  src="/images/bookleaf/scraped/feature-publish-faster.png"
+                  alt="Publish your book faster"
+                  className="w-full h-auto object-contain drop-shadow-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 group-hover:text-[#F05262] transition-colors tracking-tight">
                   Publish your book faster
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  You no longer have to wait for months to hear back from a publisher. Publish in paperback and eBook in just weeks.
+                </h3>
+                <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
+                  You no longer have to wait for months to hear back from a publisher. Publish your book in just a couple of weeks.
                 </p>
+                <div className="pt-1">
+                  <Link
+                    href="/create_book"
+                    className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-[#F05262] hover:underline"
+                  >
+                    <span>Start 5-Stage Publishing</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             </div>
 
-            {/* Box 2: Unbeatable Pricing */}
-            <div className="p-6 rounded-3xl bg-[#FFF5F6] border border-[#F8B2B9]/50 hover:shadow-md transition flex flex-col justify-between">
-              <div>
-                <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center p-2 mb-4 shadow-xs">
-                  <img
-                    src="/images/bookleaf/scraped/feature-unbeatable-pricing.png"
-                    alt="Unbeatable Pricing"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <h4 className="text-lg font-bold text-slate-900 mb-2">
+            {/* Feature 2: Unbeatable Pricing */}
+            <div className="flex items-start gap-5 sm:gap-6 group">
+              <div className="shrink-0 w-20 sm:w-24 transition-transform duration-300 group-hover:scale-105">
+                <img
+                  src="/images/bookleaf/scraped/feature-unbeatable-pricing.png"
+                  alt="Unbeatable Pricing"
+                  className="w-full h-auto object-contain drop-shadow-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 group-hover:text-[#F05262] transition-colors tracking-tight">
                   Unbeatable Pricing
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  We are officially world&apos;s most affordable premium self-publishing platform with 100% transparent author copy print costs.
+                </h3>
+                <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
+                  We are officially world&apos;s most affordable premium self-publishing platform.
                 </p>
+                <div className="pt-1">
+                  <a
+                    href="#calculator"
+                    className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-[#F05262] hover:underline"
+                  >
+                    <span>Calculate Printing Cost</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </a>
+                </div>
               </div>
             </div>
 
-            {/* Box 3: Highest Royalty */}
-            <div className="p-6 rounded-3xl bg-[#FFF5F6] border border-[#F8B2B9]/50 hover:shadow-md transition flex flex-col justify-between">
-              <div>
-                <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center p-2 mb-4 shadow-xs">
-                  <img
-                    src="/images/bookleaf/scraped/feature-highest-royalty.png"
-                    alt="Highest Royalty"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <h4 className="text-lg font-bold text-slate-900 mb-2">
+            {/* Feature 3: Highest Royalty */}
+            <div className="flex items-start gap-5 sm:gap-6 group">
+              <div className="shrink-0 w-20 sm:w-24 transition-transform duration-300 group-hover:scale-105">
+                <img
+                  src="/images/bookleaf/scraped/feature-highest-royalty.png"
+                  alt="Highest Royalty"
+                  className="w-full h-auto object-contain drop-shadow-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 group-hover:text-[#F05262] transition-colors tracking-tight">
                   Highest Royalty
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  Earn up to 100% royalty on every single book sold across domestic and global retail platforms.
+                </h3>
+                <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
+                  Earn up to 100% royalty on every copy sold on Amazon, Flipkart, and the BookLeaf Store.
                 </p>
+                <div className="pt-1">
+                  <Link
+                    href="/printing-cost-royalty-calculator"
+                    className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-[#F05262] hover:underline"
+                  >
+                    <span>Explore 100% Split Formula</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             </div>
 
-            {/* Box 4: Live Sales Report */}
-            <div className="p-6 rounded-3xl bg-[#FFF5F6] border border-[#F8B2B9]/50 hover:shadow-md transition flex flex-col justify-between">
-              <div>
-                <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center p-2 mb-4 shadow-xs">
-                  <img
-                    src="/images/bookleaf/scraped/feature-live-sales.png"
-                    alt="Live sales report"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <h4 className="text-lg font-bold text-slate-900 mb-2">
+            {/* Feature 4: Live sales report */}
+            <div className="flex items-start gap-5 sm:gap-6 group">
+              <div className="shrink-0 w-20 sm:w-24 transition-transform duration-300 group-hover:scale-105">
+                <img
+                  src="/images/bookleaf/scraped/feature-live-sales.png"
+                  alt="Live sales report"
+                  className="w-full h-auto object-contain drop-shadow-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 group-hover:text-[#F05262] transition-colors tracking-tight">
                   Live sales report
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  View real-time sales insights, inventory status, and quarterly payout ledgers in your Author Portal.
+                </h3>
+                <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
+                  Track sales, check author royalties, and request instant bank payouts anytime from your author dashboard.
                 </p>
+                <div className="pt-1">
+                  <Link
+                    href="/author-dashboard?menu=Royalty%20Withdrawal"
+                    className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-[#F05262] hover:underline"
+                  >
+                    <span>Author Royalty Dashboard</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -600,12 +659,12 @@ export default function HomePage() {
                   </li>
                 </ul>
 
-                <button
-                  onClick={() => router.push("/login")}
-                  className="w-full py-3.5 rounded-full bg-[#F05262] hover:bg-[#e04555] text-white font-bold text-sm transition shadow-sm"
+                <Link
+                  href="/create_book?plan=basic"
+                  className="block text-center w-full py-3.5 rounded-full bg-[#F05262] hover:bg-[#e04555] text-white font-bold text-sm transition shadow-sm"
                 >
                   Get Started
-                </button>
+                </Link>
               </div>
             </div>
 
@@ -647,12 +706,12 @@ export default function HomePage() {
                   </li>
                 </ul>
 
-                <button
-                  onClick={() => router.push("/login")}
-                  className="w-full py-3.5 rounded-full bg-[#F05262] hover:bg-[#e04555] text-white font-bold text-sm transition shadow-md"
+                <Link
+                  href="/create_book?plan=premium"
+                  className="block text-center w-full py-3.5 rounded-full bg-[#F05262] hover:bg-[#e04555] text-white font-bold text-sm transition shadow-md"
                 >
                   Get Started
-                </button>
+                </Link>
               </div>
             </div>
 
@@ -699,12 +758,12 @@ export default function HomePage() {
                   </li>
                 </ul>
 
-                <button
-                  onClick={() => router.push("/login")}
-                  className="w-full py-3.5 rounded-full bg-[#F05262] hover:bg-[#e04555] text-white font-bold text-sm transition shadow-sm"
+                <Link
+                  href="/create_book?plan=professional"
+                  className="block text-center w-full py-3.5 rounded-full bg-[#F05262] hover:bg-[#e04555] text-white font-bold text-sm transition shadow-sm"
                 >
                   Get Started
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -768,7 +827,7 @@ export default function HomePage() {
               </p>
               <div className="pt-2">
                 <Link
-                  href="/login"
+                  href="/create_book"
                   className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#F05262] hover:bg-[#e04555] text-white font-bold text-sm shadow-md hover:shadow-lg transition transform active:scale-95"
                 >
                   <span>Publish My Book</span>
@@ -783,7 +842,7 @@ export default function HomePage() {
       {/* ====================================================================
           FEATURED BESTSELLERS FROM BOOKLEAF STORE
           ==================================================================== */}
-      <section className="py-16 bg-white border-t border-slate-100">
+      <section id="bookstore" className="py-16 bg-white border-t border-slate-100 scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-10 gap-4">
             <div>
@@ -807,104 +866,144 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Book 1 */}
-            <div className="bg-[#FFF5F6]/40 rounded-2xl p-4 border border-[#F8B2B9]/40 shadow-xs hover:shadow-md transition flex flex-col justify-between group">
-              <div className="h-64 rounded-xl overflow-hidden mb-4 relative bg-white flex items-center justify-center p-2">
+            <a
+              href="https://store.bookleafpub.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+            >
+              <div className="h-64 rounded-xl overflow-hidden mb-4 relative bg-slate-50 flex items-center justify-center p-2">
                 <img
                   src="/images/bookleaf/hope-between-the-lines.jpg"
                   alt="Hope Between the Lines"
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
               <div>
-                <h4 className="font-bold text-sm text-slate-900 line-clamp-1">
+                <h4 className="font-bold text-sm text-slate-900 line-clamp-1 group-hover:text-[#F05262] transition-colors">
                   Hope Between the Lines
                 </h4>
                 <p className="text-xs text-slate-500 mt-0.5">Poetry • ₹210</p>
-                <div className="flex items-center gap-1 text-amber-400 mt-2">
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <span className="text-xs text-slate-600 font-bold ml-1">4.9</span>
+                <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
+                  <div className="flex items-center gap-1 text-amber-400">
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <span className="text-xs text-slate-600 font-bold ml-1">4.9</span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-[#F05262] group-hover:underline inline-flex items-center gap-0.5">
+                    Store <ExternalLink className="w-3 h-3" />
+                  </span>
                 </div>
               </div>
-            </div>
+            </a>
 
             {/* Book 2 */}
-            <div className="bg-[#FFF5F6]/40 rounded-2xl p-4 border border-[#F8B2B9]/40 shadow-xs hover:shadow-md transition flex flex-col justify-between group">
-              <div className="h-64 rounded-xl overflow-hidden mb-4 relative bg-white flex items-center justify-center p-2">
+            <a
+              href="https://store.bookleafpub.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+            >
+              <div className="h-64 rounded-xl overflow-hidden mb-4 relative bg-slate-50 flex items-center justify-center p-2">
                 <img
                   src="/images/bookleaf/middle-class-to-millionaire.png"
                   alt="From Middle Class to Millionaire"
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
               <div>
-                <h4 className="font-bold text-sm text-slate-900 line-clamp-1">
+                <h4 className="font-bold text-sm text-slate-900 line-clamp-1 group-hover:text-[#F05262] transition-colors">
                   From Middle Class to Millionaire
                 </h4>
                 <p className="text-xs text-slate-500 mt-0.5">Finance • ₹210</p>
-                <div className="flex items-center gap-1 text-amber-400 mt-2">
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <span className="text-xs text-slate-600 font-bold ml-1">4.8</span>
+                <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
+                  <div className="flex items-center gap-1 text-amber-400">
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <span className="text-xs text-slate-600 font-bold ml-1">4.8</span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-[#F05262] group-hover:underline inline-flex items-center gap-0.5">
+                    Store <ExternalLink className="w-3 h-3" />
+                  </span>
                 </div>
               </div>
-            </div>
+            </a>
 
             {/* Book 3 */}
-            <div className="bg-[#FFF5F6]/40 rounded-2xl p-4 border border-[#F8B2B9]/40 shadow-xs hover:shadow-md transition flex flex-col justify-between group">
-              <div className="h-64 rounded-xl overflow-hidden mb-4 relative bg-white flex items-center justify-center p-2">
+            <a
+              href="https://store.bookleafpub.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+            >
+              <div className="h-64 rounded-xl overflow-hidden mb-4 relative bg-slate-50 flex items-center justify-center p-2">
                 <img
                   src="/images/bookleaf/the-language-of-us.png"
                   alt="The Language of Us"
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
               <div>
-                <h4 className="font-bold text-sm text-slate-900 line-clamp-1">
+                <h4 className="font-bold text-sm text-slate-900 line-clamp-1 group-hover:text-[#F05262] transition-colors">
                   The Language of Us
                 </h4>
                 <p className="text-xs text-slate-500 mt-0.5">Contemporary • ₹249</p>
-                <div className="flex items-center gap-1 text-amber-400 mt-2">
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <span className="text-xs text-slate-600 font-bold ml-1">4.9</span>
+                <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
+                  <div className="flex items-center gap-1 text-amber-400">
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <span className="text-xs text-slate-600 font-bold ml-1">4.9</span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-[#F05262] group-hover:underline inline-flex items-center gap-0.5">
+                    Store <ExternalLink className="w-3 h-3" />
+                  </span>
                 </div>
               </div>
-            </div>
+            </a>
 
             {/* Book 4 */}
-            <div className="bg-[#FFF5F6]/40 rounded-2xl p-4 border border-[#F8B2B9]/40 shadow-xs hover:shadow-md transition flex flex-col justify-between group">
-              <div className="h-64 rounded-xl overflow-hidden mb-4 relative bg-white flex items-center justify-center p-2">
+            <a
+              href="https://store.bookleafpub.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+            >
+              <div className="h-64 rounded-xl overflow-hidden mb-4 relative bg-slate-50 flex items-center justify-center p-2">
                 <img
                   src="/images/bookleaf/verses-on-the-human-stage.png"
                   alt="Verses on The HUMAN Stage"
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
               <div>
-                <h4 className="font-bold text-sm text-slate-900 line-clamp-1">
+                <h4 className="font-bold text-sm text-slate-900 line-clamp-1 group-hover:text-[#F05262] transition-colors">
                   Verses on The HUMAN Stage
                 </h4>
                 <p className="text-xs text-slate-500 mt-0.5">Anthology • ₹220</p>
-                <div className="flex items-center gap-1 text-amber-400 mt-2">
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  <span className="text-xs text-slate-600 font-bold ml-1">4.7</span>
+                <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
+                  <div className="flex items-center gap-1 text-amber-400">
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    <span className="text-xs text-slate-600 font-bold ml-1">4.7</span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-[#F05262] group-hover:underline inline-flex items-center gap-0.5">
+                    Store <ExternalLink className="w-3 h-3" />
+                  </span>
                 </div>
               </div>
-            </div>
+            </a>
           </div>
         </div>
       </section>
@@ -1097,7 +1196,7 @@ export default function HomePage() {
                   </a>
 
                   <a
-                    href="http://www.facebook.com/bookleafpublishing"
+                    href="https://www.facebook.com/bookleafpublishing"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-9 h-9 rounded-full bg-white text-slate-700 hover:bg-[#F05262] hover:text-white transition-all flex items-center justify-center border border-slate-200 shadow-xs hover:scale-105"
@@ -1199,6 +1298,149 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* ====================================================================
+          SHARK TANK INDIA PITCH STORY MODAL
+          ==================================================================== */}
+      {sharkModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setSharkModalOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="shark-tank-modal-title"
+            className="relative w-full max-w-3xl rounded-3xl bg-slate-900 border border-white/15 text-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/50">
+              <div className="flex items-center gap-3">
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-500/20 text-[#F05262] border border-rose-500/30">
+                  Sony LIV Exclusive
+                </span>
+                <span className="text-xs font-semibold text-slate-300">
+                  Shark Tank India Spotlight
+                </span>
+              </div>
+              <button
+                onClick={() => setSharkModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="Close dialog"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 sm:p-8 overflow-y-auto space-y-6">
+              {/* Media Preview */}
+              <div className="relative rounded-2xl overflow-hidden aspect-[16/9] border border-white/15 bg-black shadow-lg group">
+                <img
+                  src="/images/bookleaf/scraped/shark-tank-banner.png"
+                  alt="BookLeaf Publishing Pitch on Shark Tank India"
+                  className="w-full h-full object-cover opacity-90 group-hover:scale-102 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent flex flex-col justify-end p-6">
+                  <div className="inline-flex items-center gap-2 mb-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="text-xs font-bold text-emerald-300 uppercase tracking-wider">
+                      National Prime Time Broadcast
+                    </span>
+                  </div>
+                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-white tracking-tight">
+                    &ldquo;Democratizing Self-Publishing for Every Indian Storyteller&rdquo;
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1">
+                    BookLeaf&apos;s founders presented India&apos;s fastest print-on-demand &amp; 100% author royalty engine to the Sharks.
+                  </p>
+                </div>
+              </div>
+
+              {/* Pitch Highlights Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="text-xs font-bold text-[#F05262] uppercase tracking-wider mb-1">
+                    0-Inventory Model
+                  </div>
+                  <div className="text-sm font-semibold text-white">
+                    Automated Print-on-Demand
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Every copy is printed &amp; bound upon reader order, cutting upfront risk.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">
+                    Global Distribution
+                  </div>
+                  <div className="text-sm font-semibold text-white">
+                    Amazon, Flipkart, BookLeaf
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Direct ISBN assignment and worldwide reach across 150+ territories.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">
+                    Author First
+                  </div>
+                  <div className="text-sm font-semibold text-white">
+                    100% Net Royalty Split
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Transparent formula with automated quarterly bank account settlement.
+                  </p>
+                </div>
+              </div>
+
+              {/* Founder Quote */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-950/30 to-slate-900 border border-[#F05262]/20 flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#F05262]/20 text-[#F05262] flex items-center justify-center shrink-0 mt-0.5">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div className="text-xs text-slate-300 leading-relaxed">
+                  <strong className="text-white">Our Mission:</strong> Publishing a book traditionally required months of gatekeeping and expensive upfront commitments. On Shark Tank India, we showcased how BookLeaf levels the playing field so every poet, novelist, and researcher can publish professionally in under 21 days.
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer CTAs */}
+            <div className="p-6 border-t border-white/10 bg-slate-950/60 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <a
+                href="https://www.youtube.com/results?search_query=bookleaf+publishing+shark+tank+india"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/15 transition-all"
+              >
+                <Play className="w-3.5 h-3.5 fill-white" />
+                <span>Search Episode on YouTube</span>
+                <ExternalLink className="w-3 h-3 text-slate-400" />
+              </a>
+
+              <div className="w-full sm:w-auto flex items-center gap-2">
+                <button
+                  onClick={() => setSharkModalOpen(false)}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-full text-slate-400 hover:text-white text-xs font-medium transition cursor-pointer"
+                >
+                  Close
+                </button>
+                <Link
+                  href="/create_book"
+                  onClick={() => setSharkModalOpen(false)}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-[#F05262] hover:bg-[#d94151] text-white text-xs font-bold shadow-lg hover:shadow-xl transition-all"
+                >
+                  <span>Start Publishing</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ====================================================================
           INTERACTIVE CUSTOMER SUPPORT CHAT POPUP ("Nishtha" Agent Parity)
