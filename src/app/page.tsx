@@ -918,27 +918,17 @@ export default function HomePage() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Sales Reporting and 100% Royalty</span>
                   </li>
-                  <li className="flex items-start sm:items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
-                        AI Smart Title &amp; Blurb Consultation
-                      </span>
-                      <span className="bg-slate-900 text-amber-300 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
-                        AI POWERED
-                      </span>
-                    </div>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                      AI Smart Title &amp; Blurb Consultation
+                    </span>
                   </li>
-                  <li className="flex items-start sm:items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
-                        AI Pre-Print Grammar &amp; Syntax Diagnostic
-                      </span>
-                      <span className="bg-slate-900 text-amber-300 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
-                        AI
-                      </span>
-                    </div>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                      AI Pre-Print Grammar &amp; Syntax Diagnostic
+                    </span>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -1009,38 +999,23 @@ export default function HomePage() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Customised Premium Cover Design</span>
                   </li>
-                  <li className="flex items-start sm:items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
-                        AI Chapter Synopsis &amp; Narrative Flow Analysis
-                      </span>
-                      <span className="bg-[#F05262] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
-                        AI PLUS
-                      </span>
-                    </div>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                      AI Chapter Synopsis &amp; Narrative Flow Analysis
+                    </span>
                   </li>
-                  <li className="flex items-start sm:items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
-                        AI Amazon Search &amp; KDP Keyword SEO Tags
-                      </span>
-                      <span className="bg-[#F05262] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
-                        AI PLUS
-                      </span>
-                    </div>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                      AI Amazon Search &amp; KDP Keyword SEO Tags
+                    </span>
                   </li>
-                  <li className="flex items-start sm:items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
-                        AI Target Audience &amp; Category Matcher
-                      </span>
-                      <span className="bg-[#F05262] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
-                        AI PLUS
-                      </span>
-                    </div>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                      AI Target Audience &amp; Category Matcher
+                    </span>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -1100,16 +1075,11 @@ export default function HomePage() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>10 Complimentary Author Copies + Hardcover</span>
                   </li>
-                  <li className="flex items-start sm:items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
-                        AI Comprehensive Manuscript Studio
-                      </span>
-                      <span className="bg-slate-900 text-amber-300 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
-                        AI PRO
-                      </span>
-                    </div>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                      AI Comprehensive Manuscript Studio
+                    </span>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -1123,27 +1093,17 @@ export default function HomePage() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>30-Day Managed Amazon Ad Campaign</span>
                   </li>
-                  <li className="flex items-start sm:items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
-                        AI Bestseller Category &amp; Competitor Radar
-                      </span>
-                      <span className="bg-slate-900 text-amber-300 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
-                        AI PRO
-                      </span>
-                    </div>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                      AI Bestseller Category &amp; Competitor Radar
+                    </span>
                   </li>
-                  <li className="flex items-start sm:items-center gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
-                        AI Predictive Sales &amp; Demand Model
-                      </span>
-                      <span className="bg-slate-900 text-amber-300 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
-                        AI PRO
-                      </span>
-                    </div>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                      AI Predictive Sales &amp; Demand Model
+                    </span>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
