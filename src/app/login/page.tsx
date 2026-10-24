@@ -13,10 +13,8 @@ import {
   BookOpen,
   Building,
   CheckCircle2,
-  CreditCard,
   Eye,
   EyeOff,
-  KeyRound,
   Lock,
   LogIn,
   Mail,
@@ -27,16 +25,6 @@ import {
   User,
   UserPlus,
 } from "lucide-react";
-
-interface DemoAccount {
-  author_id: string | null;
-  name: string;
-  email: string;
-  role: "AUTHOR" | "ADMIN";
-  city: string | null;
-  books_count: number;
-  edge_case_tag: string;
-}
 
 export default function LoginPage() {
   const toast = useToast();
@@ -66,8 +54,6 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [demoAccounts, setDemoAccounts] = useState<DemoAccount[]>([]);
-  const [showMatrix, setShowMatrix] = useState(false);
   const [redirectNotice, setRedirectNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -102,14 +88,6 @@ export default function LoginPage() {
         }
       }
     }
-
-    // Load demo accounts for 1-click evaluator evaluation
-    fetch("/api/auth/demo-accounts")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data?.accounts) setDemoAccounts(data.accounts);
-      })
-      .catch(() => {});
   }, []);
 
   const handleTabChange = (tab: "AUTHOR" | "ADMIN") => {
@@ -240,15 +218,6 @@ export default function LoginPage() {
   function handleSignInSubmit(e: React.FormEvent) {
     e.preventDefault();
     performLogin(signInEmail, signInPassword);
-  }
-
-  function selectDemoAccount(acc: DemoAccount) {
-    setAuthMode("signin");
-    setActiveTab(acc.role);
-    const pass = acc.role === "ADMIN" ? "admin123" : "author123";
-    setSignInEmail(acc.email);
-    setSignInPassword(pass);
-    performLogin(acc.email, pass);
   }
 
   return (
@@ -747,8 +716,8 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Bottom Switch Links & Quick Evaluator Toggle */}
-          <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3">
+          {/* Bottom Switch Links */}
+          <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center text-xs text-slate-500">
             <div>
               {authMode === "signin" ? (
                 <p className="font-medium">
@@ -782,75 +751,10 @@ export default function LoginPage() {
                 </p>
               )}
             </div>
-
-            <button
-              type="button"
-              onClick={() => setShowMatrix(!showMatrix)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF7F2] border border-[#EDE6DD] hover:bg-[#F2ECE5] text-xs font-semibold text-[#0F4C3A] transition cursor-pointer shadow-2xs"
-            >
-              <KeyRound className="w-3.5 h-3.5 text-[#0F4C3A]" />
-              <span>
-                {showMatrix ? "Hide Quick Accounts" : "Quick Evaluator Accounts (11)"}
-              </span>
-            </button>
           </div>
         </div>
       </div>
-
-      {/* Quick Evaluator Matrix (Collapsible for test grading) */}
-      {showMatrix && (
-        <div className="max-w-5xl w-full mx-auto mt-6 bg-white rounded-3xl p-6 sm:p-7 border border-[#E8E1D8] shadow-xs animate-fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[#0F4C3A] text-[10px] font-bold uppercase tracking-wider mb-1">
-                <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                <span>Test & Grading Accounts</span>
-              </div>
-              <h4 className="font-serif text-lg font-bold text-slate-900">
-                Instant 1-Click Login Matrix (10 Authors + 1 Admin)
-              </h4>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Click any credential below to immediately authenticate and test RBAC routing
-              </p>
-            </div>
-            <span className="text-[11px] px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 self-start sm:self-auto">
-              Live Database Connected
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {demoAccounts.map((acc) => (
-              <button
-                key={acc.email}
-                type="button"
-                onClick={() => selectDemoAccount(acc)}
-                className="p-3.5 rounded-2xl border border-slate-200/90 hover:border-[#0F4C3A] bg-[#FAF8F5] hover:bg-white text-left transition-all hover:shadow-xs flex items-center justify-between group cursor-pointer"
-              >
-                <div className="min-w-0 pr-2">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="font-bold text-xs text-slate-900 group-hover:text-[#0F4C3A] transition-colors">
-                      {acc.name}
-                    </span>
-                    <span
-                      className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                        acc.role === "ADMIN"
-                          ? "bg-amber-100 text-amber-800 border border-amber-200"
-                          : "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                      }`}
-                    >
-                      {acc.author_id || acc.role}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 truncate font-mono">{acc.email}</p>
-                </div>
-                <div className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-[#0F4C3A] group-hover:border-[#0F4C3A]/30 shrink-0 transition-colors">
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
+

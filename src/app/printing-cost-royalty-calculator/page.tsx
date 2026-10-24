@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Calculator, Sparkles } from "lucide-react";
+import { ArrowLeft, BookOpen, Calculator, Award } from "lucide-react";
 import { RoyaltyCalculator } from "@/components/calculator/royalty-calculator";
 
 export const metadata: Metadata = {
@@ -61,7 +61,7 @@ export default function PrintingCostRoyaltyCalculatorPage() {
         <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs">
             <div className="w-10 h-10 rounded-xl bg-rose-50 text-[#F05262] flex items-center justify-center font-bold mb-4">
-              <Sparkles className="w-5 h-5" />
+              <Award className="w-5 h-5" />
             </div>
             <h3 className="text-base font-bold text-slate-900 mb-2">
               100% Profit Share Model
