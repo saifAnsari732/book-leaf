@@ -3,6 +3,8 @@
  * Tests all 40 API routes against the running Next.js server on http://localhost:3000
  */
 
+export {};
+
 interface RouteTestResult {
   route: string;
   method: string;

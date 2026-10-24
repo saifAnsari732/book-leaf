@@ -72,11 +72,14 @@ export async function POST(req: NextRequest) {
     // Invalidate author caches for instant book catalog refresh
     await invalidateAuthorCaches(user.author_id);
 
-    const response = NextResponse.json({
-      success: true,
-      book: newBook,
-      message: `Congratulations! "${newBook.title}" has been created and submitted to BookLeaf's editorial review queue.`,
-    });
+    const response = NextResponse.json(
+      {
+        success: true,
+        book: newBook,
+        message: `Congratulations! "${newBook.title}" has been created and submitted to BookLeaf's editorial review queue.`,
+      },
+      { status: 201 }
+    );
 
     return applySecurityHeaders(response, { isApiRoute: true });
   } catch (error) {
