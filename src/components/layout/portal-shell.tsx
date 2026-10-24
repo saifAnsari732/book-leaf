@@ -22,7 +22,6 @@ import {
   Search,
   Settings,
   ShieldCheck,
-  Sparkles,
   Ticket,
   User,
   UserCheck,
@@ -70,7 +69,7 @@ export function PortalShell({
           exact: false,
         },
         {
-          href: "/admin/profile",
+          href: "/admin/profile?tab=authors",
           label: "Authors",
           icon: Users,
           exact: false,
@@ -88,7 +87,7 @@ export function PortalShell({
           exact: false,
         },
         {
-          href: "/admin/profile",
+          href: "/admin/profile?tab=settings",
           label: "Settings",
           icon: Settings,
           exact: false,
@@ -117,6 +116,12 @@ export function PortalShell({
           href: "/author-dashboard?menu=Support%20Tickets",
           label: "Support Tickets",
           icon: Ticket,
+          exact: false,
+        },
+        {
+          href: "/track",
+          label: "Track Grievance",
+          icon: Search,
           exact: false,
         },
         {
@@ -192,7 +197,7 @@ export function PortalShell({
                 : pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
                 <Link
-                  key={item.href}
+                  key={`${item.label}-${item.href}`}
                   href={item.href}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition ${
                     active
@@ -314,7 +319,7 @@ export function PortalShell({
               const Icon = item.icon;
               return (
                 <Link
-                  key={item.href}
+                  key={`mobile-${item.label}-${item.href}`}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-200 hover:bg-slate-800"

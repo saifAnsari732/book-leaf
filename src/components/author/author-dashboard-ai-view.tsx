@@ -7,7 +7,9 @@ import {
   ArrowRight,
   BarChart3,
   BookOpen,
-  Bot,
+  Headphones,
+  PenTool,
+  ShieldCheck,
   Calculator,
   Check,
   CheckCircle2,
@@ -22,10 +24,8 @@ import {
   RefreshCw,
   Send,
   Share2,
-  Sparkles,
   TrendingUp,
   User,
-  Wand2,
 } from "lucide-react";
 
 interface AuthorDashboardAIViewProps {
@@ -193,7 +193,7 @@ export function AuthorDashboardAIView({
       <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
             <span>Google Gemini 3.8 Flash Multimodal Intelligence Engine</span>
           </div>
           <h2 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
@@ -224,7 +224,7 @@ export function AuthorDashboardAIView({
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
           }`}
         >
-          <Bot className="w-4 h-4" />
+          <Headphones className="w-4 h-4" />
           <span>24/7 Chatbot (Nishtha)</span>
         </button>
 
@@ -293,7 +293,7 @@ export function AuthorDashboardAIView({
                           : "bg-[#0F4C3A] text-white shadow-xs"
                       }`}
                     >
-                      {isUser ? "You" : <Bot className="w-4 h-4 text-emerald-200" />}
+                      {isUser ? "You" : <Headphones className="w-4 h-4 text-emerald-200" />}
                     </div>
 
                     <div
@@ -319,7 +319,7 @@ export function AuthorDashboardAIView({
               {isTyping && (
                 <div className="flex gap-3 items-center text-xs text-slate-500">
                   <div className="w-8 h-8 rounded-full bg-[#0F4C3A] text-white flex items-center justify-center">
-                    <Bot className="w-4 h-4 text-emerald-200 animate-pulse" />
+                    <Headphones className="w-4 h-4 text-emerald-200 animate-pulse" />
                   </div>
                   <div className="bg-white p-3 rounded-2xl border border-slate-200 flex items-center gap-1.5 shadow-2xs">
                     <span className="w-2 h-2 rounded-full bg-[#F05262] animate-bounce" />
@@ -408,8 +408,8 @@ export function AuthorDashboardAIView({
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
-                    <span>✨ Generate Launch Marketing Pack</span>
+                    <PenTool className="w-4 h-4" />
+                    <span>Generate Launch Marketing Pack</span>
                   </>
                 )}
               </button>
@@ -451,7 +451,7 @@ export function AuthorDashboardAIView({
           ) : (
             <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-3xl space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-rose-50 text-[#F05262] flex items-center justify-center mx-auto">
-                <Wand2 className="w-6 h-6" />
+                <PenTool className="w-6 h-6" />
               </div>
               <h4 className="text-sm font-bold text-slate-800">
                 Ready to maximize your book&apos;s Amazon visibility

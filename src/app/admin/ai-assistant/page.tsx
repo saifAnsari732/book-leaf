@@ -7,9 +7,8 @@ import { useFastQuery } from "@/lib/client-cache";
 import { SafeUser, TicketCategory, TicketPriority, TICKET_CATEGORIES, TICKET_PRIORITIES } from "@/types/domain";
 import { TicketCategoryBadge, TicketPriorityBadge } from "@/components/ui/badges";
 import {
-  Sparkles,
-  Cpu,
-  Bot,
+  MessageSquare,
+  Play,
   Send,
   Copy,
   Check,
@@ -200,7 +199,7 @@ export default function AdminAiAssistantPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#0F4C3A]">
-              <Sparkles className="w-4 h-4 text-[#10B981]" />
+              <ShieldCheck className="w-4 h-4 text-[#10B981]" />
               <span>Google Gemini AI Co-Pilot & Policy Engine</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold font-serif text-slate-900 mt-1">
@@ -340,7 +339,7 @@ export default function AdminAiAssistantPage() {
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4 text-emerald-200" />
+                    <Play className="w-4 h-4 text-emerald-200" />
                     <span>Run AI Triage & Draft Generation</span>
                   </>
                 )}
@@ -359,7 +358,7 @@ export default function AdminAiAssistantPage() {
                       AI Engine
                     </span>
                     <span className="text-sm font-bold text-slate-900 flex items-center gap-1 mt-0.5">
-                      <Cpu className="w-3.5 h-3.5 text-emerald-600" />
+                      <Layers className="w-3.5 h-3.5 text-emerald-600" />
                       {simulationResult.result.model}
                     </span>
                   </div>
@@ -428,7 +427,7 @@ export default function AdminAiAssistantPage() {
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-lg bg-emerald-100 text-[#0F4C3A] flex items-center justify-center">
-                        <Bot className="w-4 h-4" />
+                        <MessageSquare className="w-4 h-4" />
                       </div>
                       <span className="font-semibold text-slate-900 text-sm">
                         Recommended Author Reply (Grounded Draft)
@@ -475,7 +474,7 @@ export default function AdminAiAssistantPage() {
               /* Empty State */
               <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center shadow-sm flex flex-col items-center justify-center min-h-[420px]">
                 <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#0F4C3A] flex items-center justify-center mb-4">
-                  <Sparkles className="w-7 h-7 text-[#10B981]" />
+                  <FileText className="w-7 h-7 text-[#10B981]" />
                 </div>
                 <h3 className="text-lg font-bold font-serif text-slate-900">
                   Ready to Simulate AI Triage

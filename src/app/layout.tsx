@@ -4,7 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
 import { RealtimeTicketProvider } from "@/lib/use-ticket-realtime";
-import { FloatingAgentChat } from "@/components/support/floating-agent-chat";
+import { FloatingWhatsApp } from "@/components/support/floating-whatsapp";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -55,7 +55,7 @@ export default function RootLayout({
           <ToastProvider>
             <RealtimeTicketProvider>
               {children}
-              <FloatingAgentChat />
+              <FloatingWhatsApp />
             </RealtimeTicketProvider>
           </ToastProvider>
         </AuthProvider>

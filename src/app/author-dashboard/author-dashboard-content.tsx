@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { WhatsAppIcon } from "@/components/ui/whatsapp-icon";
 import {
   AlertCircle,
   ArrowRight,
@@ -2203,17 +2204,7 @@ export function AuthorDashboardContent() {
         </div>
       )}
 
-      {/* Floating WhatsApp Support Button with Nishtha Avatar */}
-      <a
-        href="https://wa.me/911943550930?text=Hello%20BookLeaf%20Author%20Support"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-xl hover:scale-105 transition-all group"
-        title="Chat with Nishtha (BookLeaf Author Support)"
-      >
-        <MessageCircle className="w-7 h-7 fill-white text-[#25D366]" />
-        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-300 rounded-full border-2 border-white animate-pulse" />
-      </a>
+
     </div>
   );
 }

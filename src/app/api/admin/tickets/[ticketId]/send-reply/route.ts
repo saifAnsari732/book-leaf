@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { AdminSendReplyInputSchema } from "@/types/domain";
 import { sendAdminReplyToTicket } from "@/lib/repository";
+import { sendStatusUpdateEmail } from "@/lib/email";
 import { invalidateTicketCaches } from "@/lib/redis";
 
 export async function POST(
@@ -62,6 +63,20 @@ export async function POST(
       ticketId,
       authorId: result.ticket.author_id,
     });
+
+    // Notify author of admin reply and status update via email
+    if (result.ticket.author_email) {
+      sendStatusUpdateEmail({
+        ticketId: result.ticket.ticket_id,
+        authorName: result.ticket.author_name,
+        authorEmail: result.ticket.author_email,
+        oldStatus: "In Progress",
+        newStatus: result.ticket.status,
+        subject: result.ticket.subject,
+        adminNote: parsed.data.content,
+        authorId: result.ticket.author_id,
+      }).catch((err) => console.warn("[Admin Reply Email Error]", err));
+    }
 
     return NextResponse.json(
       {

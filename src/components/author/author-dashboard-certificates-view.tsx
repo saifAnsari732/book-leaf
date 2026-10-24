@@ -12,7 +12,6 @@ import {
   QrCode,
   Share2,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 
 interface AuthorDashboardCertificatesViewProps {

@@ -6,6 +6,7 @@ import {
   getAdminTicketDetail,
   updateTicketByAdmin,
 } from "@/lib/repository";
+import { sendStatusUpdateEmail } from "@/lib/email";
 import { redisGet, redisSet, REDIS_KEYS, invalidateTicketCaches } from "@/lib/redis";
 
 export async function GET(
@@ -107,6 +108,9 @@ export async function PATCH(
     }
 
     const { ticketId } = await Promise.resolve(context.params);
+    const existing = await getAdminTicketDetail(ticketId);
+    const oldStatus = existing?.ticket.status || "Open";
+
     const updated = await updateTicketByAdmin({
       ticketId,
       admin: user,
@@ -118,6 +122,20 @@ export async function PATCH(
         { success: false, error: "Ticket not found" },
         { status: 404 }
       );
+    }
+
+    // If status changed and author email exists, dispatch transactional status update notification
+    if (parsed.data.status && parsed.data.status !== oldStatus && updated.author_email) {
+      sendStatusUpdateEmail({
+        ticketId: updated.ticket_id,
+        authorName: updated.author_name,
+        authorEmail: updated.author_email,
+        oldStatus,
+        newStatus: updated.status,
+        subject: updated.subject,
+        userId: existing?.author?.user_id,
+        authorId: updated.author_id,
+      }).catch((err) => console.warn("[Status Update Email Error]", err));
     }
 
     // Instant Tiered Cache invalidation

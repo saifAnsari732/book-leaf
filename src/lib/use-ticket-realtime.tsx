@@ -62,6 +62,11 @@ export function RealtimeTicketProvider({
   const pingSentAtRef = useRef<number>(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const unmountedRef = useRef(false);
+  const modeRef = useRef<RealtimeMode>("CONNECTING");
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
 
   const dispatchEventToListeners = useCallback((event: RealtimeTicketEvent) => {
     setLastEvent(event);
@@ -121,6 +126,18 @@ export function RealtimeTicketProvider({
       sseRef.current.close();
     }
 
+    if (
+      sseRef.current &&
+      (sseRef.current.readyState === EventSource.OPEN ||
+        sseRef.current.readyState === EventSource.CONNECTING)
+    ) {
+      return;
+    }
+    if (sseRef.current) {
+      try { sseRef.current.close(); } catch {}
+      sseRef.current = null;
+    }
+
     try {
       const es = new EventSource("/api/realtime/tickets");
       sseRef.current = es;
@@ -143,8 +160,19 @@ export function RealtimeTicketProvider({
 
       es.onerror = () => {
         if (unmountedRef.current) return;
-        // If SSE temporarily drops, keep trying in background
         setMode("OFFLINE");
+        if (es.readyState === EventSource.CLOSED) {
+          try { es.close(); } catch {}
+          sseRef.current = null;
+          if (!reconnectTimeoutRef.current) {
+            reconnectTimeoutRef.current = setTimeout(() => {
+              reconnectTimeoutRef.current = null;
+              if (!unmountedRef.current && modeRef.current === "OFFLINE") {
+                connectSSE();
+              }
+            }, 15000);
+          }
+        }
       };
     } catch {
       setMode("OFFLINE");
@@ -219,14 +247,14 @@ export function RealtimeTicketProvider({
       ws.onclose = () => {
         if (unmountedRef.current) return;
         // If WebSocket closed, fallback to SSE and retry WS later
-        if (mode === "WEBSOCKET") {
+        if (modeRef.current === "WEBSOCKET") {
           connectSSE();
         }
       };
     } catch {
       connectSSE();
     }
-  }, [connectSSE, dispatchEventToListeners, mode, sendPing]);
+  }, [connectSSE, dispatchEventToListeners, sendPing]);
 
   useEffect(() => {
     unmountedRef.current = false;

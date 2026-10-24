@@ -119,7 +119,7 @@ export function FloatingAgentChat() {
   ];
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-[88px] right-6 z-50">
       {/* Floating Chat Bubble Popup Card */}
       {isOpen && (
         <div className="mb-3 w-80 sm:w-96 rounded-3xl bg-white border border-slate-200 shadow-2xl overflow-hidden animate-fade-in flex flex-col h-[520px]">

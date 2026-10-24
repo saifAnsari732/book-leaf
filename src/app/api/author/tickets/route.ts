@@ -9,7 +9,11 @@ import {
   getBooksByAuthorId,
 } from "@/lib/repository";
 import { analyzeTicketWithAI } from "@/lib/ai-service";
-import { dispatchActivityEmail } from "@/lib/email";
+import {
+  dispatchActivityEmail,
+  sendAdminGrievanceAlert,
+  sendComplainantAcknowledgement,
+} from "@/lib/email";
 import { applySecurityHeaders } from "@/lib/security";
 import { redisGet, redisSet, REDIS_KEYS, invalidateTicketCaches } from "@/lib/redis";
 
@@ -154,21 +158,30 @@ export async function POST(req: NextRequest) {
     const publicTicket = { ...createdTicket };
     delete (publicTicket as Record<string, any>).ai_metadata;
 
-    // Send confirmation email
-    dispatchActivityEmail("TICKET", {
-      name: user.name,
-      email: user.email,
-      userId: user.user_id,
-      authorId: user.author_id,
+    // Dual-Channel Transactional Notifications (Author Acknowledgment + Immediate Admin Alert)
+    sendComplainantAcknowledgement({
       ticketId: createdTicket.ticket_id,
+      authorName: user.name,
+      authorEmail: user.email,
+      category: createdTicket.category,
       subject: createdTicket.subject,
       status: createdTicket.status,
+      userId: user.user_id,
+      authorId: user.author_id,
+    }).catch((err) => console.warn("[Complainant Email Alert Error]", err));
+
+    sendAdminGrievanceAlert({
+      ticketId: createdTicket.ticket_id,
+      authorName: user.name,
+      authorEmail: user.email,
+      authorPhone: user.phone || undefined,
+      bookTitle: selectedBook?.title,
+      category: createdTicket.category,
       priority: createdTicket.priority,
-      messagePreview: description.slice(0, 200),
-      actorName: user.name,
-      actorRole: "Author",
-      timestamp: new Date().toISOString(),
-    }).catch(() => {});
+      subject: createdTicket.subject,
+      description,
+      status: createdTicket.status,
+    }).catch((err) => console.warn("[Admin Grievance Alert Error]", err));
 
     // Instant Tiered Cache invalidation for fresh data
     await invalidateTicketCaches({

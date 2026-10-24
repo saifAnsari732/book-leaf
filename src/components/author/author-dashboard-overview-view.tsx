@@ -106,54 +106,54 @@ export function AuthorDashboardOverviewView({
   return (
     <div className="space-y-6 animate-fade-in font-sans text-[#2C2825]">
       {/* ====================================================================
-          TOP HEADER: WELCOME + SEARCH & PROFILE
+          TOP EXECUTIVE GREETING CARD (Anchored Surface - Zero Floating Text)
           ==================================================================== */}
-      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 pt-2">
-        <div className="space-y-1">
-          <span className="text-[11px] font-bold tracking-[0.2em] text-[#8C827A] uppercase block">
-            WELCOME BACK
-          </span>
-          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#2C2825] tracking-tight">
-            Good morning, {authorFirstName}
-          </h1>
-          <div className="flex items-center gap-2 pt-0.5">
-            <span className="font-serif italic text-lg sm:text-xl text-[#3A4D39] font-medium">
-              Author Dashboard
-            </span>
+      <div className="bg-white rounded-3xl border border-[#EDE6DD] p-6 sm:p-7 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#FAF0EB] border border-[#F2DDD2] text-[#A65B43]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#A65B43]" />
+              <span className="text-[10px] font-bold tracking-[0.18em] uppercase">
+                AUTHOR DESK OVERVIEW
+              </span>
+            </div>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#2C2825] tracking-tight">
+              Good morning, {authorFirstName}
+            </h1>
+            <p className="text-xs sm:text-sm text-[#7D756F]">
+              Here&apos;s a live summary of your published titles, royalties, and reader engagement.
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-[#7D756F]">
-            Here&apos;s what&apos;s happening with your books today.
-          </p>
-        </div>
 
-        {/* Top Right Controls & Literary Flourish */}
-        <div className="flex flex-col items-end gap-3">
-          <div className="flex items-center gap-3">
+          {/* Top Right Controls & Author Capsule */}
+          <div className="flex flex-wrap items-center gap-3">
             {/* Search Input */}
-            <div className="relative w-64 sm:w-72">
+            <div className="relative w-full sm:w-64">
               <Search className="w-4 h-4 text-[#A8A099] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search books, tickets or help..."
-                className="w-full pl-9 pr-4 py-2 rounded-full border border-[#EDE6DD] bg-white text-xs text-[#2C2825] placeholder:text-[#A8A099] focus:outline-hidden focus:border-[#A65B43] focus:ring-1 focus:ring-[#A65B43] shadow-2xs"
+                className="w-full pl-9 pr-4 py-2 rounded-full border border-[#EDE6DD] bg-[#FAF7F2] text-xs text-[#2C2825] placeholder:text-[#A8A099] focus:outline-hidden focus:border-[#A65B43] focus:bg-white focus:ring-1 focus:ring-[#A65B43] transition shadow-2xs"
               />
             </div>
 
-            {/* Notification Bell with Red Dot */}
+            {/* Notification Bell */}
             <button
               type="button"
               onClick={() => onNavigate("My Tickets")}
-              className="relative w-9 h-9 rounded-full bg-white border border-[#EDE6DD] flex items-center justify-center text-[#5A524C] hover:bg-[#F6F2EA] transition cursor-pointer shadow-2xs"
+              className="relative w-9 h-9 rounded-full bg-[#FAF7F2] border border-[#EDE6DD] flex items-center justify-center text-[#5A524C] hover:bg-[#F2ECE5] transition cursor-pointer shadow-2xs"
               title="Notifications"
             >
               <Bell className="w-4 h-4" />
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#E03A4B] ring-2 ring-white" />
+              {openSupportTicketsCount > 0 && (
+                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#E03A4B] ring-2 ring-white" />
+              )}
             </button>
 
-            {/* Author Avatar Dropdown Chip */}
+            {/* Author Profile Chip */}
             <div
               onClick={() => onNavigate("Profile")}
-              className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-white border border-[#EDE6DD] hover:bg-[#F6F2EA] transition cursor-pointer shadow-2xs"
+              className="flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full bg-[#FAF7F2] border border-[#EDE6DD] hover:bg-[#F2ECE5] transition cursor-pointer shadow-2xs"
             >
               <div className="w-7 h-7 rounded-full bg-[#2C4A3E] text-white flex items-center justify-center font-bold text-xs">
                 {authorFirstName[0]}
@@ -163,13 +163,6 @@ export function AuthorDashboardOverviewView({
               </span>
               <ChevronDown className="w-3.5 h-3.5 text-[#8C827A]" />
             </div>
-          </div>
-
-          {/* Literary Quote Flourish */}
-          <div className="hidden sm:flex items-center gap-2 text-right">
-            <span className="font-serif italic text-xs text-[#8C827A]">
-              Great stories create a brighter world.
-            </span>
           </div>
         </div>
       </div>

@@ -2300,3 +2300,103 @@ export async function saveProcessedPayment(
     persistLocalState(state);
   }
 }
+
+
+// ============================================================================
+// Public Ticket Tracking (Adapted from IT Academics Grievance Portal)
+// ============================================================================
+
+function maskEmail(email: string): string {
+  if (!email || !email.includes("@")) return "Anonymous";
+  const [local, domain] = email.split("@");
+  if (local.length <= 2) {
+    return `${local[0]}***@${domain}`;
+  }
+  return `${local.slice(0, 2)}***${local.slice(-1)}@${domain}`;
+}
+
+export async function getPublicTicketTrackDetail(ticketId: string): Promise<{
+  ticket_id: string;
+  author_name: string;
+  masked_email: string;
+  book_title: string;
+  subject: string;
+  description: string;
+  status: TicketStatus;
+  category: TicketCategory;
+  priority: TicketPriority;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+  assigned_to: string | null;
+  attachments_count: number;
+  timeline: {
+    message_id: string;
+    sender_role: string;
+    sender_name: string;
+    content: string;
+    created_at: string;
+  }[];
+} | null> {
+  if (!ticketId || !ticketId.trim()) return null;
+  const cleanId = ticketId.trim();
+  const mode = await ensureDatabaseReady();
+
+  let ticket: TicketRecord | null = null;
+  let rawMessages: TicketMessageRecord[] = [];
+
+  if (mode === "mongo") {
+    const escaped = cleanId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    ticket = await TicketModel.findOne({
+      ticket_id: { $regex: new RegExp(`^${escaped}$`, "i") },
+    }).lean();
+
+    if (ticket) {
+      rawMessages = await TicketMessageModel.find({
+        ticket_id: ticket.ticket_id,
+      })
+        .sort({ created_at: 1 })
+        .lean();
+    }
+  } else {
+    const state = globalThis.__bookleafLocalState!;
+    ticket =
+      state.tickets.find(
+        (t) => t.ticket_id.toLowerCase() === cleanId.toLowerCase()
+      ) || null;
+
+    if (ticket) {
+      rawMessages = state.messages
+        .filter((m) => m.ticket_id === ticket!.ticket_id)
+        .sort((a, b) => a.created_at.localeCompare(b.created_at));
+    }
+  }
+
+  if (!ticket) return null;
+
+  const timeline = rawMessages.map((m) => ({
+    message_id: m.message_id,
+    sender_role: m.sender_role,
+    sender_name: m.sender_role === "ADMIN" ? "Support Specialist" : m.sender_name,
+    content: m.content,
+    created_at: m.created_at,
+  }));
+
+  return {
+    ticket_id: ticket.ticket_id,
+    author_name: ticket.author_name,
+    masked_email: maskEmail(ticket.author_email),
+    book_title: ticket.book_title,
+    subject: ticket.subject,
+    description: ticket.description,
+    status: ticket.status,
+    category: ticket.category,
+    priority: ticket.priority,
+    created_at: ticket.created_at,
+    updated_at: ticket.updated_at,
+    resolved_at: ticket.resolved_at,
+    assigned_to: ticket.assigned_to ? "Assigned Support Officer" : null,
+    attachments_count: Array.isArray(ticket.attachments) ? ticket.attachments.length : 0,
+    timeline,
+  };
+}

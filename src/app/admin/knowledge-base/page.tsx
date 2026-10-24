@@ -18,7 +18,6 @@ import {
   Eye,
   FileText,
   Clock,
-  Sparkles,
   Layers,
   ChevronRight,
   Edit3,
@@ -396,7 +395,7 @@ export default function AdminKnowledgeBasePage() {
                 AI Grounding Status
               </span>
               <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
-                <Sparkles className="w-4 h-4" />
+                <CheckCircle2 className="w-4 h-4" />
               </div>
             </div>
             <p className="text-2xl font-bold text-slate-900 mt-2">100%</p>
@@ -496,7 +495,7 @@ export default function AdminKnowledgeBasePage() {
                   <TicketCategoryBadge category={article.category} />
                   {article.isAiGrounded && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                      <Sparkles className="w-3 h-3 text-emerald-600" />
+                      <ShieldCheck className="w-3 h-3 text-emerald-600" />
                       AI Grounded
                     </span>
                   )}

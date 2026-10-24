@@ -28,7 +28,6 @@ import {
   MessageSquare,
   RotateCcw,
   Search,
-  Sparkles,
   Ticket,
   UserCheck,
 } from "lucide-react";

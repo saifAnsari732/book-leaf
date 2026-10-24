@@ -11,7 +11,6 @@ import {
   ExternalLink,
   Flame,
   Send,
-  Sparkles,
   Trophy,
   Users,
 } from "lucide-react";

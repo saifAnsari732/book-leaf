@@ -8,8 +8,21 @@ import {
   getRealtimeStats,
 } from "@/lib/realtime-service";
 
+const recentConnections = new Map<string, number>();
+
 export async function GET(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || "client";
+    const now = Date.now();
+    const lastConn = recentConnections.get(ip) || 0;
+    if (now - lastConn < 3000) {
+      return new NextResponse("Rate limited: live stream reconnect cooldown active", {
+        status: 429,
+        headers: { "Retry-After": "5" },
+      });
+    }
+    recentConnections.set(ip, now);
+
     const user = await getSessionUser();
     if (!user) {
       return NextResponse.json(

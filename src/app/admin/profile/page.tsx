@@ -9,7 +9,6 @@ import {
   Server,
   Zap,
   Database,
-  Cpu,
   RefreshCw,
   CheckCircle2,
   Lock,
@@ -17,7 +16,6 @@ import {
   User,
   Sliders,
   ExternalLink,
-  Sparkles,
   FileCode2,
   HardDrive,
   Activity,
@@ -119,7 +117,7 @@ export default function AdminSettingsPage() {
           {[
             { id: "general", label: "Admin Profile", icon: User },
             { id: "integrations", label: "Cloud & Redis Cluster", icon: Server },
-            { id: "ai", label: "Gemini AI & Policy Engine", icon: Cpu },
+            { id: "ai", label: "Editorial Policy & Rules Engine", icon: ShieldCheck },
             { id: "security", label: "Security & RBAC", icon: Lock },
           ].map((tab) => {
             const Icon = tab.icon;

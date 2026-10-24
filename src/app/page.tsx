@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { WhatsAppIcon } from "@/components/ui/whatsapp-icon";
 import {
   ArrowRight,
   BadgePercent,
@@ -42,7 +43,6 @@ import {
   Zap,
 } from "lucide-react";
 import { RoyaltyCalculator } from "@/components/calculator/royalty-calculator";
-import { FloatingAgentChat } from "@/components/support/floating-agent-chat";
 import AuthorVideoReel from "@/components/AuthorVideoReel";
 import { RazorpayModal } from "@/components/payment/RazorpayModal";
 import { useAuth } from "@/context/AuthContext";
@@ -324,6 +324,10 @@ export default function HomePage() {
             <Link href="#faq" className="hover:text-[#F05262] transition">
               FAQ
             </Link>
+            <Link href="/track" className="hover:text-[#F05262] font-semibold transition flex items-center gap-1.5">
+              <Search className="w-3.5 h-3.5" />
+              <span>Track Ticket</span>
+            </Link>
           </nav>
 
           {/* Action Buttons */}
@@ -423,6 +427,14 @@ export default function HomePage() {
                 className="hover:text-[#F05262]"
               >
                 Support Tickets &amp; Help
+              </Link>
+              <Link
+                href="/track"
+                onClick={() => setMobileNavOpen(false)}
+                className="hover:text-[#F05262] flex items-center justify-between font-semibold text-indigo-700"
+              >
+                <span className="flex items-center gap-2"><Search className="w-4 h-4" /> Track Grievance Status</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold">LIVE</span>
               </Link>
               <Link
                 href="#faq"
@@ -1294,7 +1306,7 @@ export default function HomePage() {
                     rel="noopener noreferrer"
                     className="w-full h-11 rounded-2xl bg-[#25D366] hover:bg-[#20be5a] text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-xs hover:shadow-md cursor-pointer"
                   >
-                    <MessageCircle className="w-4 h-4 fill-white" />
+                    <WhatsAppIcon className="w-4 h-4 fill-white text-white" />
                     <span>Chat on WhatsApp (+91 194 355 0930)</span>
                   </a>
 
@@ -1662,6 +1674,12 @@ export default function HomePage() {
                 <li>
                   <Link href="/admin/tickets" className="hover:text-white transition-colors block">
                     Ticket Queue (Live Status)
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/track" className="hover:text-white transition-colors block text-indigo-300 font-semibold flex items-center gap-1.5">
+                    <Search className="w-3.5 h-3.5" />
+                    <span>Track Grievance / Ticket</span>
                   </Link>
                 </li>
                 <li>
@@ -2105,7 +2123,7 @@ export default function HomePage() {
       {/* ====================================================================
           INTERACTIVE CUSTOMER SUPPORT CHAT POPUP ("Nishtha" Agent Parity)
           ==================================================================== */}
-      <FloatingAgentChat />
+      
 
       {/* ====================================================================
           RAZORPAY CHECKOUT MODAL (Secure Payment Gateway)

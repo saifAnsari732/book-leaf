@@ -16,7 +16,6 @@ import {
   Trash2,
   RefreshCw,
   Clock,
-  Sparkles,
   Filter,
   Eye,
   Code,

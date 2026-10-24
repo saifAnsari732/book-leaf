@@ -35,17 +35,15 @@ import {
   ArrowLeft,
   BookOpen,
   CheckCircle2,
-  Cpu,
+  FileEdit,
   EyeOff,
   Lock,
   Paperclip,
   RefreshCw,
   Send,
   ShieldCheck,
-  Sparkles,
   User,
   UserCheck,
-  Wand2,
 } from "lucide-react";
 
 interface AdminTicketDetailResponse {
@@ -564,13 +562,13 @@ export default function AdminTicketDetailWorkbenchPage() {
             <div className="rounded-2xl border-2 border-sky-200 bg-white overflow-hidden shadow-sm">
               <div className="bg-[#0E2842] px-6 py-4 text-white flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                  <Sparkles
+                  <FileEdit
                     className="h-5 w-5 text-sky-300"
                     aria-hidden="true"
                   />
                   <div>
                     <h2 className="text-sm font-bold">
-                      AI-Assisted Response Workbench
+                      Editorial Response Workbench
                     </h2>
                     <p className="text-[11px] text-slate-300">
                       Grounded in BookLeaf Knowledge Base &{" "}
@@ -597,8 +595,8 @@ export default function AdminTicketDetailWorkbenchPage() {
                 <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-3.5 text-xs space-y-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-bold text-[#1B4D7E] flex items-center gap-1.5">
-                      <Cpu className="h-3.5 w-3.5" aria-hidden="true" />
-                      AI Classification Rationale:
+                      <ShieldCheck className="h-3.5 w-3.5 text-sky-600" aria-hidden="true" />
+                      Ticket Triage Rationale:
                     </span>
                     <span className="text-[11px] text-slate-600">
                       Suggested:{" "}
@@ -628,15 +626,15 @@ export default function AdminTicketDetailWorkbenchPage() {
                     disabled={isRegeneratingAI}
                     className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-sky-300 bg-sky-50 px-3.5 py-2 text-xs font-semibold text-[#1B4D7E] hover:bg-sky-100 transition-colors cursor-pointer shrink-0"
                   >
-                    <Wand2
+                    <RefreshCw
                       className={`h-3.5 w-3.5 ${
                         isRegeneratingAI ? "animate-spin" : ""
                       }`}
                       aria-hidden="true"
                     />
                     {isRegeneratingAI
-                      ? "Regenerating..."
-                      : "Regenerate AI Draft"}
+                      ? "Refreshing..."
+                      : "Refresh Response Draft"}
                   </button>
                 </div>
 

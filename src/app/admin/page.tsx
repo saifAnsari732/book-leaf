@@ -24,7 +24,6 @@ import {
   Clock,
   Layers,
   ShieldCheck,
-  Sparkles,
   Ticket,
   TrendingUp,
   UserCheck,
