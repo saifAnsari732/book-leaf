@@ -148,6 +148,15 @@ export function PortalShell({
     setIsLoggingOut(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
+      document.cookie =
+        "bookleaf_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie =
+        "bookleaf_access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie =
+        "bookleaf_refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      try {
+        localStorage.setItem("bookleaf_auth_event", `logout_${Date.now()}`);
+      } catch {}
       router.push("/login");
       router.refresh();
     } finally {

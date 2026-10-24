@@ -23,6 +23,8 @@ import {
   Layers,
   Linkedin,
   Lock,
+  LogIn,
+  LogOut,
   Mail,
   MapPin,
   Menu,
@@ -157,7 +159,13 @@ const BESTSELLER_BOOKS: BookstoreBook[] = [
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, role: currentRole, isAuthenticated } = useAuth();
+  const {
+    user,
+    role: currentRole,
+    isAuthenticated,
+    isLoading: authLoading,
+    logout,
+  } = useAuth();
   const [loggingInAs, setLoggingInAs] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [faqSearchQuery, setFaqSearchQuery] = useState("");
@@ -332,22 +340,48 @@ export default function HomePage() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3 shrink-0">
-            {isAuthenticated ? (
-              <Link
-                href="/dashboard"
-                className="px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold text-[#0F4C3A] bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 transition flex items-center gap-2 shadow-xs"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Dashboard ({currentRole === "ADMIN" ? "Admin" : "Author"})</span>
-              </Link>
+            {authLoading ? (
+              <div className="w-28 h-10 rounded-full bg-slate-100 animate-pulse" />
+            ) : isAuthenticated && user ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/dashboard"
+                  className="px-4 py-2 rounded-full text-xs sm:text-sm font-bold text-[#0F4C3A] bg-emerald-50 border border-emerald-300 hover:bg-emerald-100 transition flex items-center gap-2.5 shadow-xs"
+                  title={`Signed in as ${user.name} (${user.role})`}
+                >
+                  <div className="w-6 h-6 rounded-full bg-emerald-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                    {user.name ? user.name[0].toUpperCase() : "A"}
+                  </div>
+                  <div className="flex flex-col text-left leading-tight">
+                    <span className="text-xs font-bold text-slate-800 truncate max-w-[110px]">
+                      {user.name?.split(" ")[0] || "Author"}
+                    </span>
+                    <span className="text-[10px] text-emerald-700 font-semibold">
+                      {currentRole === "ADMIN" ? "Admin Portal" : "Dashboard"}
+                    </span>
+                  </div>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => logout()}
+                  className="p-2.5 rounded-full text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 transition shrink-0 cursor-pointer"
+                  title="Sign Out"
+                  aria-label="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             ) : (
               <Link
                 href="/login"
-                className="px-5 py-2.5 rounded-full text-sm font-semibold text-[#F05262] border border-[#F05262]/30 hover:bg-[#FFE7E9]/50 transition"
+                className="px-5 py-2.5 rounded-full text-sm font-semibold text-[#F05262] border border-[#F05262]/30 hover:bg-[#FFE7E9]/50 transition flex items-center gap-1.5 shadow-2xs"
               >
-                Sign In
+                <LogIn className="w-4 h-4" />
+                <span>Sign In</span>
               </Link>
             )}
+
             <Link
               href="/create_book"
               className="hidden sm:inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold bg-[#F05262] hover:bg-[#e04555] text-white shadow-xs hover:shadow transition"
@@ -414,20 +448,29 @@ export default function HomePage() {
               >
                 Bookstore Bestsellers
               </Link>
-              <Link
-                href="/author-dashboard?menu=Royalty%20Withdrawal"
-                onClick={() => setMobileNavOpen(false)}
-                className="text-emerald-700 font-bold"
-              >
-                Author Dashboard &amp; Royalty Wallet
-              </Link>
-              <Link
-                href="/author-dashboard?menu=Support%20Tickets"
-                onClick={() => setMobileNavOpen(false)}
-                className="hover:text-[#F05262]"
-              >
-                Support Tickets &amp; Help
-              </Link>
+
+              {isAuthenticated && user && (
+                <>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="text-emerald-700 font-bold flex items-center justify-between"
+                  >
+                    <span>Dashboard ({currentRole === "ADMIN" ? "Admin" : "Author"})</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold">
+                      {user.name?.split(" ")[0] || "Active"}
+                    </span>
+                  </Link>
+                  <Link
+                    href="/author-dashboard?menu=Support%20Tickets"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="hover:text-[#F05262]"
+                  >
+                    Support Tickets &amp; Help
+                  </Link>
+                </>
+              )}
+
               <Link
                 href="/track"
                 onClick={() => setMobileNavOpen(false)}
@@ -444,21 +487,46 @@ export default function HomePage() {
                 FAQ
               </Link>
             </nav>
+
             <div className="pt-3 border-t border-slate-100 flex gap-2">
-              <Link
-                href="/login"
-                onClick={() => setMobileNavOpen(false)}
-                className="flex-1 py-2.5 text-center rounded-xl bg-slate-100 font-bold text-xs text-slate-800"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/author-dashboard?menu=Books"
-                onClick={() => setMobileNavOpen(false)}
-                className="flex-1 py-2.5 text-center rounded-xl bg-[#F05262] font-bold text-xs text-white"
-              >
-                Publish Book
-              </Link>
+              {isAuthenticated && user ? (
+                <>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="flex-1 py-2.5 text-center rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-xs"
+                  >
+                    Open Dashboard
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileNavOpen(false);
+                      logout();
+                    }}
+                    className="flex-1 py-2.5 text-center rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 font-bold text-xs transition"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="flex-1 py-2.5 text-center rounded-xl bg-slate-100 font-bold text-xs text-slate-800"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/create_book"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="flex-1 py-2.5 text-center rounded-xl bg-[#F05262] font-bold text-xs text-white"
+                  >
+                    Publish Book
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -797,13 +865,13 @@ export default function HomePage() {
           <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold uppercase tracking-wider shadow-2xs">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Official BookLeaf Publishing Packages</span>
+              <span>Official BookLeaf Publishing Packages • Now with AI Editorial &amp; Sales Features</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#F05262] tracking-tight">
               Publishing Packages
             </h2>
             <p className="text-sm sm:text-base text-slate-600">
-              Choose the perfect publishing plan tailored to your book&apos;s goals. Transparent royalties, complete author ownership, and global distribution.
+              Choose the perfect publishing plan tailored to your book&apos;s goals. Includes highlighted AI publishing intelligence, transparent royalties, and global distribution.
             </p>
           </div>
 
@@ -850,9 +918,27 @@ export default function HomePage() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Sales Reporting and 100% Royalty</span>
                   </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Book Blurb &amp; Title Consultation</span>
+                  <li className="flex items-start sm:items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                        AI Smart Title &amp; Blurb Consultation
+                      </span>
+                      <span className="bg-slate-900 text-amber-300 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
+                        AI POWERED
+                      </span>
+                    </div>
+                  </li>
+                  <li className="flex items-start sm:items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                        AI Pre-Print Grammar &amp; Syntax Diagnostic
+                      </span>
+                      <span className="bg-slate-900 text-amber-300 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
+                        AI
+                      </span>
+                    </div>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -923,9 +1009,38 @@ export default function HomePage() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Customised Premium Cover Design</span>
                   </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Chapter Synopsis &amp; Narrative Structuring</span>
+                  <li className="flex items-start sm:items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                        AI Chapter Synopsis &amp; Narrative Flow Analysis
+                      </span>
+                      <span className="bg-[#F05262] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
+                        AI PLUS
+                      </span>
+                    </div>
+                  </li>
+                  <li className="flex items-start sm:items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                        AI Amazon Search &amp; KDP Keyword SEO Tags
+                      </span>
+                      <span className="bg-[#F05262] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
+                        AI PLUS
+                      </span>
+                    </div>
+                  </li>
+                  <li className="flex items-start sm:items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                        AI Target Audience &amp; Category Matcher
+                      </span>
+                      <span className="bg-[#F05262] text-white text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
+                        AI PLUS
+                      </span>
+                    </div>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -934,10 +1049,6 @@ export default function HomePage() {
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>15-Day Targeted Amazon Ad Campaign</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Amazon Search &amp; Keyword Strategy</span>
                   </li>
                 </ul>
 
@@ -989,9 +1100,16 @@ export default function HomePage() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>10 Complimentary Author Copies + Hardcover</span>
                   </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>End-to-End Comprehensive Manuscript Studio</span>
+                  <li className="flex items-start sm:items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                        AI Comprehensive Manuscript Studio
+                      </span>
+                      <span className="bg-slate-900 text-amber-300 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
+                        AI PRO
+                      </span>
+                    </div>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -1005,9 +1123,27 @@ export default function HomePage() {
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>30-Day Managed Amazon Ad Campaign</span>
                   </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Amazon Bestseller Category Optimisation</span>
+                  <li className="flex items-start sm:items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                        AI Bestseller Category &amp; Competitor Radar
+                      </span>
+                      <span className="bg-slate-900 text-amber-300 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
+                        AI PRO
+                      </span>
+                    </div>
+                  </li>
+                  <li className="flex items-start sm:items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 sm:mt-0" />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="bg-amber-100 text-slate-900 font-bold px-2 py-0.5 rounded-md border border-amber-300/80 shadow-2xs">
+                        AI Predictive Sales &amp; Demand Model
+                      </span>
+                      <span className="bg-slate-900 text-amber-300 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
+                        AI PRO
+                      </span>
+                    </div>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />

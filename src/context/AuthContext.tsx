@@ -244,7 +244,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setAccessToken(null);
       try {
-        localStorage.setItem("bookleaf_auth_event", "logout");
+        localStorage.setItem("bookleaf_auth_event", `logout_${Date.now()}`);
+        // Clear any accessible client-side cookies
+        document.cookie = "bookleaf_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+        document.cookie = "bookleaf_access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+        document.cookie = "bookleaf_refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
       } catch {}
       router.replace("/login");
       router.refresh();

@@ -4,11 +4,22 @@ import { applySecurityHeaders, validateCsrfOrigin } from "./lib/security";
 
 const ACCESS_COOKIE = "bookleaf_access_token";
 const SESSION_COOKIE = "bookleaf_session";
+const REFRESH_COOKIE = "bookleaf_refresh_token";
 
 function getSecretKey(): Uint8Array {
   const secret =
     process.env.SESSION_SECRET ||
+    process.env.AUTH_SECRET ||
     "bookleaf-dev-session-secret-change-in-production-2026";
+  return new TextEncoder().encode(secret);
+}
+
+function getRefreshSecretKey(): Uint8Array {
+  const secret =
+    process.env.REFRESH_SECRET ||
+    process.env.SESSION_SECRET ||
+    process.env.AUTH_SECRET ||
+    "bookleaf-dev-refresh-secret-change-in-production-2026";
   return new TextEncoder().encode(secret);
 }
 
@@ -24,24 +35,45 @@ async function verifyToken(req: NextRequest): Promise<DecodedToken | null> {
     req.cookies.get(SESSION_COOKIE)?.value ||
     req.headers.get("authorization")?.replace("Bearer ", "");
 
-  if (!token) return null;
-
-  try {
-    const { payload } = await jwtVerify(token, getSecretKey());
-    if (
-      typeof payload.user_id === "string" &&
-      (payload.role === "AUTHOR" || payload.role === "ADMIN")
-    ) {
-      return {
-        user_id: payload.user_id,
-        role: payload.role as "AUTHOR" | "ADMIN",
-        email: typeof payload.email === "string" ? payload.email : "",
-      };
+  if (token) {
+    try {
+      const { payload } = await jwtVerify(token, getSecretKey());
+      if (
+        typeof payload.user_id === "string" &&
+        (payload.role === "AUTHOR" || payload.role === "ADMIN")
+      ) {
+        return {
+          user_id: payload.user_id,
+          role: payload.role as "AUTHOR" | "ADMIN",
+          email: typeof payload.email === "string" ? payload.email : "",
+        };
+      }
+    } catch {
+      // Continue to check refresh token
     }
-    return null;
-  } catch {
-    return null;
   }
+
+  // Fallback to refresh token if access token has expired
+  const refreshToken = req.cookies.get(REFRESH_COOKIE)?.value;
+  if (refreshToken) {
+    try {
+      const { payload } = await jwtVerify(refreshToken, getRefreshSecretKey());
+      if (
+        typeof payload.user_id === "string" &&
+        (payload.role === "AUTHOR" || payload.role === "ADMIN")
+      ) {
+        return {
+          user_id: payload.user_id,
+          role: payload.role as "AUTHOR" | "ADMIN",
+          email: typeof payload.email === "string" ? payload.email : "",
+        };
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }
 
 export async function middleware(req: NextRequest) {
@@ -111,7 +143,16 @@ export async function middleware(req: NextRequest) {
     if (!decoded) {
       const url = req.nextUrl.clone();
       url.pathname = "/login";
-      url.searchParams.set("redirect", pathname);
+      const fullRedirect = req.nextUrl.search
+        ? `${pathname}${req.nextUrl.search}`
+        : pathname;
+      url.searchParams.set("redirect", fullRedirect);
+      return applySecurityHeaders(NextResponse.redirect(url));
+    }
+
+    if (decoded.role !== "AUTHOR") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/admin";
       return applySecurityHeaders(NextResponse.redirect(url));
     }
   }

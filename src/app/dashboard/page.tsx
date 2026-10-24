@@ -19,7 +19,7 @@ export default function UniversalDashboardPage() {
     if (role === "ADMIN") {
       router.replace("/admin");
     } else {
-      router.replace("/author");
+      router.replace("/author-dashboard?menu=Royalty%20Withdrawal");
     }
   }, [isLoading, isAuthenticated, role, user, router]);
 

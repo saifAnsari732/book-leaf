@@ -36,10 +36,16 @@ export async function POST(req: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: 0,
+      expires: new Date(0),
     };
 
     response.cookies.set(ACCESS_TOKEN_COOKIE_NAME, "", cookieOptions);
     response.cookies.set(REFRESH_TOKEN_COOKIE_NAME, "", cookieOptions);
+    response.cookies.set(SESSION_COOKIE_NAME, "", {
+      ...cookieOptions,
+      httpOnly: false,
+    });
+    // Also explicitly expire with httpOnly: true just in case
     response.cookies.set(SESSION_COOKIE_NAME, "", cookieOptions);
 
     return applySecurityHeaders(response, { isApiRoute: true });

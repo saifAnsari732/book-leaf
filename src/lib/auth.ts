@@ -13,7 +13,7 @@ export const ACCESS_TOKEN_MAX_AGE_SECONDS = 15 * 60; // 15 minutes
 export const REFRESH_TOKEN_MAX_AGE_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
 function getSecretKey(): Uint8Array {
-  const secret = process.env.SESSION_SECRET;
+  const secret = process.env.SESSION_SECRET || process.env.AUTH_SECRET;
   if (process.env.NODE_ENV === "production" && (!secret || secret.includes("dev-session-secret"))) {
     console.warn(
       "[SECURITY WARNING]: Production environment detected without a strong custom SESSION_SECRET configured. Please set SESSION_SECRET in production env."
@@ -25,7 +25,7 @@ function getSecretKey(): Uint8Array {
 }
 
 function getRefreshSecretKey(): Uint8Array {
-  const secret = process.env.REFRESH_SECRET || process.env.SESSION_SECRET;
+  const secret = process.env.REFRESH_SECRET || process.env.SESSION_SECRET || process.env.AUTH_SECRET;
   if (process.env.NODE_ENV === "production" && (!secret || secret.includes("dev-refresh-secret"))) {
     console.warn(
       "[SECURITY WARNING]: Production environment detected without a strong custom REFRESH_SECRET configured."

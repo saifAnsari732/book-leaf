@@ -9,10 +9,14 @@ import { useToast } from "@/context/ToastContext";
 import {
   AlertCircle,
   ArrowRight,
+  BadgePercent,
   BookOpen,
+  Building,
   CheckCircle2,
+  CreditCard,
   Eye,
   EyeOff,
+  KeyRound,
   Lock,
   LogIn,
   Mail,
@@ -20,7 +24,6 @@ import {
   Phone,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
   User,
   UserPlus,
 } from "lucide-react";
@@ -150,22 +153,20 @@ export default function LoginPage() {
       }
 
       setSuccessMessage(
-        `Welcome back, ${result.user.name}! Routing to your dashboard...`
+        `Welcome back, ${result.user.name}! Directing to your console...`
       );
       toast.success(
-        "Signed In Successfully",
-        `Welcome back, ${result.user.name}! Secure session token issued.`
+        "Authentication Successful",
+        `Signed in as ${result.user.name} (${result.user.role})`
       );
-      const destination = getDestinationUrl(result.role || "AUTHOR");
 
+      const destination = getDestinationUrl(result.user.role);
       setTimeout(() => {
         router.push(destination);
         router.refresh();
-      }, 400);
+      }, 500);
     } catch {
-      const netErr = "Network error while signing in. Please try again.";
-      setError(netErr);
-      toast.error("Network Error", netErr);
+      setError("An unexpected network error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -177,16 +178,17 @@ export default function LoginPage() {
     setError(null);
     setSuccessMessage(null);
 
+    // Validation
     if (!fullName.trim()) {
-      setError("Please enter your full name.");
+      setError("Please enter your full legal name.");
       return;
     }
-    if (!signUpEmail.trim()) {
+    if (!signUpEmail.trim() || !signUpEmail.includes("@")) {
       setError("Please enter a valid email address.");
       return;
     }
     if (signUpPassword.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setError("Password must be at least 6 characters long.");
       return;
     }
     if (signUpPassword !== confirmPassword) {
@@ -194,7 +196,7 @@ export default function LoginPage() {
       return;
     }
     if (!agreeTerms) {
-      setError("Please agree to BookLeaf Publishing Terms & Conditions.");
+      setError("Please agree to the Publishing Terms of Service to proceed.");
       return;
     }
 
@@ -209,7 +211,7 @@ export default function LoginPage() {
       });
 
       if (!result.success || !result.user) {
-        const errMsg = result.error || "Registration could not be completed.";
+        const errMsg = result.error || "Failed to create author account";
         setError(errMsg);
         toast.error("Registration Failed", errMsg);
         return;
@@ -250,11 +252,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F9FAF7] flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8 selection:bg-[#0F4C3A] selection:text-white">
+    <div className="min-h-screen bg-[#FBF9F5] flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8 selection:bg-[#0F4C3A] selection:text-white relative overflow-hidden">
+      {/* Ambient background decorations */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[550px] bg-gradient-to-b from-[#EFE8DE]/60 via-[#F7F3EC]/30 to-transparent pointer-events-none -z-10 rounded-full blur-3xl" />
+      <div className="absolute -bottom-28 -right-28 w-96 h-96 bg-[#0F4C3A]/5 pointer-events-none -z-10 rounded-full blur-3xl" />
+      <div className="absolute top-1/3 -left-32 w-80 h-80 bg-[#F05262]/5 pointer-events-none -z-10 rounded-full blur-3xl" />
+
       {/* Top Navbar Brand Link */}
-      <div className="max-w-5xl w-full mx-auto mb-8 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-[#0F4C3A] text-white flex items-center justify-center shadow-xs">
+      <div className="max-w-5xl w-full mx-auto mb-6 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0F4C3A] to-[#186851] text-white flex items-center justify-center shadow-sm shadow-[#0F4C3A]/20 group-hover:scale-105 transition-transform">
             <svg
               className="w-5 h-5 text-emerald-200"
               viewBox="0 0 24 24"
@@ -267,94 +274,125 @@ export default function LoginPage() {
             </svg>
           </div>
           <div>
-            <span className="font-serif text-lg font-bold text-slate-900 leading-tight block">
+            <span className="font-serif text-xl font-bold text-slate-900 leading-tight block group-hover:text-[#0F4C3A] transition-colors">
               BookLeaf Publishing
             </span>
-            <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
-              Official Author Portal & Desk
-            </span>
+            <div className="flex items-center gap-1.5 -mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                Official Author Portal & Desk
+              </span>
+            </div>
           </div>
         </Link>
 
         <Link
           href="/"
-          className="text-xs font-semibold text-[#0F4C3A] hover:text-[#0A3B2D] transition flex items-center gap-1.5"
+          className="text-xs font-semibold text-slate-700 hover:text-[#0F4C3A] bg-white/80 hover:bg-white border border-[#E5DFD7] px-4 py-2 rounded-full shadow-2xs hover:shadow-xs transition-all flex items-center gap-1.5 backdrop-blur-xs"
         >
           <span>Back to Home</span>
-          <ArrowRight className="w-3.5 h-3.5" />
+          <ArrowRight className="w-3.5 h-3.5 text-[#0F4C3A]" />
         </Link>
       </div>
 
-      {/* Main Single Unified Auth Container (Screen 1 & 2 Combined) */}
-      <div className="max-w-5xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 bg-white rounded-3xl border border-[#E8EDE6] shadow-sm overflow-hidden">
+      {/* Main Single Unified Auth Container */}
+      <div className="max-w-5xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 bg-white rounded-[28px] border border-[#E8E1D8] shadow-[0_24px_70px_-15px_rgba(15,76,58,0.12),0_8px_24px_-8px_rgba(0,0,0,0.04)] overflow-hidden">
         {/* Left Brand Panel */}
-        <div className="lg:col-span-5 bg-gradient-to-br from-[#0F3D30] via-[#0A2F25] to-[#062019] text-white p-8 sm:p-10 flex flex-col justify-between relative">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="lg:col-span-5 bg-gradient-to-br from-[#0B3327] via-[#0E3D30] to-[#07241B] text-white p-8 sm:p-10 flex flex-col justify-between relative overflow-hidden">
+          {/* Subtle luminous highlights */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-emerald-600/10 rounded-full blur-2xl pointer-events-none" />
 
-          <div>
-            <div className="flex items-center gap-2 mb-8">
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-emerald-300">
-                <BookOpen className="w-4 h-4" />
-              </div>
-              <span className="font-serif font-bold text-base tracking-wide text-white">
-                BookLeaf Publishing
-              </span>
+          <div className="relative z-10">
+            {/* Publisher Hallmark Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.08] border border-white/15 text-[10px] font-bold tracking-widest uppercase text-emerald-300 mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>AUTHOR DESK &amp; CONSOLE</span>
             </div>
 
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white tracking-tight leading-tight mb-4">
+            <h2 className="font-serif text-3xl sm:text-[34px] font-bold text-white tracking-tight leading-[1.18] mb-3.5">
               {authMode === "signin"
                 ? "Better Support for Better Stories"
                 : "Begin Your Author Journey"}
             </h2>
 
-            <p className="text-emerald-100/80 text-sm leading-relaxed mb-6">
+            <p className="text-emerald-100/80 text-xs sm:text-sm leading-relaxed mb-6 font-normal">
               {authMode === "signin"
                 ? "Access real-time royalty disbursement, track global book sales, and manage ISBN metadata in one unified author desk."
-                : "Publish your book with 100% royalty split, official ISBN allotment, global distribution across Amazon, Flipkart, and Ingram."}
+                : "Publish your book with 100% royalty split, official ISBN allotment, and global distribution across Amazon, Flipkart, and Ingram."}
             </p>
 
-            {/* Author Value Pillars */}
+            {/* Author Value Pillars (Elevated frosted cards) */}
             <div className="space-y-2.5 mb-8">
-              <div className="flex items-center gap-2.5 text-xs text-emerald-100/90">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>100% Author Royalty Net Profit Share</span>
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.06] border border-white/10 hover:bg-white/[0.10] transition-colors">
+                <div className="w-7 h-7 rounded-lg bg-emerald-400/20 text-emerald-300 flex items-center justify-center shrink-0">
+                  <BadgePercent className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-white block">100% Author Royalty Net Split</span>
+                  <span className="text-[11px] text-emerald-200/70">Full author profit share with zero hidden fees</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2.5 text-xs text-emerald-100/90">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Direct Automated Bank Disbursements (TDS Compliant)</span>
+
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.06] border border-white/10 hover:bg-white/[0.10] transition-colors">
+                <div className="w-7 h-7 rounded-lg bg-emerald-400/20 text-emerald-300 flex items-center justify-center shrink-0">
+                  <Building className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-white block">Direct Automated Bank Payouts</span>
+                  <span className="text-[11px] text-emerald-200/70">TDS-compliant penny-drop verified disbursement</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2.5 text-xs text-emerald-100/90">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Shark Tank India Featured & Verified Platform</span>
+
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.06] border border-white/10 hover:bg-white/[0.10] transition-colors">
+                <div className="w-7 h-7 rounded-lg bg-emerald-400/20 text-emerald-300 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-white block">Shark Tank India Featured</span>
+                  <span className="text-[11px] text-emerald-200/70">Recognized & verified publishing infrastructure</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Book Mockup Visual Image */}
-          <div className="relative rounded-2xl overflow-hidden border border-white/20 shadow-lg group">
-            <Image
-              src="/images/login-books-desk.jpg"
-              alt="BookLeaf Publishing Cozy Author Desk"
-              width={600}
-              height={200}
-              className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#062019]/95 via-[#0A2F25]/45 to-transparent flex flex-col justify-end p-4">
-              <span className="font-serif italic text-xs text-emerald-200">
-                “Stories create a better tomorrow.”
-              </span>
-              <span className="text-[10px] uppercase tracking-wider text-emerald-400/90 font-semibold mt-0.5">
-                Official BookLeaf Author Console
-              </span>
+          {/* Luxury Author Showcase / Testimonial Card */}
+          <div className="relative z-10 rounded-2xl bg-white/[0.08] backdrop-blur-md border border-white/15 p-4 shadow-lg group">
+            <div className="flex items-center gap-3.5 mb-2.5">
+              <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-emerald-400/60 shrink-0">
+                <Image
+                  src="https://static.elfsight.com/configurator/assets/avatars/5-female-20-small-320x320.jpg"
+                  alt="Priya Sharma"
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-cover"
+                  unoptimized
+                />
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-slate-900" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-white">Priya Sharma</span>
+                  <span className="text-[9px] font-semibold text-emerald-300 bg-emerald-500/20 px-1.5 py-0.2 rounded-full border border-emerald-500/30">
+                    Verified Author
+                  </span>
+                </div>
+                <span className="text-[11px] text-emerald-200/70 block truncate">
+                  Author of <em>Whispers of the Ganges</em>
+                </span>
+              </div>
             </div>
+            <p className="font-serif italic text-xs text-emerald-100/90 leading-relaxed border-t border-white/10 pt-2.5">
+              “BookLeaf disbursed my royalties directly to my bank within 48 hours of sales reporting. The author portal is truly first-class.”
+            </p>
           </div>
         </div>
 
         {/* Right Form Panel: Single Unified Auth Hub */}
-        <div className="lg:col-span-7 p-8 sm:p-10 flex flex-col justify-between bg-white">
+        <div className="lg:col-span-7 p-8 sm:p-10 lg:p-11 flex flex-col justify-between bg-white">
           <div>
             {/* Unified Top Switcher: Sign In vs Create Account */}
-            <div className="p-1 rounded-2xl bg-[#F2F6F3] border border-[#E2ECE5] flex items-center gap-1 mb-6">
+            <div className="p-1.5 rounded-2xl bg-[#F4EFEA] border border-[#E5DFD7] flex items-center gap-1.5 mb-7">
               <button
                 type="button"
                 onClick={() => {
@@ -362,10 +400,10 @@ export default function LoginPage() {
                   setError(null);
                   setSuccessMessage(null);
                 }}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   authMode === "signin"
-                    ? "bg-[#0F4C3A] text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-[#0F4C3A] text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                 }`}
               >
                 <LogIn className="w-3.5 h-3.5" />
@@ -378,10 +416,10 @@ export default function LoginPage() {
                   setError(null);
                   setSuccessMessage(null);
                 }}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   authMode === "signup"
-                    ? "bg-[#0F4C3A] text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-[#0F4C3A] text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                 }`}
               >
                 <UserPlus className="w-3.5 h-3.5" />
@@ -391,25 +429,25 @@ export default function LoginPage() {
 
             {/* Redirect / Access Denied Notice */}
             {redirectNotice && (
-              <div className="mb-5 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2.5">
+              <div className="mb-5 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2.5 shadow-2xs">
                 <ShieldAlert className="w-4 h-4 shrink-0 text-amber-600" />
-                <span className="leading-relaxed">{redirectNotice}</span>
+                <span className="leading-relaxed font-medium">{redirectNotice}</span>
               </div>
             )}
 
             {/* Error Banner */}
             {error && (
-              <div className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
+              <div className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2 shadow-2xs">
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                <span className="leading-relaxed">{error}</span>
+                <span className="leading-relaxed font-medium">{error}</span>
               </div>
             )}
 
             {/* Success Banner */}
             {successMessage && (
-              <div className="mb-5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2">
+              <div className="mb-5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2 shadow-2xs">
                 <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-                <span className="leading-relaxed">{successMessage}</span>
+                <span className="leading-relaxed font-medium">{successMessage}</span>
               </div>
             )}
 
@@ -418,46 +456,46 @@ export default function LoginPage() {
             {/* ============================================================== */}
             {authMode === "signin" ? (
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="font-serif text-2xl font-bold text-slate-900 leading-tight">
-                      Welcome Back
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Sign in to your BookLeaf account to access your dashboard
-                    </p>
-                  </div>
+                <div className="mb-5">
+                  <h3 className="font-serif text-2xl sm:text-[26px] font-bold text-slate-900 leading-tight">
+                    Welcome Back
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Sign in to your BookLeaf account to access your personal author desk
+                  </p>
                 </div>
 
                 {/* Segmented Control: Author vs Admin */}
-                <div className="p-1 rounded-xl bg-[#F6F7F5] border border-slate-200/80 flex items-center gap-1 mb-5">
+                <div className="p-1 rounded-xl bg-[#F4EFEA] border border-[#E5DFD7] flex items-center gap-1 mb-5">
                   <button
                     type="button"
                     onClick={() => handleTabChange("AUTHOR")}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                       activeTab === "AUTHOR"
-                        ? "bg-white text-[#0F4C3A] shadow-xs font-bold"
+                        ? "bg-white text-[#0F4C3A] shadow-xs"
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    Author Account
+                    <BookOpen className="w-3.5 h-3.5 text-[#0F4C3A]" />
+                    <span>Author Account</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleTabChange("ADMIN")}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${
+                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                       activeTab === "ADMIN"
-                        ? "bg-white text-[#0F4C3A] shadow-xs font-bold"
+                        ? "bg-white text-[#0F4C3A] shadow-xs"
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
-                    Admin Console
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#0F4C3A]" />
+                    <span>Admin Console</span>
                   </button>
                 </div>
 
                 <form onSubmit={handleSignInSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700 tracking-wide mb-1.5">
                       Email Address
                     </label>
                     <div className="relative">
@@ -468,13 +506,13 @@ export default function LoginPage() {
                         onChange={(e) => setSignInEmail(e.target.value)}
                         required
                         placeholder="you@example.com"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-[#F9FAF7] text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-1 focus:ring-[#0F4C3A] transition"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-[#EDE6DD] bg-[#FAF8F5] text-slate-900 text-sm placeholder:text-slate-400 focus:bg-white focus:border-[#0F4C3A] focus:ring-4 focus:ring-[#0F4C3A]/10 transition shadow-2xs"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700 tracking-wide mb-1.5">
                       Password
                     </label>
                     <div className="relative">
@@ -485,12 +523,13 @@ export default function LoginPage() {
                         onChange={(e) => setSignInPassword(e.target.value)}
                         required
                         placeholder="Enter your password"
-                        className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 bg-[#F9FAF7] text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-1 focus:ring-[#0F4C3A] transition"
+                        className="w-full pl-10 pr-10 py-3 rounded-xl border border-[#EDE6DD] bg-[#FAF8F5] text-slate-900 text-sm placeholder:text-slate-400 focus:bg-white focus:border-[#0F4C3A] focus:ring-4 focus:ring-[#0F4C3A]/10 transition shadow-2xs font-mono"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer transition-colors"
+                        title={showPassword ? "Hide password" : "Show password"}
                       >
                         {showPassword ? (
                           <EyeOff className="w-4 h-4" />
@@ -507,9 +546,9 @@ export default function LoginPage() {
                         type="checkbox"
                         checked={rememberMe}
                         onChange={(e) => setRememberMe(e.target.checked)}
-                        className="rounded text-[#0F4C3A] focus:ring-[#0F4C3A] border-slate-300"
+                        className="w-4 h-4 rounded text-[#0F4C3A] focus:ring-[#0F4C3A] border-slate-300 cursor-pointer"
                       />
-                      <span>Remember me</span>
+                      <span className="font-medium">Remember me</span>
                     </label>
                     <button
                       type="button"
@@ -518,7 +557,7 @@ export default function LoginPage() {
                           "Demo credentials hint: 'author123' for Authors or 'admin123' for Admin."
                         )
                       }
-                      className="text-[#0F4C3A] hover:underline font-medium"
+                      className="text-[#0F4C3A] hover:underline font-bold cursor-pointer"
                     >
                       Forgot password?
                     </button>
@@ -527,7 +566,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-3 rounded-xl bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white font-bold text-sm shadow-sm transition active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#0F4C3A] via-[#125340] to-[#18654F] hover:from-[#0B382B] hover:to-[#125340] text-white font-bold text-sm shadow-md hover:shadow-lg hover:shadow-[#0F4C3A]/25 transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
                   >
                     {isSubmitting ? (
                       <div className="flex items-center gap-2">
@@ -549,18 +588,18 @@ export default function LoginPage() {
               /* ============================================================== */
               <div>
                 <div className="mb-5">
-                  <h3 className="font-serif text-2xl font-bold text-slate-900 leading-tight">
+                  <h3 className="font-serif text-2xl sm:text-[26px] font-bold text-slate-900 leading-tight">
                     Create Author Account
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Start publishing with 100% royalty and live sales analytics
+                  <p className="text-xs text-slate-500 mt-1">
+                    Start publishing with 100% royalty split and live sales analytics
                   </p>
                 </div>
 
                 <form onSubmit={performRegister} className="space-y-3.5">
                   {/* Full Name */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-slate-700 tracking-wide mb-1">
                       Full Legal / Author Name *
                     </label>
                     <div className="relative">
@@ -571,14 +610,14 @@ export default function LoginPage() {
                         onChange={(e) => setFullName(e.target.value)}
                         required
                         placeholder="e.g. Aarav Mehta"
-                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 bg-[#F9FAF7] text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-1 focus:ring-[#0F4C3A] transition"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#EDE6DD] bg-[#FAF8F5] text-slate-900 text-sm placeholder:text-slate-400 focus:bg-white focus:border-[#0F4C3A] focus:ring-4 focus:ring-[#0F4C3A]/10 transition shadow-2xs"
                       />
                     </div>
                   </div>
 
                   {/* Email */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-slate-700 tracking-wide mb-1">
                       Email Address *
                     </label>
                     <div className="relative">
@@ -589,7 +628,7 @@ export default function LoginPage() {
                         onChange={(e) => setSignUpEmail(e.target.value)}
                         required
                         placeholder="e.g. aarav.mehta@example.com"
-                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 bg-[#F9FAF7] text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-1 focus:ring-[#0F4C3A] transition"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#EDE6DD] bg-[#FAF8F5] text-slate-900 text-sm placeholder:text-slate-400 focus:bg-white focus:border-[#0F4C3A] focus:ring-4 focus:ring-[#0F4C3A]/10 transition shadow-2xs"
                       />
                     </div>
                   </div>
@@ -597,7 +636,7 @@ export default function LoginPage() {
                   {/* Phone & City 2-Column */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-slate-700 tracking-wide mb-1">
                         WhatsApp / Phone Number
                       </label>
                       <div className="relative">
@@ -607,13 +646,13 @@ export default function LoginPage() {
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           placeholder="+91 98765 43210"
-                          className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 bg-[#F9FAF7] text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-1 focus:ring-[#0F4C3A] transition"
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#EDE6DD] bg-[#FAF8F5] text-slate-900 text-sm placeholder:text-slate-400 focus:bg-white focus:border-[#0F4C3A] focus:ring-4 focus:ring-[#0F4C3A]/10 transition shadow-2xs"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-slate-700 tracking-wide mb-1">
                         City / State
                       </label>
                       <div className="relative">
@@ -623,7 +662,7 @@ export default function LoginPage() {
                           value={city}
                           onChange={(e) => setCity(e.target.value)}
                           placeholder="e.g. Mumbai, Maharashtra"
-                          className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 bg-[#F9FAF7] text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-1 focus:ring-[#0F4C3A] transition"
+                          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#EDE6DD] bg-[#FAF8F5] text-slate-900 text-sm placeholder:text-slate-400 focus:bg-white focus:border-[#0F4C3A] focus:ring-4 focus:ring-[#0F4C3A]/10 transition shadow-2xs"
                         />
                       </div>
                     </div>
@@ -632,7 +671,7 @@ export default function LoginPage() {
                   {/* Password & Confirm Password 2-Column */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-slate-700 tracking-wide mb-1">
                         Password (min 6 chars) *
                       </label>
                       <div className="relative">
@@ -643,13 +682,13 @@ export default function LoginPage() {
                           onChange={(e) => setSignUpPassword(e.target.value)}
                           required
                           placeholder="••••••••"
-                          className="w-full pl-10 pr-3 py-2 rounded-xl border border-slate-200 bg-[#F9FAF7] text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-1 focus:ring-[#0F4C3A] transition"
+                          className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-[#EDE6DD] bg-[#FAF8F5] text-slate-900 text-sm placeholder:text-slate-400 focus:bg-white focus:border-[#0F4C3A] focus:ring-4 focus:ring-[#0F4C3A]/10 transition shadow-2xs font-mono"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-slate-700 tracking-wide mb-1">
                         Confirm Password *
                       </label>
                       <div className="relative">
@@ -660,7 +699,7 @@ export default function LoginPage() {
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           required
                           placeholder="••••••••"
-                          className="w-full pl-10 pr-3 py-2 rounded-xl border border-slate-200 bg-[#F9FAF7] text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-1 focus:ring-[#0F4C3A] transition"
+                          className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-[#EDE6DD] bg-[#FAF8F5] text-slate-900 text-sm placeholder:text-slate-400 focus:bg-white focus:border-[#0F4C3A] focus:ring-4 focus:ring-[#0F4C3A]/10 transition shadow-2xs font-mono"
                         />
                       </div>
                     </div>
@@ -673,11 +712,11 @@ export default function LoginPage() {
                         type="checkbox"
                         checked={agreeTerms}
                         onChange={(e) => setAgreeTerms(e.target.checked)}
-                        className="mt-0.5 rounded text-[#0F4C3A] focus:ring-[#0F4C3A] border-slate-300"
+                        className="w-4 h-4 mt-0.5 rounded text-[#0F4C3A] focus:ring-[#0F4C3A] border-slate-300 cursor-pointer"
                       />
                       <span>
                         I agree to BookLeaf Publishing{" "}
-                        <span className="font-semibold text-slate-800">
+                        <span className="font-bold text-slate-900 underline">
                           Terms of Service
                         </span>{" "}
                         and 100% Author Royalty Policy.
@@ -689,7 +728,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-3 rounded-xl bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white font-bold text-sm shadow-sm transition active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#0F4C3A] via-[#125340] to-[#18654F] hover:from-[#0B382B] hover:to-[#125340] text-white font-bold text-sm shadow-md hover:shadow-lg hover:shadow-[#0F4C3A]/25 transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
                   >
                     {isSubmitting ? (
                       <div className="flex items-center gap-2">
@@ -712,7 +751,7 @@ export default function LoginPage() {
           <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3">
             <div>
               {authMode === "signin" ? (
-                <p>
+                <p className="font-medium">
                   Don&apos;t have an author account?{" "}
                   <button
                     type="button"
@@ -721,13 +760,13 @@ export default function LoginPage() {
                       setError(null);
                       setSuccessMessage(null);
                     }}
-                    className="text-[#0F4C3A] font-bold hover:underline cursor-pointer"
+                    className="text-[#0F4C3A] font-bold hover:underline cursor-pointer ml-1"
                   >
                     Create Account
                   </button>
                 </p>
               ) : (
-                <p>
+                <p className="font-medium">
                   Already have an author account?{" "}
                   <button
                     type="button"
@@ -736,7 +775,7 @@ export default function LoginPage() {
                       setError(null);
                       setSuccessMessage(null);
                     }}
-                    className="text-[#0F4C3A] font-bold hover:underline cursor-pointer"
+                    className="text-[#0F4C3A] font-bold hover:underline cursor-pointer ml-1"
                   >
                     Sign In
                   </button>
@@ -747,9 +786,9 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowMatrix(!showMatrix)}
-              className="text-[#0F4C3A] font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FAF7F2] border border-[#EDE6DD] hover:bg-[#F2ECE5] text-xs font-semibold text-[#0F4C3A] transition cursor-pointer shadow-2xs"
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <KeyRound className="w-3.5 h-3.5 text-[#0F4C3A]" />
               <span>
                 {showMatrix ? "Hide Quick Accounts" : "Quick Evaluator Accounts (11)"}
               </span>
@@ -760,47 +799,53 @@ export default function LoginPage() {
 
       {/* Quick Evaluator Matrix (Collapsible for test grading) */}
       {showMatrix && (
-        <div className="max-w-5xl w-full mx-auto mt-6 bg-white rounded-2xl p-6 border border-[#E8EDE6] shadow-xs">
-          <div className="flex items-center justify-between mb-4">
+        <div className="max-w-5xl w-full mx-auto mt-6 bg-white rounded-3xl p-6 sm:p-7 border border-[#E8E1D8] shadow-xs animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[#0F4C3A] text-[10px] font-bold uppercase tracking-wider mb-1">
+                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                <span>Test & Grading Accounts</span>
+              </div>
+              <h4 className="font-serif text-lg font-bold text-slate-900">
                 Instant 1-Click Login Matrix (10 Authors + 1 Admin)
               </h4>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                Click any account to automatically authenticate and test RBAC routing
+              <p className="text-xs text-slate-500 mt-0.5">
+                Click any credential below to immediately authenticate and test RBAC routing
               </p>
             </div>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">
-              Live DB Ready
+            <span className="text-[11px] px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 self-start sm:self-auto">
+              Live Database Connected
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {demoAccounts.map((acc) => (
               <button
                 key={acc.email}
                 type="button"
                 onClick={() => selectDemoAccount(acc)}
-                className="p-3 rounded-xl border border-slate-200 hover:border-[#0F4C3A] hover:bg-[#F2F7F4] text-left transition flex items-center justify-between group cursor-pointer"
+                className="p-3.5 rounded-2xl border border-slate-200/90 hover:border-[#0F4C3A] bg-[#FAF8F5] hover:bg-white text-left transition-all hover:shadow-xs flex items-center justify-between group cursor-pointer"
               >
                 <div className="min-w-0 pr-2">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="font-bold text-xs text-slate-900 group-hover:text-[#0F4C3A]">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="font-bold text-xs text-slate-900 group-hover:text-[#0F4C3A] transition-colors">
                       {acc.name}
                     </span>
                     <span
-                      className={`text-[9px] px-1.5 py-0.2 rounded font-semibold uppercase ${
+                      className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${
                         acc.role === "ADMIN"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-emerald-100 text-emerald-800"
+                          ? "bg-amber-100 text-amber-800 border border-amber-200"
+                          : "bg-emerald-100 text-emerald-800 border border-emerald-200"
                       }`}
                     >
                       {acc.author_id || acc.role}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 truncate">{acc.email}</p>
+                  <p className="text-[11px] text-slate-500 truncate font-mono">{acc.email}</p>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#0F4C3A] shrink-0" />
+                <div className="w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-[#0F4C3A] group-hover:border-[#0F4C3A]/30 shrink-0 transition-colors">
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </div>
               </button>
             ))}
           </div>

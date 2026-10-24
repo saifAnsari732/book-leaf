@@ -48,6 +48,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Ticket,
+  Zap,
   TrendingUp,
   User,
   Wallet,
@@ -110,12 +111,18 @@ export function AuthorDashboardContent() {
     }
   }, [authLoading, isAuthenticated, router]);
 
+  const isAuthorAuthorized =
+    !authLoading && isAuthenticated && user?.role === "AUTHOR";
+
   // Data fetching
   const { data, isLoading, error, refresh } =
     useFastQuery<RoyaltyDashboardResponse>(
       "author:royalty:dashboard",
       "/api/author/royalty",
-      { pollIntervalMs: 5000 }
+      {
+        pollIntervalMs: 5000,
+        enabled: isAuthorAuthorized,
+      }
     );
 
   // Tickets query for counts and overview widgets
@@ -125,7 +132,10 @@ export function AuthorDashboardContent() {
   }>(
     "author:tickets:dashboard_summary",
     "/api/author/tickets?status=ALL",
-    { pollIntervalMs: 5000 }
+    {
+      pollIntervalMs: 5000,
+      enabled: isAuthorAuthorized,
+    }
   );
 
   // UI Modals
@@ -443,28 +453,113 @@ export function AuthorDashboardContent() {
     router.push(`/author-dashboard?menu=${encodeURIComponent(menuName)}`);
   }
 
+  const [isQuickLoggingIn, setIsQuickLoggingIn] = useState(false);
+
+  async function handleQuickAuthorLogin() {
+    setIsQuickLoggingIn(true);
+    try {
+      const res = await fetch("/api/auth/quick-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "AUTHOR" }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        toast.success("Welcome, Priya Sharma!", "Author session established successfully.");
+        window.location.reload();
+      } else {
+        toast.error("Sign In Failed", result.error || "Please sign in manually.");
+        router.push("/login?redirect=/author-dashboard");
+      }
+    } catch {
+      router.push("/login?redirect=/author-dashboard");
+    } finally {
+      setIsQuickLoggingIn(false);
+    }
+  }
+
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#F2EDEB] flex flex-col items-center justify-center p-6 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-3 border-[#F05262] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-semibold text-slate-600">
+            {authLoading ? "Verifying Author Session..." : "Redirecting to Sign In..."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
-      <div className="min-h-screen bg-[#F9FAF7] flex items-center justify-center p-6">
-        <div className="max-w-md w-full rounded-3xl bg-white p-8 text-center shadow-lg space-y-4 border border-slate-200">
-          <AlertCircle className="w-10 h-10 text-amber-600 mx-auto" />
-          <h1 className="font-serif text-2xl font-bold text-slate-900">
-            Author Session Required
-          </h1>
-          <p className="text-sm text-slate-600">{error}</p>
-          <div className="flex justify-center gap-3 pt-2">
+      <div className="min-h-screen bg-gradient-to-br from-[#0F1E33] via-[#0B1728] to-[#080E18] flex items-center justify-center p-6 text-slate-100">
+        <div className="max-w-lg w-full rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-8 sm:p-10 text-center shadow-2xl space-y-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mr-12 -mt-12 w-40 h-40 bg-rose-500/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 -ml-12 -mb-12 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+
+          {/* BookLeaf Icon Badge */}
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#F05262] to-[#ff7584] text-white flex items-center justify-center mx-auto shadow-lg shadow-rose-500/20">
+            <BookOpen className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-bold uppercase tracking-wider">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Protected Author Space</span>
+            </div>
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-tight">
+              Author Session Required
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-sm mx-auto">
+              Please authenticate to access your publishing royalties, distribution analytics, and support tickets.
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-2">
             <button
-              onClick={() => router.push("/login")}
-              className="rounded-full bg-[#F05262] px-6 py-2.5 text-xs font-semibold text-white hover:bg-[#e04555] transition"
+              onClick={handleQuickAuthorLogin}
+              disabled={isQuickLoggingIn}
+              className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#F05262] via-[#e24455] to-[#c73444] text-white font-bold text-sm shadow-lg shadow-rose-500/30 hover:scale-[1.02] active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              Sign In to Author Account
+              {isQuickLoggingIn ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Connecting Author Account...</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 text-amber-200" />
+                  <span>1-Click Instant Login (Priya Sharma)</span>
+                </>
+              )}
             </button>
-            <button
-              onClick={refresh}
-              className="rounded-full border border-slate-200 px-6 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-            >
-              Retry
-            </button>
+
+            <div className="flex flex-col sm:flex-row gap-2.5 justify-center">
+              <button
+                onClick={() => router.push("/login?redirect=/author-dashboard")}
+                className="flex-1 py-2.5 px-5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-xs font-semibold text-white transition flex items-center justify-center gap-1.5"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>Sign In with Credentials</span>
+              </button>
+
+              <button
+                onClick={refresh}
+                className="py-2.5 px-5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 transition"
+              >
+                Retry Check
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
+            <Link href="/" className="hover:text-white transition flex items-center gap-1">
+              <span>&larr; Return to Homepage</span>
+            </Link>
+            <span className="flex items-center gap-1">
+              <Lock className="w-3 h-3 text-emerald-400" /> 256-Bit SSL Secured
+            </span>
           </div>
         </div>
       </div>
