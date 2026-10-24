@@ -287,11 +287,11 @@ Pursued by adversaries who will stop at nothing to keep the past silent, Maya mu
   }
 
   if (p.includes("publish") || p.includes("package") || p.includes("cost") || p.includes("price") || p.includes("plan")) {
-    return `BookLeaf Publishing offers three transparent publishing packages (All with Gemini AI Studio features):
-1. Basic (₹3,999): Global eBook & Paperback distribution, standard cover, ISBN, and Gemini AI Book Blurb & Title Generator.
-2. Premium (₹7,999 - Most Popular): Bestseller layout, custom cover, 5 author copies, 15-day Amazon Ads, and Gemini AI Manuscript Polish & Proofreading.
-3. Professional (₹14,999): 10 author copies, Hardcover edition, 30-day Amazon Ads, National Press Release, and Full Gemini AI Writing Studio.
-All packages include 100% Royalty and Money-Back Guarantee!`;
+    return `BookLeaf Publishing offers three transparent publishing packages:
+1. Basic (₹3,999): Global eBook & Paperback distribution, standard cover design, ISBN assignment, and Book Blurb consultation.
+2. Premium (₹7,999 - Bestseller Breakthrough): Custom cover design, 5 author copies, 15-day Amazon Ads, and Editorial & Proofreading (up to 30K words).
+3. Professional (₹14,999 - Executive Master): 10 author copies, Hardcover edition, 30-day Amazon Ads, National Press Release, and Complete Manuscript Studio.
+All packages include 100% Royalty and dedicated post-publishing support!`;
   }
 
   return `Hello from BookLeaf Publishing AI! We are here to support your journey from aspiring writer to published author. You can manage your manuscripts, view sales reports, withdraw royalties, or raise support tickets anytime from your Author Portal. How else can I assist you today?`;

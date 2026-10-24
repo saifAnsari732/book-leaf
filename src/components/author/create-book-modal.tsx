@@ -14,9 +14,9 @@ import {
   Layers,
   Loader2,
   Palette,
-  Sparkles,
+  Lightbulb,
+  FileEdit,
   UploadCloud,
-  Wand2,
   X,
 } from "lucide-react";
 
@@ -83,9 +83,9 @@ export function CreateBookModal({
         .slice(0, 5);
 
       setSuggestedTitles(lines.length > 0 ? lines : [rawText.slice(0, 60)]);
-      toast.info("Gemini AI Titles Ready", "Click any suggestion below to set your title.");
+      toast.info("Title Suggestions Ready", "Click any suggestion below to set your title.");
     } catch (err: any) {
-      toast.error("AI Generation Error", err?.message || "Could not generate titles.");
+      toast.error("Generation Error", err?.message || "Could not generate titles.");
     } finally {
       setIsAiGeneratingTitle(false);
     }
@@ -93,7 +93,7 @@ export function CreateBookModal({
 
   async function handleAiGenerateBlurb() {
     if (!title.trim()) {
-      toast.warning("Title Required", "Please enter a book title first so Gemini AI can craft your blurb.");
+      toast.warning("Title Required", "Please enter a book title first to draft your blurb.");
       return;
     }
     setIsAiGeneratingBlurb(true);
@@ -114,9 +114,9 @@ export function CreateBookModal({
         throw new Error(data.error || "Failed to generate blurb");
       }
       setBlurb(data.content.trim());
-      toast.success("AI Blurb Generated", "Gemini 3.8 created a captivating back cover blurb!");
+      toast.success("Blurb Drafted", "Compelling back-cover blurb generated!");
     } catch (err: any) {
-      toast.error("AI Generation Error", err?.message || "Could not generate blurb.");
+      toast.error("Drafting Error", err?.message || "Could not generate blurb.");
     } finally {
       setIsAiGeneratingBlurb(false);
     }
@@ -362,8 +362,8 @@ export function CreateBookModal({
                           </>
                         ) : (
                           <>
-                            <Sparkles className="w-3 h-3 text-[#F05262]" />
-                            <span>✨ Suggest Titles with Gemini AI</span>
+                            <Lightbulb className="w-3 h-3 text-[#F05262]" />
+                            <span>Suggest Bestselling Titles</span>
                           </>
                         )}
                       </button>
@@ -376,12 +376,12 @@ export function CreateBookModal({
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#F05262] text-sm"
                     />
 
-                    {/* Gemini Suggested Titles Pille */}
+                    {/* Suggested Titles */}
                     {suggestedTitles.length > 0 && (
                       <div className="mt-2.5 p-3 bg-gradient-to-r from-rose-50/80 to-amber-50/80 rounded-xl border border-rose-100 animate-fade-in">
                         <p className="text-[10px] font-bold uppercase tracking-wider text-rose-800 mb-1.5 flex items-center gap-1">
-                          <Wand2 className="w-3 h-3 text-[#F05262]" />
-                          Gemini 3.8 Suggested Titles (Click to apply):
+                          <Lightbulb className="w-3 h-3 text-[#F05262]" />
+                          Suggested Titles (Click to apply):
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                           {suggestedTitles.map((t, idx) => (
@@ -507,7 +507,7 @@ export function CreateBookModal({
 
                   <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 space-y-1">
                     <p className="font-semibold flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-emerald-600" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       BookLeaf In-House Typesetting Included
                     </p>
                     <p className="text-[11px] text-emerald-700 leading-relaxed">
@@ -538,8 +538,8 @@ export function CreateBookModal({
                           </>
                         ) : (
                           <>
-                            <Sparkles className="w-3 h-3 text-indigo-600" />
-                            <span>✨ Auto-Draft with Gemini AI</span>
+                            <FileEdit className="w-3 h-3 text-indigo-600" />
+                            <span>Auto-Draft Back Cover Blurb</span>
                           </>
                         )}
                       </button>
@@ -548,7 +548,7 @@ export function CreateBookModal({
                       rows={5}
                       value={blurb}
                       onChange={(e) => setBlurb(e.target.value)}
-                      placeholder="Enter a compelling 100-200 word summary that will appear on the back cover of your book, or click 'Auto-Draft with Gemini AI'..."
+                      placeholder="Enter a compelling 100-200 word summary that will appear on the back cover of your book, or click 'Auto-Draft Back Cover Blurb'..."
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#F05262] text-sm leading-relaxed"
                     />
                   </div>

@@ -38,6 +38,7 @@ import {
 import { getSlicedKnowledgeBaseContext } from "@/lib/knowledge-base";
 import { toSafeUser } from "@/lib/auth";
 import { invalidateTicketCaches } from "@/lib/redis";
+import { broadcastRealtimeTicketEvent } from "@/lib/realtime-service";
 
 interface SampleBookRaw {
   book_id: string;
@@ -88,6 +89,8 @@ declare global {
   // eslint-disable-next-line no-var
   var __bookleafMongoConnected: boolean | undefined;
   // eslint-disable-next-line no-var
+  var __bookleafMongoFailedAt: number | undefined;
+  // eslint-disable-next-line no-var
   var __bookleafLocalState: LocalDatabaseState | undefined;
 }
 
@@ -128,27 +131,42 @@ function getConfiguredMongoUri(): string | undefined {
 /**
  * Checks whether a live MongoDB connection is active or can be established.
  * Reuses the connection across Next.js HMR reloads in development.
+ * If MongoDB Atlas is unreachable (e.g. IP whitelist / offline), instantly uses
+ * the local persistent JSON store (.data/bookleaf-db.json) without blocking queries.
  */
 export async function ensureDatabaseReady(): Promise<"mongo" | "local"> {
+  if (
+    globalThis.__bookleafMongoConnected &&
+    mongoose.connection.readyState === 1
+  ) {
+    return "mongo";
+  }
+
+  // If Mongo connection failed recently (within 5 minutes), immediately serve from local store
+  const now = Date.now();
+  if (
+    globalThis.__bookleafMongoFailedAt &&
+    now - globalThis.__bookleafMongoFailedAt < 300_000
+  ) {
+    await ensureLocalStateSeeded();
+    return "local";
+  }
+
   const uri = getConfiguredMongoUri();
   if (uri && process.env.NODE_ENV !== "test") {
-    if (
-      globalThis.__bookleafMongoConnected &&
-      mongoose.connection.readyState === 1
-    ) {
-      return "mongo";
-    }
     try {
       await mongoose.connect(uri, {
         dbName: "bookleaf_support",
-        serverSelectionTimeoutMS: 10000,
+        serverSelectionTimeoutMS: 2000,
       });
       globalThis.__bookleafMongoConnected = true;
+      globalThis.__bookleafMongoFailedAt = undefined;
       await seedMongoDatabaseIfNeeded();
       return "mongo";
     } catch (err) {
+      globalThis.__bookleafMongoFailedAt = now;
       console.warn(
-        "[BookLeaf DB] MongoDB connection unavailable, falling back to persistent local document store:",
+        "[BookLeaf DB] MongoDB Atlas unreachable (IP whitelist / offline), instantly using persistent local document store:",
         err instanceof Error ? err.message : err
       );
     }
@@ -1038,6 +1056,21 @@ export async function createAuthorTicket(params: {
     authorId: newTicket.author_id,
   }).catch(() => {});
 
+  // Real-time live broadcast to WebSockets and SSE streams
+  broadcastRealtimeTicketEvent({
+    type: "TICKET_CREATED",
+    ticket_id: newTicket.ticket_id,
+    author_id: newTicket.author_id,
+    sender_name: author.name,
+    sender_role: "AUTHOR",
+    title: newTicket.subject,
+    message: newTicket.description,
+    status: newTicket.status,
+    priority: newTicket.priority,
+    category: newTicket.category,
+    payload: newTicket,
+  });
+
   return newTicket;
 }
 
@@ -1084,6 +1117,18 @@ export async function addAuthorMessageToTicket(params: {
       ticketId,
       authorId: author.author_id || undefined,
     }).catch(() => {});
+
+    broadcastRealtimeTicketEvent({
+      type: "MESSAGE_POSTED",
+      ticket_id: ticketId,
+      author_id: author.author_id || undefined,
+      sender_name: author.name,
+      sender_role: "AUTHOR",
+      message: content,
+      status: ticket.status,
+      payload: newMsg,
+    });
+
     return { status: "OK", message: newMsg };
   }
 
@@ -1115,6 +1160,18 @@ export async function addAuthorMessageToTicket(params: {
     ticketId,
     authorId: author.author_id || undefined,
   }).catch(() => {});
+
+  broadcastRealtimeTicketEvent({
+    type: "MESSAGE_POSTED",
+    ticket_id: ticketId,
+    author_id: author.author_id || undefined,
+    sender_name: author.name,
+    sender_role: "AUTHOR",
+    message: content,
+    status: ticket.status,
+    payload: newMsg,
+  });
+
   return { status: "OK", message: newMsg };
 }
 
@@ -1183,10 +1240,14 @@ export async function queryAdminTickets(
     if (options.assignee === "UNASSIGNED" && t.assigned_to !== null) {
       return false;
     }
+    if (options.assignee === "ASSIGNED" && t.assigned_to === null) {
+      return false;
+    }
     if (
       options.assignee &&
       options.assignee !== "ALL" &&
       options.assignee !== "UNASSIGNED" &&
+      options.assignee !== "ASSIGNED" &&
       t.assigned_to !== options.assignee
     ) {
       return false;
@@ -1381,6 +1442,19 @@ export async function updateTicketByAdmin(params: {
       authorId: ticket.author_id,
     }).catch(() => {});
 
+    broadcastRealtimeTicketEvent({
+      type: "TICKET_UPDATED",
+      ticket_id: ticketId,
+      author_id: ticket.author_id,
+      sender_name: admin.name,
+      sender_role: "ADMIN",
+      status: ticket.status,
+      priority: ticket.priority,
+      category: ticket.category,
+      assigned_to: ticket.assigned_to,
+      payload: ticket.toObject(),
+    });
+
     return ticket.toObject();
   }
 
@@ -1428,6 +1502,19 @@ export async function updateTicketByAdmin(params: {
     ticketId,
     authorId: ticket.author_id,
   }).catch(() => {});
+
+  broadcastRealtimeTicketEvent({
+    type: "TICKET_UPDATED",
+    ticket_id: ticketId,
+    author_id: ticket.author_id,
+    sender_name: admin.name,
+    sender_role: "ADMIN",
+    status: ticket.status,
+    priority: ticket.priority,
+    category: ticket.category,
+    assigned_to: ticket.assigned_to,
+    payload: ticket,
+  });
 
   return ticket;
 }
@@ -1559,6 +1646,27 @@ export async function sendAdminReplyToTicket(params: {
       authorId: ticket.author_id,
     }).catch(() => {});
 
+    broadcastRealtimeTicketEvent({
+      type: "MESSAGE_POSTED",
+      ticket_id: ticketId,
+      author_id: ticket.author_id,
+      sender_name: admin.name,
+      sender_role: "ADMIN",
+      message: content,
+      status: ticket.status,
+      payload: message,
+    });
+    broadcastRealtimeTicketEvent({
+      type: "TICKET_UPDATED",
+      ticket_id: ticketId,
+      author_id: ticket.author_id,
+      sender_name: admin.name,
+      sender_role: "ADMIN",
+      status: ticket.status,
+      assigned_to: ticket.assigned_to,
+      payload: ticket.toObject(),
+    });
+
     return { ticket: ticket.toObject(), message };
   }
 
@@ -1607,6 +1715,27 @@ export async function sendAdminReplyToTicket(params: {
     ticketId,
     authorId: ticket.author_id,
   }).catch(() => {});
+
+  broadcastRealtimeTicketEvent({
+    type: "MESSAGE_POSTED",
+    ticket_id: ticketId,
+    author_id: ticket.author_id,
+    sender_name: admin.name,
+    sender_role: "ADMIN",
+    message: content,
+    status: ticket.status,
+    payload: message,
+  });
+  broadcastRealtimeTicketEvent({
+    type: "TICKET_UPDATED",
+    ticket_id: ticketId,
+    author_id: ticket.author_id,
+    sender_name: admin.name,
+    sender_role: "ADMIN",
+    status: ticket.status,
+    assigned_to: ticket.assigned_to,
+    payload: ticket,
+  });
 
   return { ticket, message };
 }

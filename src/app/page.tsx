@@ -23,12 +23,17 @@ import {
   Linkedin,
   Lock,
   Mail,
+  MapPin,
   Menu,
   MessageCircle,
+  MessageSquare,
+  Phone,
   Search,
+  Shield,
   ShieldCheck,
   Sparkles,
   Star,
+  ThumbsUp,
   TrendingUp,
   Twitter,
   Users,
@@ -42,6 +47,114 @@ import AuthorVideoReel from "@/components/AuthorVideoReel";
 import { RazorpayModal } from "@/components/payment/RazorpayModal";
 import { useAuth } from "@/context/AuthContext";
 
+interface BookstoreBook {
+  id: string;
+  title: string;
+  author: string;
+  genre: string;
+  price: number;
+  rating: number;
+  reviewsCount: number;
+  coverImage: string;
+  fallbackCover: string;
+  isbn: string;
+  pages: number;
+  language: string;
+  synopsis: string;
+  highlights: string[];
+}
+
+const BESTSELLER_BOOKS: BookstoreBook[] = [
+  {
+    id: "9789375431183",
+    title: "Hope Between the Lines",
+    author: "Anisha Amol Karmalkar",
+    genre: "Poetry",
+    price: 210,
+    rating: 4.9,
+    reviewsCount: 148,
+    coverImage: "https://cdn.shopify.com/s/files/1/0860/3648/0312/files/9789375431183_front.jpg?v=1784963237",
+    fallbackCover: "/images/bookleaf/hope-between-the-lines.jpg",
+    isbn: "9789375431183",
+    pages: 142,
+    language: "English & Hindi (Bilingual)",
+    synopsis:
+      "A heartfelt collection of verses bridging emotions, quiet mornings, and unspoken longing. Divided into dual expressions of English and Hindi lyrical reflections, the collection navigates hope through personal stillness, healing, and emotional renewal.",
+    highlights: [
+      "Paperback Edition with Matte Lamination",
+      "National Poetry Bestseller 2024",
+      "Published under BookLeaf Imprint",
+      "Available across Amazon & Flipkart",
+    ],
+  },
+  {
+    id: "9788199612686",
+    title: "From Middle Class to Millionaire",
+    author: "Saumya Singh",
+    genre: "Finance & Wealth",
+    price: 210,
+    rating: 4.8,
+    reviewsCount: 312,
+    coverImage: "https://cdn.shopify.com/s/files/1/0860/3648/0312/files/FrontCover_b362f06d-2376-42f2-8565-49dcbfbcb9a6.png?v=1776934789",
+    fallbackCover: "/images/bookleaf/middle-class-to-millionaire.png",
+    isbn: "9788199612686",
+    pages: 220,
+    language: "English",
+    synopsis:
+      "Practical frameworks, psychological shifts, and actionable money habits to navigate Indian middle-class economic realities into sustainable generational wealth. Includes real-world investment roadmaps and budgeting templates.",
+    highlights: [
+      "Top Indian Personal Finance Guide",
+      "Paperback + Kindle Edition",
+      "Fast 5-Day Print Fulfillment",
+      "100% Author Royalty Protected",
+    ],
+  },
+  {
+    id: "9789375279310",
+    title: "The Language of Us",
+    author: "Sohani Jani",
+    genre: "Contemporary Fiction",
+    price: 249,
+    rating: 4.9,
+    reviewsCount: 289,
+    coverImage: "https://cdn.shopify.com/s/files/1/0860/3648/0312/files/image-1_83410d26-8ccb-4c96-b926-f09f312241f8.png?v=1775044230",
+    fallbackCover: "/images/bookleaf/the-language-of-us.png",
+    isbn: "9789375279310",
+    pages: 196,
+    language: "English",
+    synopsis:
+      "An intimate exploration of human silence, vulnerability, and love that survives distance, unspoken grief, and rediscovery in modern India. A poignant, emotionally raw narrative that resonates with contemporary readers.",
+    highlights: [
+      "Literary Fiction Bestseller",
+      "Custom Embossed Cover Finish",
+      "Over 2,400 Copies Distributed",
+      "In-House Quality Checked",
+    ],
+  },
+  {
+    id: "9789375432029",
+    title: "Verses on The HUMAN Stage",
+    author: "S Sujit Nayak",
+    genre: "Philosophy & Drama",
+    price: 220,
+    rating: 4.7,
+    reviewsCount: 195,
+    coverImage: "https://cdn.shopify.com/s/files/1/0860/3648/0312/files/front_0d9e2d7b-d802-41e2-a244-64e4bf5e6e47.png?v=1778218422",
+    fallbackCover: "/images/bookleaf/verses-on-the-human-stage.png",
+    isbn: "9789375432029",
+    pages: 168,
+    language: "English",
+    synopsis:
+      "A dramatic tapestry examining the masks people wear, societal expectations, existential wanderings, and the raw vulnerability of human experience. Structured across episodic reflections on identity, performance, and truth.",
+    highlights: [
+      "Poetry & Dramatic Monologue",
+      "Registered ISBN Imprint",
+      "Author Spotlight Featured",
+      "National Distribution Setup",
+    ],
+  },
+];
+
 export default function HomePage() {
   const router = useRouter();
   const { user, role: currentRole, isAuthenticated } = useAuth();
@@ -52,6 +165,10 @@ export default function HomePage() {
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [selectedBookPreview, setSelectedBookPreview] = useState<BookstoreBook | null>(null);
+  const [showCatalogModal, setShowCatalogModal] = useState<boolean>(false);
+  const [catalogSearch, setCatalogSearch] = useState<string>("");
+  const [catalogCategory, setCatalogCategory] = useState<string>("All");
   const [checkoutPlan, setCheckoutPlan] = useState<{
     planId?: string;
     planName: string;
@@ -666,26 +783,26 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header Banner */}
           <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border border-indigo-200 text-indigo-700 text-xs font-bold uppercase tracking-wider shadow-2xs">
-              <Sparkles className="w-4 h-4 text-indigo-600 animate-pulse" />
-              <span>NEW: Powered by Google Gemini AI Publishing Studio</span>
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold uppercase tracking-wider shadow-2xs">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Official BookLeaf Publishing Packages</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-[#F05262] tracking-tight">
               Publishing Packages
             </h2>
             <p className="text-sm sm:text-base text-slate-600">
-              Choose the perfect publishing plan tailored to your book&apos;s goals. All packages now include built-in Google Gemini AI writing &amp; support tools.
+              Choose the perfect publishing plan tailored to your book&apos;s goals. Transparent royalties, complete author ownership, and global distribution.
             </p>
           </div>
 
-          {/* 3 Pricing Cards matching Screenshot 3 */}
+          {/* 3 Pricing Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
             {/* Package 1: Basic */}
             <div className="bg-white rounded-3xl border-2 border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition flex flex-col justify-between">
               {/* Card Header */}
               <div className="bg-[#F05262] text-white p-8 text-center relative">
                 <span className="inline-block px-3 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold tracking-wider uppercase mb-1.5">
-                  Gemini AI Enabled
+                  Standard Edition
                 </span>
                 <h3 className="text-2xl font-bold">Basic</h3>
                 <p className="text-3xl font-extrabold mt-1 font-sans">₹3,999</p>
@@ -697,16 +814,6 @@ export default function HomePage() {
               {/* Card Body */}
               <div className="p-8 flex flex-col justify-between flex-1">
                 <ul className="space-y-3 text-xs sm:text-sm text-slate-700 mb-8">
-                  {/* Highlighted Gemini AI Features */}
-                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 text-indigo-950 font-bold shadow-2xs">
-                    <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <span>Gemini AI Book Blurb &amp; Title Generator</span>
-                  </li>
-                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 text-indigo-950 font-bold shadow-2xs">
-                    <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <span>24/7 Nishtha AI Publishing Concierge</span>
-                  </li>
-
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Personal Publishing Manager</span>
@@ -721,7 +828,7 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>ISBN + Bar Code</span>
+                    <span>Official ISBN Assignment + Bar Code</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -733,11 +840,15 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Book Blurb &amp; Title Consultation</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Social Media Marketing Templates</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Post Publishing Support</span>
+                    <span>Post Publishing Support &amp; Helpdesk</span>
                   </li>
                 </ul>
 
@@ -773,7 +884,7 @@ export default function HomePage() {
                   MOST POPULAR
                 </span>
                 <span className="inline-block px-3 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold tracking-wider uppercase mb-1.5">
-                  Gemini AI Pro Co-Pilot
+                  Bestseller Breakthrough
                 </span>
                 <h3 className="text-2xl font-bold">Premium</h3>
                 <p className="text-3xl font-extrabold mt-1 font-sans">₹7,999</p>
@@ -784,31 +895,9 @@ export default function HomePage() {
 
               <div className="p-8 flex flex-col justify-between flex-1">
                 <ul className="space-y-3 text-xs sm:text-sm text-slate-700 mb-8">
-                  {/* Highlighted Gemini AI Features */}
-                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-rose-50 to-purple-50 border border-rose-200 text-rose-950 font-bold shadow-2xs">
-                    <Sparkles className="w-4 h-4 text-[#F05262] shrink-0" />
-                    <span>Gemini AI Manuscript Polish &amp; Proofreading (Up to 30K words)</span>
-                  </li>
-                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-rose-50 to-purple-50 border border-rose-200 text-rose-950 font-bold shadow-2xs">
-                    <Sparkles className="w-4 h-4 text-[#F05262] shrink-0" />
-                    <span>Gemini AI Chapter Synopsis &amp; Outline Creator</span>
-                  </li>
-                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-rose-50 to-purple-50 border border-rose-200 text-rose-950 font-bold shadow-2xs">
-                    <Sparkles className="w-4 h-4 text-[#F05262] shrink-0" />
-                    <span>Gemini AI 15-Day Amazon Ad Copy &amp; SEO Keywords</span>
-                  </li>
-
                   <li className="flex items-center gap-3 font-semibold text-slate-900">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Everything in Basic</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Editing &amp; Proof Reading (Up to 30K words)</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Customised Cover Design</span>
                   </li>
                   <li className="flex items-center gap-3 font-semibold text-slate-900">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -816,11 +905,27 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Author Spotlight Interview</span>
+                    <span>Editorial &amp; Proofreading (Up to 30K words)</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Amazon Ad Campaign (15 Days)</span>
+                    <span>Customised Premium Cover Design</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Chapter Synopsis &amp; Narrative Structuring</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Author Spotlight Feature &amp; Interview</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>15-Day Targeted Amazon Ad Campaign</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Amazon Search &amp; Keyword Strategy</span>
                   </li>
                 </ul>
 
@@ -853,7 +958,7 @@ export default function HomePage() {
             <div className="bg-white rounded-3xl border-2 border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition flex flex-col justify-between">
               <div className="bg-[#F05262] text-white p-8 text-center relative">
                 <span className="inline-block px-3 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold tracking-wider uppercase mb-1.5">
-                  Full Gemini AI Studio
+                  Executive Master Edition
                 </span>
                 <h3 className="text-2xl font-bold">Professional</h3>
                 <p className="text-3xl font-extrabold mt-1 font-sans">₹14,999</p>
@@ -864,51 +969,45 @@ export default function HomePage() {
 
               <div className="p-8 flex flex-col justify-between flex-1">
                 <ul className="space-y-3 text-xs sm:text-sm text-slate-700 mb-8">
-                  {/* Highlighted Gemini AI Features */}
-                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-amber-50 via-purple-50 to-indigo-50 border border-indigo-200 text-slate-900 font-bold shadow-2xs">
-                    <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <span>Full Gemini AI Manuscript Writing Studio (Chapters &amp; Plots)</span>
-                  </li>
-                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-amber-50 via-purple-50 to-indigo-50 border border-indigo-200 text-slate-900 font-bold shadow-2xs">
-                    <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <span>Gemini AI Amazon Ranking &amp; Keyword Optimizer</span>
-                  </li>
-                  <li className="flex items-center gap-2.5 p-2 rounded-xl bg-gradient-to-r from-amber-50 via-purple-50 to-indigo-50 border border-indigo-200 text-slate-900 font-bold shadow-2xs">
-                    <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <span>Instant AI Ticket Triage &amp; 2-Hour Priority SLA</span>
-                  </li>
-
                   <li className="flex items-center gap-3 font-semibold text-slate-900">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>Everything in Premium</span>
                   </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Customised Pagination + Typesetting</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Up to 20 B&amp;W Illustrations</span>
-                  </li>
                   <li className="flex items-center gap-3 font-semibold text-slate-900">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>10 Complimentary Author Copies</span>
+                    <span>10 Complimentary Author Copies + Hardcover</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Amazon Ad Campaign (30 Days)</span>
+                    <span>End-to-End Comprehensive Manuscript Studio</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Amazon Ranking Optimisation</span>
+                    <span>Customised Pagination &amp; Interior Typesetting</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Amazon Author Page Setup</span>
+                    <span>Up to 20 Interior Illustrations</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>30-Day Managed Amazon Ad Campaign</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Amazon Bestseller Category Optimisation</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Amazon Author Central Page Setup</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span>National Press Release Distribution</span>
+                  </li>
+                  <li className="flex items-center gap-3 font-semibold text-slate-900">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Priority Support SLA with 2-Hour Response Time</span>
                   </li>
                 </ul>
 
@@ -1010,7 +1109,7 @@ export default function HomePage() {
       </section>
 
       {/* ====================================================================
-          FEATURED BESTSELLERS FROM BOOKLEAF STORE
+          FEATURED BESTSELLERS FROM BOOKLEAF STORE (In-App Direct Preview)
           ==================================================================== */}
       <section id="bookstore" className="py-16 bg-white border-t border-slate-100 scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1023,157 +1122,60 @@ export default function HomePage() {
                 Top Trending Bestsellers
               </h2>
             </div>
-            <a
-              href="https://store.bookleafpub.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#F05262] hover:underline"
+            <Link
+              href="/bookstore"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#F05262] hover:text-[#d94151] hover:underline cursor-pointer group"
             >
               <span>Explore The Book Store</span>
-              <ExternalLink className="w-4 h-4" />
-            </a>
+              <BookOpen className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Book 1 */}
-            <a
-              href="https://store.bookleafpub.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
-            >
-              <div className="h-64 rounded-xl overflow-hidden mb-4 relative bg-slate-50 flex items-center justify-center p-2">
-                <img
-                  src="/images/bookleaf/hope-between-the-lines.jpg"
-                  alt="Hope Between the Lines"
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-slate-900 line-clamp-1 group-hover:text-[#F05262] transition-colors">
-                  Hope Between the Lines
-                </h4>
-                <p className="text-xs text-slate-500 mt-0.5">Poetry • ₹210</p>
-                <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
-                  <div className="flex items-center gap-1 text-amber-400">
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <span className="text-xs text-slate-600 font-bold ml-1">4.9</span>
+            {BESTSELLER_BOOKS.map((book) => (
+              <Link
+                key={book.id}
+                href={`/book/${book.id}`}
+                className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group cursor-pointer text-left"
+              >
+                <div className="h-64 rounded-xl overflow-hidden mb-4 relative bg-[#F8F8F7] flex items-center justify-center p-2">
+                  <img
+                    src={book.coverImage}
+                    alt={book.title}
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = book.fallbackCover;
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/10 transition-colors rounded-xl flex items-center justify-center">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#3D081B] text-[#F2EFDD] text-xs font-bold px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-[#F05262]" />
+                      View Official Page
+                    </span>
                   </div>
-                  <span className="text-[11px] font-semibold text-[#F05262] group-hover:underline inline-flex items-center gap-0.5">
-                    Store <ExternalLink className="w-3 h-3" />
-                  </span>
                 </div>
-              </div>
-            </a>
-
-            {/* Book 2 */}
-            <a
-              href="https://store.bookleafpub.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
-            >
-              <div className="h-64 rounded-xl overflow-hidden mb-4 relative bg-slate-50 flex items-center justify-center p-2">
-                <img
-                  src="/images/bookleaf/middle-class-to-millionaire.png"
-                  alt="From Middle Class to Millionaire"
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-slate-900 line-clamp-1 group-hover:text-[#F05262] transition-colors">
-                  From Middle Class to Millionaire
-                </h4>
-                <p className="text-xs text-slate-500 mt-0.5">Finance • ₹210</p>
-                <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
-                  <div className="flex items-center gap-1 text-amber-400">
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <span className="text-xs text-slate-600 font-bold ml-1">4.8</span>
+                <div>
+                  <h4 className="font-bold text-sm text-slate-900 line-clamp-1 group-hover:text-[#F05262] transition-colors">
+                    {book.title}
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">{book.genre} • Rs. {book.price}.00</p>
+                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
+                    <div className="flex items-center gap-1 text-amber-400">
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <span className="text-xs text-slate-600 font-bold ml-1">{book.rating}</span>
+                    </div>
+                    <span className="text-[11px] font-semibold text-[#F05262] group-hover:underline inline-flex items-center gap-1">
+                      <span>View Details</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </span>
                   </div>
-                  <span className="text-[11px] font-semibold text-[#F05262] group-hover:underline inline-flex items-center gap-0.5">
-                    Store <ExternalLink className="w-3 h-3" />
-                  </span>
                 </div>
-              </div>
-            </a>
-
-            {/* Book 3 */}
-            <a
-              href="https://store.bookleafpub.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
-            >
-              <div className="h-64 rounded-xl overflow-hidden mb-4 relative bg-slate-50 flex items-center justify-center p-2">
-                <img
-                  src="/images/bookleaf/the-language-of-us.png"
-                  alt="The Language of Us"
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-slate-900 line-clamp-1 group-hover:text-[#F05262] transition-colors">
-                  The Language of Us
-                </h4>
-                <p className="text-xs text-slate-500 mt-0.5">Contemporary • ₹249</p>
-                <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
-                  <div className="flex items-center gap-1 text-amber-400">
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <span className="text-xs text-slate-600 font-bold ml-1">4.9</span>
-                  </div>
-                  <span className="text-[11px] font-semibold text-[#F05262] group-hover:underline inline-flex items-center gap-0.5">
-                    Store <ExternalLink className="w-3 h-3" />
-                  </span>
-                </div>
-              </div>
-            </a>
-
-            {/* Book 4 */}
-            <a
-              href="https://store.bookleafpub.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
-            >
-              <div className="h-64 rounded-xl overflow-hidden mb-4 relative bg-slate-50 flex items-center justify-center p-2">
-                <img
-                  src="/images/bookleaf/verses-on-the-human-stage.png"
-                  alt="Verses on The HUMAN Stage"
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <div>
-                <h4 className="font-bold text-sm text-slate-900 line-clamp-1 group-hover:text-[#F05262] transition-colors">
-                  Verses on The HUMAN Stage
-                </h4>
-                <p className="text-xs text-slate-500 mt-0.5">Anthology • ₹220</p>
-                <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
-                  <div className="flex items-center gap-1 text-amber-400">
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <span className="text-xs text-slate-600 font-bold ml-1">4.7</span>
-                  </div>
-                  <span className="text-[11px] font-semibold text-[#F05262] group-hover:underline inline-flex items-center gap-0.5">
-                    Store <ExternalLink className="w-3 h-3" />
-                  </span>
-                </div>
-              </div>
-            </a>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -1184,42 +1186,42 @@ export default function HomePage() {
       <AuthorVideoReel />
 
       {/* ====================================================================
-          FAQ SECTION (Executive Senior Split Layout with Interactive Category Filters)
+          FAQ SECTION (World-Class Editorial Knowledge Base & Accordion)
           ==================================================================== */}
-      <section id="faq" className="py-20 sm:py-28 bg-[#F9FAF7] border-t border-slate-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#FFF5F6] to-[#FFE7E9] border border-[#F05262]/20 text-[#F05262] text-xs font-bold uppercase tracking-wider shadow-2xs">
-              <HelpCircle className="w-3.5 h-3.5" />
-              <span>Support &amp; Author Knowledge Base</span>
-            </div>
+      <section id="faq" className="py-24 sm:py-32 bg-gradient-to-b from-[#FBFBFA] via-[#F8F9F6] to-white border-t border-slate-200/80 relative overflow-hidden">
+        {/* Subtle background ambient glow */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#F05262]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-10 left-10 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
-            <h2 className="font-serif text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <h2 className="font-serif text-3xl sm:text-5xl font-bold text-slate-900 tracking-tight leading-tight">
               Frequently Asked Questions
             </h2>
 
-            <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
               Clear, transparent answers grounded in BookLeaf official author agreements, 100% royalty standards, and global distribution network.
             </p>
           </div>
 
           {/* 2-Column Split Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
             {/* Left Column: Categories Navigation & Support Concierge (4 cols) */}
             <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-28">
-              {/* Category Filter Pills */}
-              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs space-y-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 block mb-2">
-                  Browse by Topic
-                </span>
+              {/* Category Filter Navigation */}
+              <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs space-y-1.5">
+                <div className="px-3 py-1 flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  <span>Browse by Topic</span>
+                  <span>{faqs.length} Total</span>
+                </div>
 
                 {[
                   { id: "All", label: "All Questions", count: faqs.length, icon: HelpCircle },
                   { id: "Publishing", label: "Publishing & Timeline", count: faqs.filter(f => f.category === "Publishing").length, icon: BookOpen },
                   { id: "Royalties", label: "Royalties & Payouts", count: faqs.filter(f => f.category === "Royalties").length, icon: IndianRupee },
-                  { id: "Copyright", label: "Copyright & Legal", count: faqs.filter(f => f.category === "Copyright").length, icon: ShieldCheck },
-                  { id: "AI Tech", label: "AI Co-Pilot & Tech", count: faqs.filter(f => f.category === "AI Tech").length, icon: Sparkles },
+                  { id: "Copyright", label: "Copyright & Ownership", count: faqs.filter(f => f.category === "Copyright").length, icon: ShieldCheck },
+                  { id: "AI Tech", label: "AI Co-Pilot & Platform", count: faqs.filter(f => f.category === "AI Tech").length, icon: Sparkles },
                 ].map((cat) => {
                   const Icon = cat.icon;
                   const isSelected = selectedFaqCategory === cat.id;
@@ -1231,25 +1233,29 @@ export default function HomePage() {
                         setSelectedFaqCategory(cat.id);
                         setOpenFaq(null);
                       }}
-                      className={`w-full h-11 px-3.5 rounded-xl flex items-center justify-between text-xs font-semibold transition-all group ${
+                      className={`w-full h-12 px-3.5 rounded-2xl flex items-center justify-between text-xs font-semibold transition-all group cursor-pointer ${
                         isSelected
-                          ? "bg-gradient-to-r from-[#FFF5F6] to-[#FFE7E9] text-[#F05262] font-bold border border-[#F05262]/25 shadow-2xs"
-                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent"
+                          ? "bg-slate-900 text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70"
                       }`}
                     >
-                      <div className="flex items-center gap-2.5">
-                        <Icon
-                          className={`w-4 h-4 transition-colors ${
-                            isSelected ? "text-[#F05262]" : "text-slate-400 group-hover:text-slate-700"
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                            isSelected
+                              ? "bg-white/15 text-white"
+                              : "bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-900"
                           }`}
-                        />
-                        <span>{cat.label}</span>
+                        >
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <span className="text-left">{cat.label}</span>
                       </div>
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                        className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold font-mono ${
                           isSelected
-                            ? "bg-[#F05262] text-white"
-                            : "bg-slate-100 text-slate-500"
+                            ? "bg-white/20 text-white"
+                            : "bg-slate-100 text-slate-500 group-hover:bg-slate-200"
                         }`}
                       >
                         {cat.count}
@@ -1260,31 +1266,33 @@ export default function HomePage() {
               </div>
 
               {/* Author Support Concierge Card */}
-              <div className="bg-gradient-to-br from-[#FFF5F6] via-white to-[#FFF0F2] rounded-2xl p-6 border border-[#F05262]/20 shadow-2xs space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#F05262] to-rose-400 text-white flex items-center justify-center font-bold text-lg shadow-sm">
-                    N
+              <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/90 shadow-2xs space-y-5 relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    </span>
+                    <span>Live Support Desk</span>
                   </div>
-                  <div>
-                    <h4 className="font-serif text-base font-bold text-slate-900">
-                      Need Personal Guidance?
-                    </h4>
-                    <p className="text-xs text-slate-500">
-                      Our Publishing Concierge is here to help
-                    </p>
-                  </div>
+                  <span className="text-[11px] font-medium text-slate-400">&lt; 15 min reply</span>
                 </div>
 
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Have a specific question about your poetry collection, novel manuscript, or royalty breakdown? Speak directly with our editorial team.
-                </p>
+                <div className="space-y-1.5">
+                  <h4 className="font-serif text-lg font-bold text-slate-900">
+                    Need Personal Guidance?
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Have specific questions about your manuscript, printing costs, or quarterly royalty breakdown? Connect directly with our publishing team.
+                  </p>
+                </div>
 
-                <div className="space-y-2 pt-1">
+                <div className="space-y-2.5 pt-1">
                   <a
                     href="https://wa.me/911943550930?text=Hello%20BookLeaf%20Publishing%20Team,%20I%20have%20a%20question%20about%20publishing%20my%20book."
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full h-11 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-sm hover:shadow"
+                    className="w-full h-11 rounded-2xl bg-[#25D366] hover:bg-[#20be5a] text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-xs hover:shadow-md cursor-pointer"
                   >
                     <MessageCircle className="w-4 h-4 fill-white" />
                     <span>Chat on WhatsApp (+91 194 355 0930)</span>
@@ -1292,44 +1300,71 @@ export default function HomePage() {
 
                   <Link
                     href="/author-dashboard?menu=Raise%20a%20Query"
-                    className="w-full h-10 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs transition flex items-center justify-center gap-1.5"
+                    className="w-full h-11 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 font-semibold text-xs transition flex items-center justify-center gap-2 group cursor-pointer"
                   >
-                    <span>Raise a Priority Support Query</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Raise Priority Support Ticket</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-800 group-hover:translate-x-0.5 transition-all" />
                   </Link>
                 </div>
 
-                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    Live Support Desk
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                  <span className="flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-slate-400" />
+                    <span>support@bookleafpub.com</span>
                   </span>
-                  <span className="font-semibold text-slate-700">&lt; 4 hr turnaround</span>
+                  <span className="font-medium text-slate-600">Mon-Sat (10AM-7PM)</span>
                 </div>
               </div>
             </div>
 
-            {/* Right Column: Interactive Search & Elevated Accordion (8 cols) */}
-            <div className="lg:col-span-8 space-y-5">
-              {/* Keyword Search Bar */}
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={faqSearchQuery}
-                  onChange={(e) => setFaqSearchQuery(e.target.value)}
-                  placeholder="Search questions (e.g. royalty, timeline, copyright, print copies...)"
-                  className="w-full pl-11 pr-10 py-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#F05262] transition"
-                />
-                {faqSearchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setFaqSearchQuery("")}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs"
-                  >
-                    ×
-                  </button>
-                )}
+            {/* Right Column: Search Bar & Refined Accordion (8 cols) */}
+            <div className="lg:col-span-8 space-y-6">
+              {/* Keyword Search Bar & Quick Chips */}
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-4.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={faqSearchQuery}
+                    onChange={(e) => setFaqSearchQuery(e.target.value)}
+                    placeholder="Search publishing timeline, royalty calculation, ISBN, Amazon delivery..."
+                    className="w-full pl-12 pr-11 py-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs text-xs sm:text-sm font-medium text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition"
+                  />
+                  {faqSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setFaqSearchQuery("")}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold transition cursor-pointer"
+                      title="Clear search"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+
+                {/* Popular Keywords Quick Filter Chips */}
+                <div className="flex items-center gap-2 flex-wrap text-[11px] text-slate-500 pl-1">
+                  <span className="font-semibold text-slate-400">Popular:</span>
+                  {[
+                    { label: "Royalty Payouts", cat: "Royalties" },
+                    { label: "Publishing Timeline", cat: "Publishing" },
+                    { label: "Copyright Ownership", cat: "Copyright" },
+                    { label: "Author Copies Discount", cat: "Royalties" },
+                    { label: "Gemini AI Co-Pilot", cat: "AI Tech" },
+                  ].map((chip) => (
+                    <button
+                      key={chip.label}
+                      type="button"
+                      onClick={() => {
+                        setSelectedFaqCategory(chip.cat);
+                        setFaqSearchQuery("");
+                      }}
+                      className="px-2.5 py-1 rounded-full bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 text-[11px] font-medium transition cursor-pointer"
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Accordion Cards List */}
@@ -1347,21 +1382,25 @@ export default function HomePage() {
 
                 if (filteredFaqs.length === 0) {
                   return (
-                    <div className="bg-white rounded-2xl border border-slate-200/90 p-10 text-center space-y-3">
-                      <HelpCircle className="w-8 h-8 text-slate-300 mx-auto" />
-                      <p className="text-sm font-bold text-slate-700">No matching questions found</p>
-                      <p className="text-xs text-slate-400">
-                        Try searching with different keywords or switch back to &quot;All Questions&quot;.
-                      </p>
+                    <div className="bg-white rounded-3xl border border-slate-200/90 p-12 text-center space-y-4 shadow-2xs">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mx-auto">
+                        <HelpCircle className="w-6 h-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-base font-bold text-slate-800">No matching questions found</p>
+                        <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                          We couldn&apos;t find any questions matching &ldquo;{faqSearchQuery}&rdquo;. Try another term or reset filters.
+                        </p>
+                      </div>
                       <button
                         type="button"
                         onClick={() => {
                           setFaqSearchQuery("");
                           setSelectedFaqCategory("All");
                         }}
-                        className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
+                        className="px-5 py-2.5 rounded-full bg-slate-900 hover:bg-black text-white text-xs font-semibold transition cursor-pointer shadow-xs"
                       >
-                        Reset Search Filters
+                        Show All Questions
                       </button>
                     </div>
                   );
@@ -1374,10 +1413,10 @@ export default function HomePage() {
                       return (
                         <div
                           key={faq.id || idx}
-                          className={`rounded-2xl border bg-white overflow-hidden transition-all duration-200 shadow-2xs ${
+                          className={`rounded-3xl border bg-white overflow-hidden transition-all duration-200 ${
                             isOpen
-                              ? "border-[#F05262]/40 shadow-xs ring-1 ring-[#F05262]/10"
-                              : "border-slate-200/90 hover:border-slate-300 hover:shadow-xs"
+                              ? "border-slate-400/80 shadow-sm ring-1 ring-slate-900/5"
+                              : "border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-xs"
                           }`}
                         >
                           <button
@@ -1386,7 +1425,7 @@ export default function HomePage() {
                             className="w-full p-5 sm:p-6 text-left flex items-start justify-between gap-4 group cursor-pointer"
                           >
                             <div className="space-y-1.5 flex-1 pr-2">
-                              <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-[#F05262] bg-[#FFF5F6] px-2 py-0.5 rounded-md border border-[#F05262]/20">
+                              <span className="inline-block text-[11px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md">
                                 {faq.categoryLabel}
                               </span>
                               <h3 className="font-serif text-base sm:text-lg font-bold text-slate-900 group-hover:text-[#F05262] transition-colors leading-snug">
@@ -1395,29 +1434,29 @@ export default function HomePage() {
                             </div>
 
                             <div
-                              className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 ${
+                              className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 transition-all duration-300 ${
                                 isOpen
-                                  ? "bg-[#F05262] text-white shadow-2xs rotate-180"
-                                  : "bg-slate-100 text-slate-500 group-hover:bg-[#FFF5F6] group-hover:text-[#F05262]"
+                                  ? "bg-slate-900 text-white border-slate-900 rotate-180"
+                                  : "border-slate-200 bg-slate-50 text-slate-500 group-hover:border-slate-300 group-hover:text-slate-900 group-hover:bg-slate-100"
                               }`}
                             >
-                              <ChevronDown className="w-4 h-4" />
+                              <ChevronDown className="w-4 h-4 transition-transform duration-300" />
                             </div>
                           </button>
 
                           {isOpen && (
                             <div className="px-5 sm:px-6 pb-6 pt-1 space-y-4 border-t border-slate-100 animate-fade-in">
-                              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pt-2">
                                 {faq.a}
                               </p>
 
-                              {/* Highlight Badges / Fact Strip */}
+                              {/* Highlight Badges / Key Takeaways */}
                               {faq.highlights && faq.highlights.length > 0 && (
-                                <div className="flex flex-wrap gap-2 pt-1">
+                                <div className="flex flex-wrap gap-2 pt-2">
                                   {faq.highlights.map((h, hIdx) => (
                                     <span
                                       key={hIdx}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200/80 text-[11px] font-semibold text-slate-700"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] font-semibold text-slate-700"
                                     >
                                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                                       <span>{h}</span>
@@ -1425,6 +1464,28 @@ export default function HomePage() {
                                   ))}
                                 </div>
                               )}
+
+                              {/* Quick Feedback & Assistance Strip */}
+                              <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-400">
+                                <span>Was this helpful for your publishing plan?</span>
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => alert("Thank you for your feedback!")}
+                                    className="inline-flex items-center gap-1 text-slate-600 hover:text-emerald-700 font-medium transition cursor-pointer"
+                                  >
+                                    <ThumbsUp className="w-3.5 h-3.5" />
+                                    <span>Yes, clear</span>
+                                  </button>
+                                  <span>•</span>
+                                  <Link
+                                    href="/author-dashboard?menu=Raise%20a%20Query"
+                                    className="text-[#F05262] hover:underline font-semibold"
+                                  >
+                                    Ask another question &rarr;
+                                  </Link>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -1438,144 +1499,253 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Top Brand Coral Accent Bar */}
-      <div className="h-1 bg-gradient-to-r from-[#F05262] via-[#F26979] to-rose-400" />
-
       {/* ====================================================================
-          FOOTER (Clean 4-Column Layout, Modern Light Slate & White Aesthetic)
+          FOOTER (World-Class Editorial Dark Midnight Luxury Layout)
           ==================================================================== */}
-      <footer className="bg-slate-50 border-t border-slate-200 text-slate-700 pt-16 pb-16 sm:pb-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <footer className="bg-[#080E18] text-slate-400 border-t border-slate-800/80 pt-16 sm:pt-20 pb-12 sm:pb-16 relative overflow-hidden">
+        {/* Ambient background glows */}
+        <div className="absolute top-0 right-10 w-96 h-96 bg-[#F05262]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-10 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Pre-Footer Community & Newsletter Banner */}
+          <div className="bg-gradient-to-br from-[#0F1E33] via-[#0E1B2D] to-[#0A131F] border border-white/10 rounded-3xl p-8 sm:p-12 shadow-2xl mb-16 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-[#F05262]/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
+              <div className="space-y-2.5 max-w-xl text-center lg:text-left">
+                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                  Start Your Book Publishing Journey
+                </h3>
+                <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                  Get our free 48-page Author Publishing Handbook, weekly royalty benchmarks, cover design inspirations, and writing challenge alerts.
+                </p>
+              </div>
+
+              {/* Newsletter Form */}
+              <form onSubmit={handleNewsletter} className="w-full lg:w-auto flex-1 max-w-md">
+                {subscribed ? (
+                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm font-semibold flex items-center gap-2.5">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                    <span>Welcome! You are subscribed to BookLeaf Author Dispatch.</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row gap-2.5">
+                    <input
+                      type="email"
+                      required
+                      value={newsletterEmail}
+                      onChange={(e) => setNewsletterEmail(e.target.value)}
+                      placeholder="Enter your email address..."
+                      className="flex-1 px-5 py-3 rounded-2xl bg-white/10 border border-white/15 text-white placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#F05262] focus:bg-white/15 transition"
+                    />
+                    <button
+                      type="submit"
+                      className="px-6 py-3 rounded-2xl bg-[#F05262] hover:bg-[#e04354] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition cursor-pointer shrink-0"
+                    >
+                      Subscribe Free
+                    </button>
+                  </div>
+                )}
+              </form>
+            </div>
+          </div>
+
           {/* Main 4-Column Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10 pb-12 border-b border-slate-200">
-            {/* Column 1: Links */}
-            <div className="lg:col-span-3 space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#F05262]">
-                Explore
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-12 pb-14 border-b border-white/10">
+            {/* Column 1: Brand Wordmark & Corporate Trust (4 cols) */}
+            <div className="lg:col-span-4 space-y-5">
+              {/* Logo */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#F05262] flex items-center justify-center text-white shadow-md">
+                  <BookOpen className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="font-serif text-2xl font-bold tracking-tight text-white leading-tight">
+                    BookLeaf
+                  </span>
+                  <span className="text-[11px] font-semibold tracking-wider text-slate-400 uppercase -mt-0.5">
+                    Publishing
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-sm">
+                World&apos;s #1 Author-First Self-Publishing Platform. Empowering writers across 100+ countries with 100% royalty profit ownership, 30-day print fulfillment, official government-registered ISBNs, and distribution on Amazon &amp; Flipkart.
+              </p>
+
+              {/* Corporate Legal Entity */}
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-1 text-xs">
+                <span className="text-slate-300 font-semibold block text-[11px] uppercase tracking-wider">
+                  Corporate Registration
+                </span>
+                <p className="text-slate-400">
+                  Libresco Feeds Private Limited
+                </p>
+                <p className="font-mono text-[11px] text-slate-500">
+                  CIN: U22100JK2019PTC010936
+                </p>
+              </div>
+
+              {/* Security & DMCA Badges */}
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 font-semibold">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>DMCA Protected</span>
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-[11px] text-sky-300 font-semibold">
+                  <Lock className="w-3 h-3 text-sky-400 shrink-0" />
+                  <span>256-Bit SSL Encrypted</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Column 2: Publishing & Services (2 cols) */}
+            <div className="lg:col-span-2 space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                Publishing
               </h4>
-              <ul className="space-y-2.5 text-xs sm:text-sm text-slate-600">
+              <ul className="space-y-3 text-xs sm:text-sm text-slate-400">
                 <li>
-                  <a href="#publishing-packages" className="hover:text-[#F05262] transition-colors">
-                    Packages and Pricing
+                  <a href="#publishing-packages" className="hover:text-white transition-colors block">
+                    Packages &amp; Pricing
                   </a>
                 </li>
                 <li>
-                  <a href="#bookstore" className="hover:text-[#F05262] transition-colors">
-                    Bookstore
+                  <a href="#calculator" className="hover:text-white transition-colors block">
+                    Royalty Calculator
                   </a>
                 </li>
                 <li>
-                  <Link href="/login" className="hover:text-[#F05262] transition-colors">
-                    Writing Challenges
+                  <a href="#bookstore" className="hover:text-white transition-colors block">
+                    Bookstore &amp; Catalog
+                  </a>
+                </li>
+                <li>
+                  <Link href="/login" className="hover:text-white transition-colors block">
+                    21-Day Challenges
                   </Link>
                 </li>
                 <li>
-                  <Link href="/login" className="hover:text-[#F05262] transition-colors">
-                    About BookLeaf
+                  <Link href="/printing-cost-royalty-calculator" className="hover:text-white transition-colors block">
+                    Print Cost Estimator
                   </Link>
                 </li>
                 <li>
-                  <Link href="/login" className="hover:text-[#F05262] transition-colors">
-                    Privacy &amp; Refund Policy
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/login" className="hover:text-[#F05262] transition-colors">
-                    Terms and Conditions
+                  <Link href="/create_book" className="hover:text-white transition-colors block">
+                    Create New Book
                   </Link>
                 </li>
               </ul>
             </div>
 
-            {/* Column 2: Contact & Support */}
-            <div className="lg:col-span-3 space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#F05262]">
-                Support &amp; Help
+            {/* Column 3: Author Support & Legal (3 cols) */}
+            <div className="lg:col-span-3 space-y-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                Author Support
               </h4>
-              <div className="space-y-3 text-xs sm:text-sm text-slate-600">
-                <div>
-                  <span className="text-slate-400 block text-xs">Email / Phone:</span>
-                  <a
-                    href="mailto:support@bookleafpub.com"
-                    className="hover:text-[#F05262] font-semibold text-slate-800 transition-colors block"
-                  >
-                    support@bookleafpub.com
-                  </a>
-                  <a
-                    href="tel:+911943550930"
-                    className="hover:text-[#F05262] text-xs text-slate-600 transition-colors block mt-0.5"
-                  >
-                    +91 194 355 0930
-                  </a>
-                </div>
-
-                <div>
-                  <a href="#faq" className="hover:text-[#F05262] transition-colors block">
-                    Frequently Asked Questions
-                  </a>
-                </div>
-
-                <div className="pt-1">
-                  <Link
-                    href="/author-dashboard?menu=Raise%20a%20Query"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#F05262] hover:text-[#d94151] transition-colors group"
-                  >
-                    <span>Click here to raise a ticket</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              <ul className="space-y-3 text-xs sm:text-sm text-slate-400">
+                <li>
+                  <Link href="/author" className="hover:text-white transition-colors block font-medium text-slate-300">
+                    Author Dashboard Login &rarr;
                   </Link>
-                </div>
-              </div>
+                </li>
+                <li>
+                  <a href="#faq" className="hover:text-white transition-colors block">
+                    Knowledge Base &amp; FAQs
+                  </a>
+                </li>
+                <li>
+                  <Link href="/author-dashboard?menu=Raise%20a%20Query" className="hover:text-white transition-colors block">
+                    Submit Support Query
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/admin/tickets" className="hover:text-white transition-colors block">
+                    Ticket Queue (Live Status)
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/login" className="hover:text-white transition-colors block">
+                    Privacy &amp; Refund Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/login" className="hover:text-white transition-colors block">
+                    Terms &amp; Conditions
+                  </Link>
+                </li>
+              </ul>
             </div>
 
-            {/* Column 3: Corporate Registration & Offices */}
-            <div className="lg:col-span-3 space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#F05262]">
-                Company
-              </h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                BookLeaf Publishing (Global) is a subsidiary of <strong className="text-slate-900 font-semibold">Libresco Feeds Pvt Ltd.</strong> (CIN: <span className="font-mono text-slate-700">U22100JK2019PTC010936</span>).
-              </p>
-
-              <div className="text-xs text-slate-500 space-y-1 pt-1">
-                <span className="text-slate-700 font-semibold block text-[11px] uppercase tracking-wide">
-                  Regd. Offices:
-                </span>
-                <p>• 1603 Capitol Ave., Suite 310, Cheyenne, WY 82001, USA</p>
-                <p>• Srinagar, J&amp;K, India - 190005</p>
-              </div>
-
-              {/* Security & DMCA Trust Badges */}
-              <div className="pt-2 flex items-center gap-2 flex-wrap">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800 font-semibold shadow-2xs">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span>DMCA Protected</span>
-                </div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 border border-sky-200 text-[11px] text-sky-800 font-semibold shadow-2xs">
-                  <Lock className="w-3 h-3 text-sky-600 shrink-0" />
-                  <span>256-bit SSL</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Column 4: Community, Logo & Payment Trust Badges */}
-            <div className="lg:col-span-3 flex flex-col justify-between space-y-5">
+            {/* Column 4: Global Offices & Editorial Helpline (3 cols) */}
+            <div className="lg:col-span-3 space-y-5">
               <div className="space-y-3">
-                <p className="text-xs sm:text-sm font-semibold text-slate-900">
-                  Join our community of 25K+ writers and readers:
-                </p>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                  Editorial Desk &amp; Offices
+                </h4>
 
-                {/* 5 Scraped Social Media Buttons with Official Brand Backgrounds */}
-                <div className="flex items-center gap-2.5 flex-wrap pt-1">
+                <div className="space-y-2.5 text-xs text-slate-400">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5 text-[#F05262] shrink-0" />
+                    <a
+                      href="mailto:support@bookleafpub.com"
+                      className="hover:text-white font-medium text-slate-300 transition-colors"
+                    >
+                      support@bookleafpub.com
+                    </a>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <a
+                      href="tel:+911943550930"
+                      className="hover:text-white font-medium text-slate-300 transition-colors"
+                    >
+                      +91 194 355 0930
+                    </a>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="w-3.5 h-3.5 text-[#25D366] shrink-0" />
+                    <a
+                      href="https://wa.me/911943550930"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-white font-medium text-slate-300 transition-colors"
+                    >
+                      WhatsApp Priority Support
+                    </a>
+                  </div>
+                </div>
+
+                <div className="pt-2 space-y-1.5 text-xs text-slate-400 border-t border-white/10">
+                  <div className="flex items-start gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                    <span><strong>USA:</strong> 1603 Capitol Ave., Suite 310, Cheyenne, WY 82001</span>
+                  </div>
+                  <div className="flex items-start gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                    <span><strong>India:</strong> Cyber City, Gurugram &amp; Srinagar, J&amp;K - 190005</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Media Links with Frosted Badges */}
+              <div className="space-y-2 pt-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                  Connect with BookLeaf
+                </span>
+                <div className="flex items-center gap-2 flex-wrap">
                   {/* Instagram */}
                   <a
                     href="https://instagram.com/bookleafpublishing/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white flex items-center justify-center shadow-xs hover:shadow-md hover:scale-110 transition-all duration-300"
+                    className="w-9 h-9 rounded-full bg-white/5 hover:bg-[#E4405F] border border-white/10 hover:border-[#E4405F] text-slate-300 hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-110"
                     aria-label="Instagram"
-                    title="Follow on Instagram"
+                    title="Instagram"
                   >
-                    <Instagram className="w-4 h-4 text-white" />
+                    <Instagram className="w-4 h-4" />
                   </a>
 
                   {/* Facebook */}
@@ -1583,11 +1753,11 @@ export default function HomePage() {
                     href="https://www.facebook.com/bookleafpublishing"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-[#1877F2] hover:bg-[#1565cf] text-white flex items-center justify-center shadow-xs hover:shadow-md hover:scale-110 transition-all duration-300"
+                    className="w-9 h-9 rounded-full bg-white/5 hover:bg-[#1877F2] border border-white/10 hover:border-[#1877F2] text-slate-300 hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-110"
                     aria-label="Facebook"
-                    title="Follow on Facebook"
+                    title="Facebook"
                   >
-                    <Facebook className="w-4 h-4 text-white fill-white" />
+                    <Facebook className="w-4 h-4 fill-current" />
                   </a>
 
                   {/* Twitter / X */}
@@ -1595,11 +1765,11 @@ export default function HomePage() {
                     href="https://twitter.com/bookleafpub"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-slate-900 hover:bg-black text-white flex items-center justify-center shadow-xs hover:shadow-md hover:scale-110 transition-all duration-300"
+                    className="w-9 h-9 rounded-full bg-white/5 hover:bg-slate-700 border border-white/10 hover:border-slate-500 text-slate-300 hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-110"
                     aria-label="Twitter / X"
-                    title="Follow on Twitter / X"
+                    title="Twitter / X"
                   >
-                    <Twitter className="w-4 h-4 text-white fill-white" />
+                    <Twitter className="w-4 h-4 fill-current" />
                   </a>
 
                   {/* YouTube */}
@@ -1607,11 +1777,11 @@ export default function HomePage() {
                     href="https://www.youtube.com/channel/UCJAAi_L1JH8OZSTbtYZW3OQ"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-[#FF0000] hover:bg-[#d90000] text-white flex items-center justify-center shadow-xs hover:shadow-md hover:scale-110 transition-all duration-300"
+                    className="w-9 h-9 rounded-full bg-white/5 hover:bg-[#FF0000] border border-white/10 hover:border-[#FF0000] text-slate-300 hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-110"
                     aria-label="YouTube"
-                    title="Subscribe on YouTube"
+                    title="YouTube"
                   >
-                    <Youtube className="w-4 h-4 text-white fill-white" />
+                    <Youtube className="w-4 h-4 fill-current" />
                   </a>
 
                   {/* LinkedIn */}
@@ -1619,72 +1789,318 @@ export default function HomePage() {
                     href="https://in.linkedin.com/company/bookleaf-publishing"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-9 h-9 rounded-full bg-[#0A66C2] hover:bg-[#084e96] text-white flex items-center justify-center shadow-xs hover:shadow-md hover:scale-110 transition-all duration-300"
+                    className="w-9 h-9 rounded-full bg-white/5 hover:bg-[#0A66C2] border border-white/10 hover:border-[#0A66C2] text-slate-300 hover:text-white flex items-center justify-center transition-all duration-200 hover:scale-110"
                     aria-label="LinkedIn"
-                    title="Connect on LinkedIn"
+                    title="LinkedIn"
                   >
-                    <Linkedin className="w-4 h-4 text-white fill-white" />
+                    <Linkedin className="w-4 h-4 fill-current" />
                   </a>
                 </div>
-              </div>
-
-              {/* Official Footer Logo */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#F05262] flex items-center justify-center text-white shadow-xs">
-                  <span className="font-sans text-2xl font-light leading-none -rotate-12 select-none text-white">
-                    /
-                  </span>
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="font-serif text-xl font-bold tracking-tight text-slate-900 leading-tight">
-                    BookLeaf
-                  </span>
-                  <span className="text-xs font-normal tracking-tight text-slate-500 -mt-0.5">
-                    Publishing
-                  </span>
-                </div>
-              </div>
-
-              {/* Payment Acceptance Chips */}
-              <div className="pt-1 flex items-center gap-2 flex-wrap">
-                <span className="px-2 py-0.5 rounded bg-white text-[#1A1F71] text-[10px] font-extrabold tracking-wider border border-slate-200 shadow-2xs">
-                  VISA
-                </span>
-                <span className="px-2 py-0.5 rounded bg-white text-[#EB001B] text-[10px] font-extrabold tracking-wider border border-slate-200 shadow-2xs">
-                  MC
-                </span>
-                <span className="px-2 py-0.5 rounded bg-[#006FCF] text-white text-[10px] font-bold tracking-wider shadow-2xs">
-                  AMEX
-                </span>
-                <span className="px-2 py-0.5 rounded bg-white text-[#097939] text-[10px] font-extrabold tracking-wider border border-slate-200 shadow-2xs">
-                  RuPay
-                </span>
-                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[10px] font-semibold border border-emerald-200 shadow-2xs">
-                  SSL Secure
-                </span>
               </div>
             </div>
           </div>
 
-          {/* Bottom Copyright & Disclaimer */}
-          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-            <p>
-              &copy; 2026 BookLeaf Publishing. A division of Libresco Feeds Pvt Ltd. All rights reserved.
+          {/* Bottom Bar: Copyright & Payment Security */}
+          <div className="pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500 gap-5">
+            <p className="text-center md:text-left">
+              &copy; 2026 BookLeaf Publishing. All rights reserved. A division of Libresco Feeds Pvt. Ltd.
             </p>
-            <div className="flex items-center gap-6">
-              <Link href="/api-docs" className="hover:text-[#F05262] transition-colors">
+
+            {/* Payment & Security Chips */}
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+              <span className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-slate-300 font-mono text-[10px] font-bold tracking-wider">
+                VISA
+              </span>
+              <span className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-slate-300 font-mono text-[10px] font-bold tracking-wider">
+                MASTERCARD
+              </span>
+              <span className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-slate-300 font-mono text-[10px] font-bold tracking-wider">
+                AMEX
+              </span>
+              <span className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-slate-300 font-mono text-[10px] font-bold tracking-wider">
+                RUPAY
+              </span>
+              <span className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-slate-300 font-mono text-[10px] font-bold tracking-wider">
+                UPI
+              </span>
+              <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-[10px] font-semibold">
+                RAZORPAY VERIFIED
+              </span>
+            </div>
+
+            {/* System Status & Links */}
+            <div className="flex items-center gap-5 text-slate-400">
+              <span className="flex items-center gap-1.5 text-emerald-400 text-[11px] font-medium">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Live Network Active
+              </span>
+              <Link href="/api-docs" className="hover:text-white transition-colors">
                 API Docs
               </Link>
-              <Link href="/login" className="hover:text-[#F05262] transition-colors">
-                Privacy Policy
+              <Link href="/login" className="hover:text-white transition-colors">
+                Privacy
               </Link>
-              <Link href="/login" className="hover:text-[#F05262] transition-colors">
-                Terms and Conditions
+              <Link href="/login" className="hover:text-white transition-colors">
+                Terms
               </Link>
             </div>
           </div>
         </div>
       </footer>
+
+      {/* ====================================================================
+          IN-APP BOOK DETAIL PREVIEW MODAL (Zero External Redirects)
+          ==================================================================== */}
+      {selectedBookPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 relative animate-scale-up">
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setSelectedBookPreview(null)}
+              className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer"
+              aria-label="Close Preview"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="p-6 sm:p-8">
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-start">
+                {/* Book Cover */}
+                <div className="sm:col-span-5 flex flex-col items-center">
+                  <div className="w-full max-w-[220px] aspect-[2/3] bg-slate-100 rounded-2xl overflow-hidden shadow-lg border border-slate-200/80 p-2 flex items-center justify-center">
+                    <img
+                      src={selectedBookPreview.coverImage}
+                      alt={selectedBookPreview.title}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <span className="mt-3 inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    BookLeaf Verified Edition
+                  </span>
+                </div>
+
+                {/* Book Metadata */}
+                <div className="sm:col-span-7 space-y-4">
+                  <div>
+                    <span className="text-xs font-bold text-[#F05262] uppercase tracking-wider block">
+                      {selectedBookPreview.genre}
+                    </span>
+                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900 leading-snug mt-1">
+                      {selectedBookPreview.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                      By <strong className="text-slate-800">{selectedBookPreview.author}</strong>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3 py-2 border-y border-slate-100">
+                    <div className="flex items-center gap-1 text-amber-400">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="w-4 h-4 fill-amber-400" />
+                      ))}
+                      <span className="text-sm font-bold text-slate-800 ml-1">
+                        {selectedBookPreview.rating}
+                      </span>
+                    </div>
+                    <span className="text-xs text-slate-400">•</span>
+                    <span className="text-xs text-slate-600 font-medium">
+                      {selectedBookPreview.reviewsCount} Reader Reviews
+                    </span>
+                    <span className="text-xs text-slate-400">•</span>
+                    <span className="text-base font-extrabold text-[#F05262] font-sans">
+                      ₹{selectedBookPreview.price}
+                    </span>
+                  </div>
+
+                  {/* Synopsis */}
+                  <div className="space-y-1.5">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                      About This Book
+                    </h4>
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                      {selectedBookPreview.synopsis}
+                    </p>
+                  </div>
+
+                  {/* Specs Grid */}
+                  <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">ISBN</span>
+                      <span className="font-mono text-slate-800 text-[11px] font-semibold">{selectedBookPreview.isbn}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Pages &amp; Language</span>
+                      <span className="text-slate-800 font-semibold">{selectedBookPreview.pages} pp • {selectedBookPreview.language}</span>
+                    </div>
+                  </div>
+
+                  {/* Key Highlights */}
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 block">
+                      Publishing Highlights
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      {selectedBookPreview.highlights.map((h, i) => (
+                        <div key={i} className="flex items-center gap-1.5 text-xs text-slate-700">
+                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span>{h}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons in Modal */}
+              <div className="mt-8 pt-5 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedBookPreview(null)}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-full border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold transition cursor-pointer"
+                >
+                  Close Preview
+                </button>
+                <Link
+                  href="/create_book"
+                  onClick={() => setSelectedBookPreview(null)}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-full bg-[#F05262] hover:bg-[#d94151] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <span>Publish In This Genre</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <Link
+                  href="/printing-cost-royalty-calculator"
+                  onClick={() => setSelectedBookPreview(null)}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition flex items-center justify-center gap-1.5"
+                >
+                  <IndianRupee className="w-3.5 h-3.5" />
+                  <span>Calculate Royalties</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ====================================================================
+          IN-APP BOOKSTORE CATALOG MODAL (Explores Complete Catalog In-App)
+          ==================================================================== */}
+      {showCatalogModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 relative animate-scale-up flex flex-col">
+            {/* Header */}
+            <div className="p-6 sm:p-8 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+              <div>
+                <span className="text-xs font-bold text-[#F05262] uppercase tracking-wider block">
+                  BookLeaf Official Catalog
+                </span>
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
+                  Author Bookstore &amp; Titles
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCatalogModal(false)}
+                className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer"
+                aria-label="Close Catalog"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Filter Bar */}
+            <div className="p-6 bg-slate-50 border-b border-slate-100 space-y-4">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search books by title, author, or genre..."
+                  value={catalogSearch}
+                  onChange={(e) => setCatalogSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#F05262]/20 focus:border-[#F05262]"
+                />
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {["All", "Poetry", "Finance & Wealth", "Contemporary Fiction", "Anthology & Drama"].map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCatalogCategory(cat)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${
+                      catalogCategory === cat
+                        ? "bg-[#F05262] text-white shadow-xs"
+                        : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Catalog Grid */}
+            <div className="p-6 sm:p-8 overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                {BESTSELLER_BOOKS.filter((b) => {
+                  const matchCat =
+                    catalogCategory === "All" ||
+                    b.genre.toLowerCase().includes(catalogCategory.toLowerCase());
+                  const matchQuery =
+                    !catalogSearch ||
+                    b.title.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+                    b.author.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+                    b.genre.toLowerCase().includes(catalogSearch.toLowerCase());
+                  return matchCat && matchQuery;
+                }).map((book) => (
+                  <div
+                    key={book.id}
+                    onClick={() => {
+                      setSelectedBookPreview(book);
+                    }}
+                    className="bg-white rounded-2xl p-3 border border-slate-200 shadow-2xs hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between"
+                  >
+                    <div className="h-48 rounded-xl overflow-hidden mb-3 bg-slate-50 flex items-center justify-center p-2">
+                      <img
+                        src={book.coverImage}
+                        alt={book.title}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-1">
+                        {book.title}
+                      </h4>
+                      <p className="text-[11px] text-slate-500">{book.author}</p>
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 text-xs">
+                        <span className="font-bold text-[#F05262]">₹{book.price}</span>
+                        <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
+                          Preview
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 sm:p-6 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between">
+              <span className="text-xs text-slate-500">
+                All titles published under BookLeaf 100% royalty agreements.
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowCatalogModal(false)}
+                className="px-5 py-2 rounded-full bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
+              >
+                Close Catalog
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ====================================================================
           INTERACTIVE CUSTOMER SUPPORT CHAT POPUP ("Nishtha" Agent Parity)

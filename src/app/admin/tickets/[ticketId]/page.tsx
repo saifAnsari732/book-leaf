@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { PortalShell } from "@/components/layout/portal-shell";
 import { invalidateClientCache, useFastQuery } from "@/lib/client-cache";
+import { useTicketRealtime, RealtimeStatusBadge } from "@/lib/use-ticket-realtime";
 import {
   AuditLogRecord,
   BookRecord,
@@ -92,6 +93,53 @@ export default function AdminTicketDetailWorkbenchPage() {
     text: string;
   } | null>(null);
 
+  // Real-time Live WebSocket & SSE Ticket Workbench Sync
+  useTicketRealtime({
+    ticketIdFilter: ticketId,
+    onMessagePosted: (event) => {
+      if (event.payload) {
+        const incomingMsg = event.payload as TicketMessageRecord;
+        detailQuery.mutate((prev) => {
+          if (!prev) return prev;
+          if (prev.messages.some((m) => m.message_id === incomingMsg.message_id)) {
+            return prev;
+          }
+          return {
+            ...prev,
+            messages: [...prev.messages, incomingMsg],
+          };
+        });
+      } else {
+        detailQuery.refresh();
+      }
+
+      if (event.sender_role === "AUTHOR") {
+        setFeedbackBanner({
+          type: "success",
+          text: `⚡ Live Message Received: ${event.sender_name || "Author"} just sent a message.`,
+        });
+      }
+    },
+    onTicketUpdated: (event) => {
+      detailQuery.mutate((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          ticket: {
+            ...prev.ticket,
+            status: (event.status as TicketStatus) || prev.ticket.status,
+            priority: (event.priority as TicketPriority) || prev.ticket.priority,
+            category: (event.category as TicketCategory) || prev.ticket.category,
+            assigned_to:
+              event.assigned_to !== undefined
+                ? event.assigned_to
+                : prev.ticket.assigned_to,
+          },
+        };
+      });
+    },
+  });
+
   useEffect(() => {
     if (
       detailQuery.data?.ticket &&
@@ -173,7 +221,35 @@ export default function AdminTicketDetailWorkbenchPage() {
 
   async function handleSendApprovedReply(e: React.FormEvent) {
     e.preventDefault();
-    if (!draftContent.trim()) return;
+    const contentToSend = draftContent.trim();
+    if (!contentToSend) return;
+
+    // Optimistic instantaneous UI update (sub-5ms)
+    const optimisticMsgId = `opt_${Date.now()}`;
+    const optimisticMsg: TicketMessageRecord = {
+      message_id: optimisticMsgId,
+      ticket_id: ticketId,
+      sender_role: "ADMIN",
+      sender_name: adminUser.name,
+      sender_id: adminUser.user_id,
+      content: contentToSend,
+      attachments: [],
+      created_at: new Date().toISOString(),
+    };
+
+    detailQuery.mutate((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        ticket: {
+          ...prev.ticket,
+          status: sendStatusOnReply,
+          assigned_to: prev.ticket.assigned_to || adminUser.name,
+        },
+        messages: [...prev.messages, optimisticMsg],
+      };
+    });
+
     setIsSendingReply(true);
     setFeedbackBanner(null);
 
@@ -182,24 +258,45 @@ export default function AdminTicketDetailWorkbenchPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          content: draftContent,
+          content: contentToSend,
           status: sendStatusOnReply,
         }),
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        setFeedbackBanner({
-          type: "error",
-          text: json.error || "Failed to send response",
-        });
-        return;
+        throw new Error(json.error || "Failed to send response");
       }
+
+      if (json.message) {
+        detailQuery.mutate((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            messages: prev.messages.map((m) =>
+              m.message_id === optimisticMsgId ? json.message : m
+            ),
+          };
+        });
+      }
+
       invalidateClientCache("admin:");
       invalidateClientCache("author:");
-      detailQuery.refresh();
       setFeedbackBanner({
         type: "success",
-        text: "Response sent to author! It is now visible in real time on the Author Portal.",
+        text: "⚡ Response sent to author via WebSocket! Synced in real time.",
+      });
+    } catch (err: any) {
+      // Revert optimistic message on error
+      detailQuery.mutate((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          messages: prev.messages.filter((m) => m.message_id !== optimisticMsgId),
+        };
+      });
+      setFeedbackBanner({
+        type: "error",
+        text: err.message || "Failed to send response",
       });
     } finally {
       setIsSendingReply(false);
@@ -292,13 +389,16 @@ export default function AdminTicketDetailWorkbenchPage() {
       <div className="space-y-6 animate-fade-up">
         {/* Top Bar & Feedback Banner */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link
-            href="/admin/tickets"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-            Back to Ticket Queue
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin/tickets"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+              Back to Ticket Queue
+            </Link>
+            <RealtimeStatusBadge />
+          </div>
 
           <div className="flex items-center gap-2">
             {ticket.assigned_to === adminUser.name ? (

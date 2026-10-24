@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PortalShell } from "@/components/layout/portal-shell";
 import { useFastQuery } from "@/lib/client-cache";
+import { useTicketRealtime, RealtimeStatusBadge } from "@/lib/use-ticket-realtime";
+import { useToast } from "@/context/ToastContext";
 import { TableSkeleton } from "@/components/ui/skeleton-loaders";
 import {
   SafeUser,
@@ -62,6 +64,7 @@ function AdminTicketQueueContent() {
   const [status, setStatus] = useState(searchParams.get("status") || "ALL");
   const [category, setCategory] = useState(searchParams.get("category") || "ALL");
   const [priority, setPriority] = useState(searchParams.get("priority") || "ALL");
+  const [assignee, setAssignee] = useState(searchParams.get("assignee") || "ALL");
   const [dateRange, setDateRange] = useState("30d");
   const [page, setPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
@@ -93,6 +96,7 @@ function AdminTicketQueueContent() {
     page: String(page),
     limit: "10",
   });
+  if (assignee && assignee !== "ALL") queryParams.set("assignee", assignee);
   if (debouncedSearch) queryParams.set("search", debouncedSearch);
 
   const queueQuery = useFastQuery<AdminQueueResponse>(
@@ -101,12 +105,68 @@ function AdminTicketQueueContent() {
     { pollIntervalMs: 4000 }
   );
 
+  const toast = useToast();
+
+  // Instant Real-time WebSocket / SSE Queue Synchronization
+  useTicketRealtime({
+    onTicketCreated: (event) => {
+      if (event.payload) {
+        const newTicket = event.payload as TicketRecord;
+        queueQuery.mutate((prev) => {
+          if (!prev) return prev;
+          if (prev.tickets.some((t) => t.ticket_id === newTicket.ticket_id)) {
+            return prev;
+          }
+          return {
+            ...prev,
+            total: prev.total + 1,
+            tickets: [newTicket, ...prev.tickets],
+          };
+        });
+      }
+      overviewQuery.refresh();
+      queueQuery.refresh();
+      toast.info(
+        "⚡ New Live Ticket Received",
+        `#${event.ticket_id}: ${event.title || "Support Request"} from ${event.sender_name || "Author"}`
+      );
+    },
+    onTicketUpdated: (event) => {
+      queueQuery.mutate((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          tickets: prev.tickets.map((t) =>
+            t.ticket_id === event.ticket_id
+              ? {
+                  ...t,
+                  status: (event.status as TicketStatus) || t.status,
+                  priority: (event.priority as TicketPriority) || t.priority,
+                  category: (event.category as TicketCategory) || t.category,
+                  assigned_to:
+                    event.assigned_to !== undefined
+                      ? event.assigned_to
+                      : t.assigned_to,
+                }
+              : t
+          ),
+        };
+      });
+      overviewQuery.refresh();
+    },
+    onMessagePosted: () => {
+      queueQuery.refresh();
+      overviewQuery.refresh();
+    },
+  });
+
   function resetFilters() {
     setSearchInput("");
     setDebouncedSearch("");
     setStatus("ALL");
     setCategory("ALL");
     setPriority("ALL");
+    setAssignee("ALL");
     setDateRange("30d");
     setPage(1);
   }
@@ -186,16 +246,21 @@ function AdminTicketQueueContent() {
         {/* ================================================================
             PAGE HEADER (Exact match to Screenshot 1 - Support Operations)
             ================================================================ */}
-        <div className="space-y-1">
-          <span className="text-[11px] font-bold tracking-[0.2em] text-[#0288D1] uppercase block">
-            SUPPORT
-          </span>
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#0E2842] tracking-tight">
-            Support Operations
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500">
-            Help authors succeed, one story at a time.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <span className="text-[11px] font-bold tracking-[0.2em] text-[#0288D1] uppercase block">
+              SUPPORT
+            </span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-3xl sm:text-4xl font-bold text-[#0E2842] tracking-tight">
+                Support Operations
+              </h1>
+              <RealtimeStatusBadge />
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500">
+              Help authors succeed, one story at a time.
+            </p>
+          </div>
         </div>
 
         {/* ================================================================
@@ -296,11 +361,12 @@ function AdminTicketQueueContent() {
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-2xs p-6 space-y-5">
           {/* Queue Title & Showing Counter */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2">
-            <div>
+            <div className="flex items-center gap-3 flex-wrap">
               <h2 className="text-xl font-bold text-slate-900 tracking-tight inline-block relative pb-1">
                 Ticket Queue
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#0288D1] rounded-full" />
               </h2>
+              <RealtimeStatusBadge compact />
             </div>
             <span className="text-xs font-medium text-slate-400">
               Showing 1-{tickets.length} of {total} tickets
@@ -391,6 +457,25 @@ function AdminTicketQueueContent() {
                   <option value="all">All Time</option>
                 </select>
               </div>
+
+              {/* Assignment Filter */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  Assignment
+                </label>
+                <select
+                  value={assignee}
+                  onChange={(e) => {
+                    setAssignee(e.target.value);
+                    setPage(1);
+                  }}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:border-slate-300 focus:outline-hidden focus:border-[#0288D1]"
+                >
+                  <option value="ALL">All Tickets</option>
+                  <option value="UNASSIGNED">Unassigned Only</option>
+                  <option value="ASSIGNED">Assigned Only</option>
+                </select>
+              </div>
             </div>
 
             {/* Clear Filters Link */}
@@ -403,9 +488,9 @@ function AdminTicketQueueContent() {
             </button>
           </div>
 
-          {/* Table matching Screenshot 1 */}
+          {/* Table matching Ticket Queue requirements */}
           <div className="overflow-x-auto -mx-6 sm:mx-0">
-            <table className="w-full text-left text-xs min-w-[900px]">
+            <table className="w-full text-left text-xs min-w-[980px]">
               <thead>
                 <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px] bg-slate-50/50">
                   <th className="py-3 pl-4 sm:pl-2 w-8">
@@ -418,12 +503,13 @@ function AdminTicketQueueContent() {
                   </th>
                   <th className="py-3">Priority</th>
                   <th className="py-3">Ticket ID</th>
-                  <th className="py-3">Author</th>
+                  <th className="py-3">Author Name</th>
+                  <th className="py-3">Book Name</th>
                   <th className="py-3">Subject</th>
                   <th className="py-3">Category</th>
                   <th className="py-3">Status</th>
-                  <th className="py-3">Age</th>
-                  <th className="py-3 pr-4 sm:pr-2">Assignee</th>
+                  <th className="py-3">Assigned Admin</th>
+                  <th className="py-3 pr-4 sm:pr-2">Created Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -431,6 +517,11 @@ function AdminTicketQueueContent() {
                   const isCritical = t.priority === "Critical";
                   const isChecked = Boolean(selectedIds[t.ticket_id]);
                   const age = getTicketAge(t.created_at);
+                  const createdDateFormatted = new Date(t.created_at).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  });
 
                   // Priority pill styles matching Screenshot 1
                   const priorityClass =
@@ -497,9 +588,16 @@ function AdminTicketQueueContent() {
                         {formattedTicketId}
                       </td>
 
-                      {/* Author */}
-                      <td className="py-4 font-semibold text-slate-900">
+                      {/* Author Name */}
+                      <td className="py-4 font-semibold text-slate-900 whitespace-nowrap">
                         {t.author_name}
+                      </td>
+
+                      {/* Book Name */}
+                      <td className="py-4">
+                        <span className="font-medium text-slate-800 block max-w-xs truncate">
+                          {t.book_title || "General Inquiry"}
+                        </span>
                       </td>
 
                       {/* Subject */}
@@ -507,15 +605,10 @@ function AdminTicketQueueContent() {
                         <span className="font-semibold text-slate-900 block max-w-xs truncate">
                           {t.subject}
                         </span>
-                        {t.book_title && t.book_title !== "General / Account Level" && (
-                          <span className="text-[10px] text-slate-400 block truncate max-w-xs">
-                            {t.book_title}
-                          </span>
-                        )}
                       </td>
 
                       {/* Category */}
-                      <td className="py-4 text-slate-600 font-medium">
+                      <td className="py-4 text-slate-600 font-medium whitespace-nowrap">
                         {t.category}
                       </td>
 
@@ -526,18 +619,21 @@ function AdminTicketQueueContent() {
                         </span>
                       </td>
 
-                      {/* Age */}
-                      <td className="py-4 text-slate-500 font-mono text-[11px]">
-                        {age}
+                      {/* Assigned Admin */}
+                      <td className="py-4 text-slate-700 font-medium whitespace-nowrap">
+                        {t.assigned_to ? (
+                          <span className="inline-flex items-center gap-1 text-[#0288D1] bg-sky-50 px-2 py-0.5 rounded-md font-semibold text-[11px] border border-sky-100">
+                            {t.assigned_to}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px]">Unassigned</span>
+                        )}
                       </td>
 
-                      {/* Assignee */}
-                      <td className="py-4 pr-4 sm:pr-2 text-slate-700 font-medium">
-                        {t.assigned_to ? (
-                          <span>{t.assigned_to}</span>
-                        ) : (
-                          <span className="text-slate-400 italic">Unassigned</span>
-                        )}
+                      {/* Created Date */}
+                      <td className="py-4 pr-4 sm:pr-2 text-slate-600 font-mono text-[11px] whitespace-nowrap">
+                        <div className="font-sans font-medium text-slate-800">{createdDateFormatted}</div>
+                        <div className="text-[10px] text-slate-400 font-mono">({age})</div>
                       </td>
                     </tr>
                   );

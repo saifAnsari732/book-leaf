@@ -46,7 +46,6 @@ import {
   Settings as SettingsIcon,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
   Ticket,
   TrendingUp,
   User,
@@ -423,17 +422,17 @@ export function AuthorDashboardContent() {
         },
         {
           id: "AI Writing Studio",
-          label: "AI Book Writer Studio",
+          label: "Manuscript Studio",
           icon: PenTool,
-          badge: "Gemini 3.8",
-          badgeType: "ai",
+          badge: "Editorial",
+          badgeType: "verified",
         },
         {
           id: "AI Co-Pilot",
-          label: "AI Co-Pilot",
-          icon: Sparkles,
-          badge: "Gemini",
-          badgeType: "ai",
+          label: "Author Help Desk",
+          icon: MessageCircle,
+          badge: "Online",
+          badgeType: "success",
         },
       ],
     },
@@ -529,7 +528,7 @@ export function AuthorDashboardContent() {
                       (item.id === "Promotion" &&
                         currentMenu.toLowerCase().includes("promo")) ||
                       (item.id === "AI Co-Pilot" &&
-                        currentMenu.toLowerCase().includes("ai"));
+                        currentMenu.toLowerCase().includes("help"));
 
                     return (
                       <button
@@ -565,8 +564,6 @@ export function AuthorDashboardContent() {
                                 ? "bg-amber-50 text-amber-700 border border-amber-200"
                                 : item.badgeType === "action"
                                 ? "bg-[#0F4C3A] text-white"
-                                : item.badgeType === "ai"
-                                ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
                                 : item.badgeType === "ticket"
                                 ? "bg-[#FFF0F2] text-[#F05262] font-extrabold"
                                 : "bg-slate-100 text-slate-600"
@@ -638,9 +635,9 @@ export function AuthorDashboardContent() {
                 ? "Book Marketing & Promotion"
                 : currentMenu.toLowerCase().includes("writing studio") ||
                   currentMenu.toLowerCase().includes("writer")
-                ? "AI Manuscript Writing Studio (Gemini 3.8)"
+                ? "Author Manuscript & Drafting Studio"
                 : currentMenu.toLowerCase().includes("ai")
-                ? "Nishtha AI Assistant"
+                ? "Author Help Desk & Support"
                 : currentMenu.toLowerCase().includes("email") ||
                   currentMenu.toLowerCase().includes("inbox")
                 ? "Email Activity & Communications"
@@ -700,7 +697,7 @@ export function AuthorDashboardContent() {
           {isNewRegistration && (
             <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center justify-between gap-3 shadow-xs">
               <div className="flex items-center gap-2.5">
-                <Sparkles className="w-5 h-5 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                 <div>
                   <strong className="font-bold block text-sm text-emerald-950">
                     Welcome to BookLeaf Publishing, {user?.name || "Author"}!

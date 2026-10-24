@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import {
-  Sparkles,
   BookOpen,
   PenTool,
   Copy,
@@ -66,13 +65,13 @@ export function AIBookWriterStudio({
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to generate AI book content");
+        throw new Error(data.error || "Failed to generate book content");
       }
 
       setGeneratedOutput(data.content);
       toast.success(
         "Content Generated Successfully!",
-        `Gemini AI generated ${activeTab} content for your book.`
+        `Editorial content created for your book.`
       );
     } catch (err: any) {
       toast.error("Generation Failed", err.message || "Could not generate content.");
@@ -103,20 +102,19 @@ export function AIBookWriterStudio({
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 rounded-2xl p-6 text-white border border-indigo-900/50 shadow-lg">
+      <div className="bg-gradient-to-r from-[#0F223D] via-[#16365C] to-[#0F4C3A] rounded-2xl p-6 text-white border border-slate-700/50 shadow-md">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs font-semibold uppercase tracking-wider border border-indigo-400/30">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Google Gemini AI • Author Co-Pilot</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 text-emerald-300 rounded-full text-xs font-semibold uppercase tracking-wider border border-white/15">
+              <FileText className="w-3.5 h-3.5 text-emerald-400" />
+              <span>BookLeaf Author Studio • Editorial Suite</span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-white">
-              AI Manuscript Writing &amp; Publishing Studio
+              Author Manuscript &amp; Drafting Studio
             </h1>
             <p className="text-slate-300 text-sm max-w-2xl">
-              Write chapters, generate bestselling titles, draft Amazon KDP
-              blurbs, plan chapter outlines, and proofread drafts with advanced
-              Gemini AI models.
+              Draft chapters, generate bestselling titles, plan 12-chapter outlines,
+              craft back-cover blurbs, and proofread manuscript drafts with professional editorial tools.
             </p>
           </div>
 
@@ -133,13 +131,13 @@ export function AIBookWriterStudio({
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-white rounded-2xl border border-slate-200 shadow-2xs">
         {[
           { id: "chapter", label: "Write Chapter", icon: PenTool },
           { id: "titles", label: "Title & Subtitle Ideas", icon: BookOpen },
           { id: "blurb", label: "Book Blurb & Synopsis", icon: AlignLeft },
           { id: "outline", label: "12-Chapter Plot Outline", icon: Layers },
-          { id: "proofread", label: "Proofread & Polish", icon: Sparkles },
+          { id: "proofread", label: "Proofread & Polish", icon: FileText },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -152,7 +150,7 @@ export function AIBookWriterStudio({
               }}
               className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${
                 isActive
-                  ? "bg-indigo-600 text-white shadow-sm"
+                  ? "bg-[#0F4C3A] text-white shadow-xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               }`}
             >
@@ -169,11 +167,11 @@ export function AIBookWriterStudio({
         <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-indigo-600" />
+              <Sliders className="w-4 h-4 text-[#0F4C3A]" />
               <span>Writing Parameters</span>
             </h3>
-            <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
-              Gemini 3.8
+            <span className="text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+              Manuscript Editor
             </span>
           </div>
 
@@ -187,7 +185,7 @@ export function AIBookWriterStudio({
                 value={bookTitle}
                 onChange={(e) => setBookTitle(e.target.value)}
                 placeholder="e.g. Echoes of the Monsoon"
-                className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-slate-900"
+                className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F4C3A] font-medium text-slate-900"
               />
             </div>
 
@@ -199,7 +197,7 @@ export function AIBookWriterStudio({
                 <select
                   value={genre}
                   onChange={(e) => setGenre(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F4C3A] text-slate-800"
                 >
                   <option value="Literary Fiction">Literary Fiction</option>
                   <option value="Thriller & Mystery">Thriller &amp; Mystery</option>
@@ -219,7 +217,7 @@ export function AIBookWriterStudio({
                 <select
                   value={tone}
                   onChange={(e) => setTone(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800"
+                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F4C3A] text-slate-800"
                 >
                   <option value="Immersive & Bestselling">Immersive &amp; Bestselling</option>
                   <option value="Fast-Paced & Gripping">Fast-Paced &amp; Gripping</option>
@@ -253,9 +251,9 @@ export function AIBookWriterStudio({
                     ? "e.g. A gripping investigative mystery set in the ghats of Varanasi involving ancient manuscripts..."
                     : activeTab === "blurb"
                     ? "e.g. A young entrepreneur loses everything, only to rebuild an empire in the tech hubs of Bangalore..."
-                    : "Describe what you want Gemini to write or paste your notes..."
+                    : "Describe the core scene goals, plot points, or notes..."
                 }
-                className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 leading-relaxed resize-none"
+                className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F4C3A] text-slate-900 leading-relaxed resize-none"
               />
             </div>
 
@@ -269,7 +267,7 @@ export function AIBookWriterStudio({
                   value={draftText}
                   onChange={(e) => setDraftText(e.target.value)}
                   placeholder="Paste existing paragraphs to continue or polish..."
-                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 leading-relaxed resize-none"
+                  className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F4C3A] text-slate-900 leading-relaxed resize-none"
                 />
               </div>
             )}
@@ -279,16 +277,16 @@ export function AIBookWriterStudio({
             type="button"
             onClick={handleGenerate}
             disabled={isGenerating}
-            className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-3 rounded-xl bg-[#0F4C3A] hover:bg-[#0c3d2e] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isGenerating ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Gemini AI Generating Content...</span>
+                <span>Generating Manuscript Draft...</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4 text-indigo-200" />
+                <PenTool className="w-4 h-4" />
                 <span>
                   Generate{" "}
                   {activeTab === "chapter"
@@ -311,7 +309,7 @@ export function AIBookWriterStudio({
           {/* Output Toolbar */}
           <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-              <FileText className="w-4 h-4 text-indigo-600" />
+              <FileText className="w-4 h-4 text-[#0F4C3A]" />
               <span>Manuscript Output Studio</span>
             </div>
 
@@ -353,15 +351,14 @@ export function AIBookWriterStudio({
           <div className="flex-1 p-6 overflow-y-auto bg-slate-50/30">
             {isGenerating ? (
               <div className="h-full flex flex-col items-center justify-center py-20 text-center space-y-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 animate-pulse">
-                  <Sparkles className="w-5 h-5 animate-spin text-indigo-600" />
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-[#0F4C3A]">
+                  <RefreshCw className="w-5 h-5 animate-spin text-[#0F4C3A]" />
                 </div>
                 <h4 className="text-sm font-bold text-slate-800">
-                  Gemini AI is crafting your manuscript...
+                  Drafting your manuscript content...
                 </h4>
                 <p className="text-xs text-slate-500 max-w-sm">
-                  Analyzing plot structure, character dialogue, pacing, and
-                  narrative voice according to your parameters.
+                  Analyzing narrative flow, chapter structure, and pacing according to your parameters.
                 </p>
               </div>
             ) : generatedOutput ? (
@@ -375,7 +372,7 @@ export function AIBookWriterStudio({
                   No Content Generated Yet
                 </h4>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  Select an AI action, provide your concept or scene details on
+                  Select an editorial tool, provide your premise or scene details on
                   the left, and click &quot;Generate&quot; to produce publication-ready
                   material.
                 </p>

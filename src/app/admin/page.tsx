@@ -125,67 +125,103 @@ export default function AdminOverviewPage() {
         </div>
 
         {/* ================================================================
-            TOP ROW: 4 METRIC CARDS (Matches Screen 7)
+            TOP ROW: 6 METRIC CARDS (All 6 Admin Overview KPIs)
             ================================================================ */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl p-5 border border-[#E8EDE6] shadow-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          {/* 1. Total Tickets */}
+          <div className="bg-white rounded-2xl p-4 border border-[#E8EDE6] shadow-xs flex flex-col justify-between">
             <span className="text-xs font-semibold text-slate-500 block mb-1">
               Total Tickets
             </span>
-            <div className="flex items-baseline gap-2 mb-2">
-              <span className="font-serif text-3xl font-bold text-slate-900">
+            <div className="flex items-baseline gap-1.5 mb-1">
+              <span className="font-serif text-2xl sm:text-3xl font-bold text-slate-900">
                 {metrics.totalTickets}
               </span>
-              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-                +12% this week
+              <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                All Time
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">Across 10 published authors</p>
+            <p className="text-[11px] text-slate-400 truncate">Across all authors</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 border border-[#E8EDE6] shadow-xs">
-            <span className="text-xs font-semibold text-slate-500 block mb-1">
+          {/* 2. Open Tickets */}
+          <div className="bg-white rounded-2xl p-4 border border-blue-100 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-blue-50/20">
+            <span className="text-xs font-semibold text-blue-700 block mb-1">
               Open Tickets
             </span>
-            <div className="flex items-baseline gap-2 mb-2">
-              <span className="font-serif text-3xl font-bold text-blue-700">
+            <div className="flex items-baseline gap-1.5 mb-1">
+              <span className="font-serif text-2xl sm:text-3xl font-bold text-blue-700">
                 {metrics.byStatus.Open}
               </span>
-              <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
-                {openPct}% of total
+              <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
+                {openPct}%
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">{metrics.unassignedTickets} unassigned to agents</p>
+            <p className="text-[11px] text-blue-600/80 truncate">{metrics.unassignedTickets} unassigned</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 border border-[#E8EDE6] shadow-xs">
-            <span className="text-xs font-semibold text-slate-500 block mb-1">
-              In Progress
+          {/* 3. High/Critical Priority Tickets */}
+          <div className="bg-white rounded-2xl p-4 border border-rose-100 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-rose-50/20">
+            <span className="text-xs font-semibold text-rose-700 block mb-1">
+              High / Critical
             </span>
-            <div className="flex items-baseline gap-2 mb-2">
-              <span className="font-serif text-3xl font-bold text-amber-700">
-                {metrics.byStatus["In Progress"]}
+            <div className="flex items-baseline gap-1.5 mb-1">
+              <span className="font-serif text-2xl sm:text-3xl font-bold text-rose-700">
+                {metrics.highAndCriticalOpen}
               </span>
-              <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
-                {inProgPct}% of total
+              <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded">
+                Urgent
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">Under operational review</p>
+            <p className="text-[11px] text-rose-600/80 truncate">Immediate action</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 border border-[#E8EDE6] shadow-xs">
-            <span className="text-xs font-semibold text-slate-500 block mb-1">
-              Resolved
+          {/* 4. Resolved Tickets */}
+          <div className="bg-white rounded-2xl p-4 border border-emerald-100 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-emerald-50/20">
+            <span className="text-xs font-semibold text-emerald-700 block mb-1">
+              Resolved Tickets
             </span>
-            <div className="flex items-baseline gap-2 mb-2">
-              <span className="font-serif text-3xl font-bold text-emerald-700">
+            <div className="flex items-baseline gap-1.5 mb-1">
+              <span className="font-serif text-2xl sm:text-3xl font-bold text-emerald-700">
                 {metrics.byStatus.Resolved}
               </span>
-              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-                {resPct}% rate
+              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                {resPct}%
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">Avg turnaround: ~24h SLA</p>
+            <p className="text-[11px] text-emerald-600/80 truncate">Closed &amp; confirmed</p>
+          </div>
+
+          {/* 5. Pending Tickets */}
+          <div className="bg-white rounded-2xl p-4 border border-amber-100 shadow-xs flex flex-col justify-between bg-gradient-to-b from-white to-amber-50/20">
+            <span className="text-xs font-semibold text-amber-700 block mb-1">
+              Pending Tickets
+            </span>
+            <div className="flex items-baseline gap-1.5 mb-1">
+              <span className="font-serif text-2xl sm:text-3xl font-bold text-amber-700">
+                {metrics.byStatus["In Progress"] || 0}
+              </span>
+              <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                In Review
+              </span>
+            </div>
+            <p className="text-[11px] text-amber-600/80 truncate">Operational pipeline</p>
+          </div>
+
+          {/* 6. Average Response Time */}
+          <div className="bg-white rounded-2xl p-4 border border-[#E8EDE6] shadow-xs flex flex-col justify-between">
+            <span className="text-xs font-semibold text-slate-500 block mb-1">
+              Avg Response Time
+            </span>
+            <div className="flex items-baseline gap-1.5 mb-1">
+              <span className="font-serif text-2xl sm:text-3xl font-bold text-slate-900">
+                {metrics.avgResolutionHours ? `${metrics.avgResolutionHours}h` : "< 4h"}
+              </span>
+              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                SLA Met
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 truncate">Target: 24h SLA</p>
           </div>
         </div>
 

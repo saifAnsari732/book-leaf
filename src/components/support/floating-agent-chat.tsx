@@ -2,16 +2,17 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import {
   MessageCircle,
   X,
   Send,
-  Sparkles,
+  BookOpen,
   Clock,
   ShieldCheck,
-  Bot,
   User,
   ChevronRight,
+  Headphones,
 } from "lucide-react";
 
 interface ChatMessage {
@@ -22,6 +23,7 @@ interface ChatMessage {
 }
 
 export function FloatingAgentChat() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,17 +32,25 @@ export function FloatingAgentChat() {
       id: "welcome-1",
       role: "assistant",
       content:
-        "Hello! I'm Nishtha, your BookLeaf AI Publishing Assistant. Ask me anything about publishing packages, 100% royalty splits, ISBN assignment, or Shark Tank features!",
+        "Hello! I'm Nishtha from BookLeaf Publishing Support. How can I assist you with publishing packages, 100% royalty splits, ISBN assignment, or author tools today?",
       timestamp: "Just now",
     },
   ]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Do not render floating bubble on dashboard pages to keep dashboard clean and professional
+  const isDashboard =
+    pathname?.startsWith("/author-dashboard") || pathname?.startsWith("/dashboard");
 
   useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isOpen]);
+
+  if (isDashboard) {
+    return null;
+  }
 
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -119,7 +129,7 @@ export function FloatingAgentChat() {
               <div className="relative w-11 h-11 rounded-full overflow-hidden border-2 border-[#00A859] bg-slate-200 shrink-0">
                 <Image
                   src="https://static.elfsight.com/configurator/assets/avatars/5-female-20-small-320x320.jpg"
-                  alt="Nishtha - BookLeaf AI"
+                  alt="Nishtha - BookLeaf Author Support"
                   width={44}
                   height={44}
                   className="w-full h-full object-cover"
@@ -130,12 +140,12 @@ export function FloatingAgentChat() {
               <div>
                 <h4 className="font-bold text-sm tracking-tight text-white flex items-center gap-1.5">
                   <span>Nishtha</span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-mono border border-emerald-500/30">
-                    Gemini AI
+                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[9px] font-medium border border-emerald-500/30">
+                    Help Desk
                   </span>
                 </h4>
                 <p className="text-[11px] text-slate-300">
-                  AI Publishing Assistant • Online
+                  Author Support Specialist • Online
                 </p>
               </div>
             </div>
@@ -157,7 +167,7 @@ export function FloatingAgentChat() {
               >
                 {m.role === "assistant" && (
                   <div className="w-7 h-7 rounded-full bg-[#0F4C3A] text-white flex items-center justify-center shrink-0 mt-0.5">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
+                    <Headphones className="w-3.5 h-3.5 text-emerald-200" />
                   </div>
                 )}
                 <div
@@ -182,7 +192,7 @@ export function FloatingAgentChat() {
             {loading && (
               <div className="flex items-center gap-2 text-slate-500 text-xs pl-2">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                <span className="text-[11px]">Nishtha is thinking with Gemini...</span>
+                <span className="text-[11px]">Consulting publishing guidelines...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -225,7 +235,7 @@ export function FloatingAgentChat() {
             <div className="flex items-center justify-between text-[10px] pt-1 border-t border-slate-100 text-slate-500">
               <span className="flex items-center gap-1">
                 <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                <span>Powered by Google Gemini</span>
+                <span>Verified Editorial Helpdesk</span>
               </span>
               <a
                 href="https://wa.me/911943550930?text=Hello%20BookLeaf%20Support%2C%20I%20have%20an%20inquiry%20regarding%20publishing%20my%20book."
@@ -247,9 +257,7 @@ export function FloatingAgentChat() {
         aria-label="Toggle chat assistant"
         className="w-14 h-14 rounded-full bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 group relative"
       >
-        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#00A859] border-2 border-white flex items-center justify-center text-[9px] font-bold text-white">
-          AI
-        </span>
+        <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-white ring-1 ring-slate-200" />
         {isOpen ? (
           <X className="w-6 h-6" />
         ) : (

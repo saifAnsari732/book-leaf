@@ -18,7 +18,6 @@ import {
   Lock,
   Megaphone,
   Share2,
-  Sparkles,
   TrendingUp,
 } from "lucide-react";
 import { RazorpayModal } from "@/components/payment/RazorpayModal";
@@ -75,8 +74,8 @@ export function AuthorDashboardPromotionView({
 
       setAiCampaignResult(data.campaign);
       toast.success(
-        "Marketing Pack Generated!",
-        "Gemini 3.8 created Amazon KDP keywords, ad hooks, and press release."
+        "Marketing Pack Ready!",
+        "Amazon KDP keywords, ad hooks, and press release generated successfully."
       );
     } catch (err: any) {
       toast.error("Marketing Generator Error", err?.message || "Failed to generate campaign.");
@@ -215,16 +214,16 @@ export function AuthorDashboardPromotionView({
         </div>
       </div>
 
-      {/* Gemini AI Powered Marketing Pack Generator */}
+      {/* Amazon SEO & Media Launch Pack Generator */}
       <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-5 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-[11px] font-bold mb-1">
-              <Sparkles className="w-3 h-3 text-indigo-600" />
-              <span>Free with All BookLeaf Publishing Plans</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold mb-1">
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+              <span>Included with All BookLeaf Publishing Plans</span>
             </div>
             <h3 className="font-serif text-xl font-bold text-slate-900">
-              Gemini 3.8 Instant Amazon SEO &amp; Media Launch Pack
+              Amazon KDP SEO &amp; Media Launch Campaign Pack
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               Generate 7 high-traffic Amazon backend keywords, 3 sponsored ad hooks, and a media press release.
@@ -235,7 +234,7 @@ export function AuthorDashboardPromotionView({
             <select
               value={selectedBookId}
               onChange={(e) => setSelectedBookId(e.target.value)}
-              className="px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-[#F05262] focus:outline-none"
+              className="px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-[#0F4C3A] focus:outline-none"
             >
               {books.map((b) => (
                 <option key={b.book_id} value={b.book_id}>
@@ -257,8 +256,8 @@ export function AuthorDashboardPromotionView({
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
-                  <span>Generate with Gemini</span>
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>Generate Campaign Pack</span>
                 </>
               )}
             </button>

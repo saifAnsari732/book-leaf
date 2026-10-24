@@ -138,13 +138,15 @@ export function useFastQuery<T>(
   }, [enabled, pollIntervalMs, fetchData]);
 
   const mutate = useCallback(
-    (updater: T | ((prev: T | null) => T)) => {
+    (updater: T | null | ((prev: T | null) => T | null)) => {
       const current = getClientCache<T>(key);
       const next =
         typeof updater === "function"
-          ? (updater as (prev: T | null) => T)(current)
+          ? (updater as (prev: T | null) => T | null)(current)
           : updater;
-      setClientCache(key, next);
+      if (next !== null) {
+        setClientCache(key, next);
+      }
       setData(next);
     },
     [key]

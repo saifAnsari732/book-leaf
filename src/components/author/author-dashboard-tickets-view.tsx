@@ -11,6 +11,7 @@ import {
   TicketMessageRecord,
 } from "@/types/domain";
 import { useFastQuery } from "@/lib/client-cache";
+import { useTicketRealtime, RealtimeStatusBadge } from "@/lib/use-ticket-realtime";
 import { useToast } from "@/context/ToastContext";
 import { TableSkeleton } from "@/components/ui/skeleton-loaders";
 import {
@@ -18,9 +19,9 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
-  Bot,
   CheckCircle2,
   Clock,
+  FileText,
   Headphones,
   Loader2,
   MessageSquare,
@@ -29,7 +30,6 @@ import {
   RotateCcw,
   Search,
   Send,
-  Sparkles,
   ThumbsUp,
   Ticket,
   User,
@@ -96,6 +96,61 @@ export function AuthorDashboardTicketsView({
     { pollIntervalMs: 3000 }
   );
 
+  // Realtime Live WebSocket / SSE Sync
+  useTicketRealtime({
+    onMessagePosted: (event) => {
+      // If author is currently viewing this ticket inside the modal
+      if (selectedTicketId && event.ticket_id === selectedTicketId) {
+        if (event.payload) {
+          const incomingMsg = event.payload as TicketMessageRecord;
+          activeTicketQuery.mutate((prev) => {
+            if (!prev) return prev as unknown as TicketDetailResponse;
+            // Prevent duplicate message insertion
+            if (prev.messages.some((m) => m.message_id === incomingMsg.message_id)) {
+              return prev;
+            }
+            return {
+              ...prev,
+              messages: [...prev.messages, incomingMsg],
+            };
+          });
+        } else {
+          activeTicketQuery.refresh();
+        }
+
+        if (event.sender_role === "ADMIN") {
+          toast.info(
+            "New Message from Support",
+            `Admin ${event.sender_name || "Support"} has replied to your query.`
+          );
+        }
+      }
+
+      // Also refresh the tickets list to show the latest reply & timestamp
+      refresh();
+    },
+
+    onTicketUpdated: (event) => {
+      if (selectedTicketId && event.ticket_id === selectedTicketId) {
+        activeTicketQuery.mutate((prev) => {
+          if (!prev) return prev as unknown as TicketDetailResponse;
+          return {
+            ...prev,
+            ticket: {
+              ...prev.ticket,
+              status: (event.status as TicketStatus) || prev.ticket.status,
+            },
+          };
+        });
+      }
+      refresh();
+    },
+
+    onTicketCreated: () => {
+      refresh();
+    },
+  });
+
   const allTickets = data?.tickets || [];
   const filteredTickets = allTickets.filter((t) => {
     if (!searchQuery.trim()) return true;
@@ -118,25 +173,70 @@ export function AuthorDashboardTicketsView({
 
   async function handleSendReply(e: React.FormEvent) {
     e.preventDefault();
-    if (!replyText.trim() || !selectedTicketId) return;
+    const textToSend = replyText.trim();
+    if (!textToSend || !selectedTicketId) return;
 
+    // Optimistic instantaneous UI update (sub-5ms)
+    const optimisticMsgId = `opt_${Date.now()}`;
+    const optimisticMsg: TicketMessageRecord = {
+      message_id: optimisticMsgId,
+      ticket_id: selectedTicketId,
+      sender_role: "AUTHOR",
+      sender_name: author.name,
+      sender_id: author.user_id,
+      content: textToSend,
+      attachments: [],
+      created_at: new Date().toISOString(),
+    };
+
+    activeTicketQuery.mutate((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        messages: [...prev.messages, optimisticMsg],
+      };
+    });
+
+    setReplyText("");
     setIsSendingReply(true);
     setReplyError(null);
+
     try {
       const res = await fetch(`/api/author/tickets/${selectedTicketId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: replyText.trim() }),
+        body: JSON.stringify({ message: textToSend }),
       });
       const resJson = await res.json();
       if (!res.ok || !resJson.success) {
         throw new Error(resJson.error || "Failed to send message");
       }
-      setReplyText("");
-      toast.success("Reply Posted", "Your message has been sent to the support desk.");
-      activeTicketQuery.refresh();
+
+      // Replace optimistic message with actual persisted record from server
+      if (resJson.message) {
+        activeTicketQuery.mutate((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            messages: prev.messages.map((m) =>
+              m.message_id === optimisticMsgId ? resJson.message : m
+            ),
+          };
+        });
+      }
+
+      toast.success("Reply Posted", "Your message was sent to BookLeaf support.");
       refresh();
     } catch (err: any) {
+      // Rollback optimistic message on error
+      activeTicketQuery.mutate((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          messages: prev.messages.filter((m) => m.message_id !== optimisticMsgId),
+        };
+      });
+      setReplyText(textToSend);
       const msg = err.message || "Failed to send reply";
       setReplyError(msg);
       toast.error("Reply Failed", msg);
@@ -150,9 +250,12 @@ export function AuthorDashboardTicketsView({
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
         <div>
-          <h2 className="font-serif text-2xl font-bold text-slate-900 tracking-tight">
-            Support Tickets &amp; Author Inquiries
-          </h2>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2 className="font-serif text-2xl font-bold text-slate-900 tracking-tight">
+              Support Tickets &amp; Author Inquiries
+            </h2>
+            <RealtimeStatusBadge />
+          </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Track your book production, royalty questions, and publishing support tickets.
           </p>
@@ -408,6 +511,7 @@ export function AuthorDashboardTicketsView({
                       {activeTicketQuery.data.ticket.status}
                     </span>
                   )}
+                  <RealtimeStatusBadge compact />
                 </div>
                 <h3 className="font-serif text-lg font-bold text-slate-900 leading-snug">
                   {activeTicketQuery.data?.ticket.subject || "Loading Ticket..."}
@@ -561,7 +665,7 @@ export function AuthorDashboardRaiseQueryView({
     if (!subject.trim() && !description.trim()) {
       toast.warning(
         "Details Required",
-        "Please provide a subject or description first so Gemini AI can understand your question."
+        "Please provide a subject or description first so we can check publishing guidelines."
       );
       return;
     }
@@ -586,10 +690,10 @@ export function AuthorDashboardRaiseQueryView({
       }
 
       setAiSolution(data.solution);
-      setAiProvider(data.provider || "Gemini 3.8 Flash");
-      toast.info("Instant Solution Ready", "Gemini AI analyzed publishing policies to answer your question.");
+      setAiProvider(data.provider || "BookLeaf Guidelines");
+      toast.info("Policy Solution Ready", "Verified publishing policy match found for your inquiry.");
     } catch (err: any) {
-      toast.error("AI Assistant Error", err?.message || "Could not retrieve instant answer.");
+      toast.error("Lookup Error", err?.message || "Could not retrieve guidelines answer.");
     } finally {
       setIsGettingAiHelp(false);
     }
@@ -778,17 +882,17 @@ export function AuthorDashboardRaiseQueryView({
               type="button"
               onClick={handleGetInstantAiHelp}
               disabled={isGettingAiHelp}
-              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-200 transition shadow-2xs"
+              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#0F4C3A] hover:text-[#0A3B2D] bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-200 transition shadow-2xs"
             >
               {isGettingAiHelp ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
-                  <span>Analyzing Policies...</span>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#0F4C3A]" />
+                  <span>Checking Guidelines...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>✨ Get Instant AI Solution</span>
+                  <BookOpen className="w-3.5 h-3.5 text-[#0F4C3A]" />
+                  <span>Instant Policy Lookup</span>
                 </>
               )}
             </button>
@@ -796,24 +900,24 @@ export function AuthorDashboardRaiseQueryView({
           <textarea
             required
             rows={5}
-            placeholder="Please provide full details, dates, or specific questions so our team or Gemini AI can assist you promptly..."
+            placeholder="Please provide full details, dates, or specific questions so our editorial operations team can assist you promptly..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-[#F26979] focus:outline-none leading-relaxed"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium focus:ring-2 focus:ring-[#0F4C3A] focus:outline-none leading-relaxed"
           />
 
-          {/* Gemini Instant Solution Box */}
+          {/* Guidelines Instant Solution Box */}
           {aiSolution && (
-            <div className="mt-3 p-4 rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50 to-slate-50 border border-emerald-200 shadow-xs animate-fade-in space-y-3">
+            <div className="mt-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 shadow-xs animate-fade-in space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
-                    <Bot className="w-3.5 h-3.5" />
+                  <div className="w-6 h-6 rounded-lg bg-[#0F4C3A] text-white flex items-center justify-center shadow-xs">
+                    <FileText className="w-3.5 h-3.5" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
-                      <span>Instant AI Solution</span>
-                      <span className="text-[10px] font-normal text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full">
+                    <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <span>Publishing Policy Resolution</span>
+                      <span className="text-[10px] font-medium text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
                         {aiProvider}
                       </span>
                     </h4>
@@ -828,12 +932,12 @@ export function AuthorDashboardRaiseQueryView({
                 </button>
               </div>
 
-              <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-line bg-white/80 p-3.5 rounded-xl border border-emerald-100/80">
+              <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-line bg-white p-3.5 rounded-xl border border-slate-200">
                 {aiSolution}
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                <p className="text-[11px] text-emerald-800">
+                <p className="text-[11px] text-slate-700">
                   Did this answer resolve your inquiry without submitting a ticket?
                 </p>
                 <div className="flex items-center gap-2">
@@ -841,12 +945,12 @@ export function AuthorDashboardRaiseQueryView({
                     type="button"
                     onClick={() => {
                       toast.success(
-                        "Resolved by AI",
-                        "Great! Ticket was not submitted since your query was resolved immediately."
+                        "Query Resolved",
+                        "Inquiry closed based on publishing guidelines."
                       );
                       onSuccess();
                     }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white font-bold text-xs transition shadow-xs"
                   >
                     <ThumbsUp className="w-3 h-3" />
                     <span>Solved! Close Query</span>
@@ -854,11 +958,11 @@ export function AuthorDashboardRaiseQueryView({
                   <button
                     type="button"
                     onClick={() => {
-                      toast.info("Proceeding", "You can submit the ticket below for human editorial review.");
+                      toast.info("Proceeding", "You can submit the ticket below for editorial review.");
                     }}
                     className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium text-xs transition"
                   >
-                    Still Submit Ticket
+                    Submit for Editorial Review
                   </button>
                 </div>
               </div>

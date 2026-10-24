@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Playfair_Display, Jost, Lato } from "next/font/googl
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
+import { RealtimeTicketProvider } from "@/lib/use-ticket-realtime";
 import { FloatingAgentChat } from "@/components/support/floating-agent-chat";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -33,7 +34,7 @@ const lato = Lato({
 export const metadata: Metadata = {
   title: "BookLeaf Publishing — World's #1 Self-Publishing Platform | Author Support",
   description:
-    "AI-Assisted Author Support & Operations Portal for BookLeaf Publishing. Manage books, royalty inquiries, production stages, and policy-grounded support responses.",
+    "Author Support & Publishing Operations Portal for BookLeaf Publishing. Manage books, royalty inquiries, production stages, and comprehensive author support.",
   icons: {
     icon: "/images/bookleaf/Slice_1pic.png",
   },
@@ -52,8 +53,10 @@ export default function RootLayout({
       <body className="min-h-screen bg-[#F9FAF7] font-sans text-slate-800 antialiased selection:bg-[#0F4C3A] selection:text-white">
         <AuthProvider>
           <ToastProvider>
-            {children}
-            <FloatingAgentChat />
+            <RealtimeTicketProvider>
+              {children}
+              <FloatingAgentChat />
+            </RealtimeTicketProvider>
           </ToastProvider>
         </AuthProvider>
       </body>

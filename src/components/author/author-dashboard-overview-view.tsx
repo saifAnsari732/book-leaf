@@ -57,9 +57,17 @@ export function AuthorDashboardOverviewView({
 
   const authorFirstName = (author?.name || "Priya").split(" ")[0];
   const totalBooksCount = books.length || 2;
+  const publishedBooksCount = books.filter(
+    (b) =>
+      (b.status || "").toLowerCase().includes("live") ||
+      (b.status || "").toLowerCase().includes("published")
+  ).length || books.length;
   const totalCopiesSold = books.reduce((acc, b) => acc + (b.total_copies_sold || 0), 0) || 531;
   const totalRoyaltyEarned = metrics?.totalRoyaltyEarned || 19908;
   const royaltyPending = metrics?.withdrawableBalance || metrics?.totalRoyaltyPending || 3570;
+  const openSupportTicketsCount = tickets.filter(
+    (t) => t.status === "Open" || t.status === "In Progress"
+  ).length;
 
   // Recent tickets for the table
   const displayTickets = tickets.length > 0 ? tickets.slice(0, 3) : [
@@ -167,91 +175,137 @@ export function AuthorDashboardOverviewView({
       </div>
 
       {/* ====================================================================
-          TOP METRICS ROW (4 Warm Elegant Bento Cards matching Screenshot 2)
+          TOP METRICS ROW (All 6 Author Overview KPIs)
           ==================================================================== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
         {/* Card 1: Total Books */}
         <div
           onClick={() => onNavigate("My Books")}
-          className="bg-white rounded-2xl p-5 border border-[#EDE6DD] shadow-2xs hover:shadow-md hover:border-[#DFCFC3] transition-all cursor-pointer flex items-center justify-between group"
+          className="bg-white rounded-2xl p-4 border border-[#EDE6DD] shadow-2xs hover:shadow-md hover:border-[#DFCFC3] transition-all cursor-pointer flex flex-col justify-between group"
         >
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-full bg-[#FAF0EB] border border-[#F2DDD2] text-[#A65B43] flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xs font-medium text-[#7D756F] block">
-                Total Books
-              </span>
-              <span className="font-serif text-2xl font-bold text-[#2C2825] tracking-tight">
-                {totalBooksCount}
-              </span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-[#7D756F]">
+              Total Books
+            </span>
+            <div className="w-8 h-8 rounded-full bg-[#FAF0EB] border border-[#F2DDD2] text-[#A65B43] flex items-center justify-center group-hover:scale-105 transition-transform">
+              <BookOpen className="w-4 h-4" />
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-[#C4BCB4] group-hover:text-[#A65B43] group-hover:translate-x-0.5 transition-all" />
+          <div className="flex items-baseline justify-between">
+            <span className="font-serif text-2xl font-bold text-[#2C2825] tracking-tight">
+              {totalBooksCount}
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-[#C4BCB4] group-hover:text-[#A65B43] group-hover:translate-x-0.5 transition-all" />
+          </div>
         </div>
 
-        {/* Card 2: Copies Sold */}
+        {/* Card 2: Published Books */}
+        <div
+          onClick={() => onNavigate("My Books")}
+          className="bg-white rounded-2xl p-4 border border-[#EDE6DD] shadow-2xs hover:shadow-md hover:border-[#DFCFC3] transition-all cursor-pointer flex flex-col justify-between group"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-[#7D756F]">
+              Published Books
+            </span>
+            <div className="w-8 h-8 rounded-full bg-[#EAF5EE] border border-[#CCE8D4] text-[#246B48] flex items-center justify-center group-hover:scale-105 transition-transform">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="font-serif text-2xl font-bold text-[#246B48] tracking-tight">
+              {publishedBooksCount}
+            </span>
+            <span className="text-[10px] font-semibold text-[#246B48] bg-[#EAF5EE] px-1.5 py-0.5 rounded-full">
+              Live
+            </span>
+          </div>
+        </div>
+
+        {/* Card 3: Total Copies Sold */}
         <div
           onClick={() => onNavigate("Sales Reports")}
-          className="bg-white rounded-2xl p-5 border border-[#EDE6DD] shadow-2xs hover:shadow-md hover:border-[#DFCFC3] transition-all cursor-pointer flex items-center justify-between group"
+          className="bg-white rounded-2xl p-4 border border-[#EDE6DD] shadow-2xs hover:shadow-md hover:border-[#DFCFC3] transition-all cursor-pointer flex flex-col justify-between group"
         >
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-full bg-[#EFF5F0] border border-[#D7E8DB] text-[#2D7A58] flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
-              <BarChart2 className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xs font-medium text-[#7D756F] block">
-                Copies Sold
-              </span>
-              <span className="font-serif text-2xl font-bold text-[#2C2825] tracking-tight">
-                {totalCopiesSold.toLocaleString("en-IN")}
-              </span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-[#7D756F]">
+              Total Copies Sold
+            </span>
+            <div className="w-8 h-8 rounded-full bg-[#EFF5F0] border border-[#D7E8DB] text-[#2D7A58] flex items-center justify-center group-hover:scale-105 transition-transform">
+              <BarChart2 className="w-4 h-4" />
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-[#C4BCB4] group-hover:text-[#2D7A58] group-hover:translate-x-0.5 transition-all" />
+          <div className="flex items-baseline justify-between">
+            <span className="font-serif text-2xl font-bold text-[#2C2825] tracking-tight">
+              {totalCopiesSold.toLocaleString("en-IN")}
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-[#C4BCB4] group-hover:text-[#2D7A58] group-hover:translate-x-0.5 transition-all" />
+          </div>
         </div>
 
-        {/* Card 3: Royalty Earned */}
+        {/* Card 4: Total Royalty Earned */}
         <div
           onClick={() => onNavigate("Royalty & Wallet")}
-          className="bg-white rounded-2xl p-5 border border-[#EDE6DD] shadow-2xs hover:shadow-md hover:border-[#DFCFC3] transition-all cursor-pointer flex items-center justify-between group"
+          className="bg-white rounded-2xl p-4 border border-[#EDE6DD] shadow-2xs hover:shadow-md hover:border-[#DFCFC3] transition-all cursor-pointer flex flex-col justify-between group"
         >
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-full bg-[#FAF0EB] border border-[#F2DDD2] text-[#A65B43] flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
-              <Wallet className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xs font-medium text-[#7D756F] block">
-                Royalty Earned
-              </span>
-              <span className="font-serif text-2xl font-bold text-[#2C2825] tracking-tight">
-                ₹{totalRoyaltyEarned.toLocaleString("en-IN")}
-              </span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-[#7D756F]">
+              Total Royalty Earned
+            </span>
+            <div className="w-8 h-8 rounded-full bg-[#FAF0EB] border border-[#F2DDD2] text-[#A65B43] flex items-center justify-center group-hover:scale-105 transition-transform">
+              <Wallet className="w-4 h-4" />
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-[#C4BCB4] group-hover:text-[#A65B43] group-hover:translate-x-0.5 transition-all" />
+          <div className="flex items-baseline justify-between">
+            <span className="font-serif text-2xl font-bold text-[#2C2825] tracking-tight">
+              ₹{totalRoyaltyEarned.toLocaleString("en-IN")}
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-[#C4BCB4] group-hover:text-[#A65B43] group-hover:translate-x-0.5 transition-all" />
+          </div>
         </div>
 
-        {/* Card 4: Royalty Pending */}
+        {/* Card 5: Pending Royalty */}
         <div
           onClick={() => onNavigate("Royalty & Wallet")}
-          className="bg-white rounded-2xl p-5 border border-[#EDE6DD] shadow-2xs hover:shadow-md hover:border-[#DFCFC3] transition-all cursor-pointer flex items-center justify-between group"
+          className="bg-white rounded-2xl p-4 border border-[#EDE6DD] shadow-2xs hover:shadow-md hover:border-[#DFCFC3] transition-all cursor-pointer flex flex-col justify-between group"
         >
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-full bg-[#F4F6ED] border border-[#DEE5CE] text-[#4A6635] flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xs font-medium text-[#7D756F] block">
-                Royalty Pending
-              </span>
-              <span className="font-serif text-2xl font-bold text-[#2C2825] tracking-tight">
-                ₹{royaltyPending.toLocaleString("en-IN")}
-              </span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-[#7D756F]">
+              Pending Royalty
+            </span>
+            <div className="w-8 h-8 rounded-full bg-[#F4F6ED] border border-[#DEE5CE] text-[#4A6635] flex items-center justify-center group-hover:scale-105 transition-transform">
+              <Clock className="w-4 h-4" />
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-[#C4BCB4] group-hover:text-[#4A6635] group-hover:translate-x-0.5 transition-all" />
+          <div className="flex items-baseline justify-between">
+            <span className="font-serif text-2xl font-bold text-[#A65B43] tracking-tight">
+              ₹{royaltyPending.toLocaleString("en-IN")}
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-[#C4BCB4] group-hover:text-[#4A6635] group-hover:translate-x-0.5 transition-all" />
+          </div>
+        </div>
+
+        {/* Card 6: Open Support Tickets */}
+        <div
+          onClick={() => onNavigate("My Tickets")}
+          className="bg-white rounded-2xl p-4 border border-[#EDE6DD] shadow-2xs hover:shadow-md hover:border-[#DFCFC3] transition-all cursor-pointer flex flex-col justify-between group"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-[#7D756F]">
+              Open Support Tickets
+            </span>
+            <div className="w-8 h-8 rounded-full bg-[#FFF5F6] border border-[#FFE0E3] text-[#E03A4B] flex items-center justify-center group-hover:scale-105 transition-transform">
+              <Ticket className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="font-serif text-2xl font-bold text-[#2C2825] tracking-tight">
+              {openSupportTicketsCount}
+            </span>
+            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${openSupportTicketsCount > 0 ? "bg-[#FFE0E3] text-[#E03A4B]" : "bg-slate-100 text-slate-500"}`}>
+              {openSupportTicketsCount > 0 ? "Active" : "All Clear"}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -281,14 +335,16 @@ export function AuthorDashboardOverviewView({
 
         {/* Books Table */}
         <div className="overflow-x-auto -mx-6 sm:mx-0">
-          <table className="w-full text-left text-xs min-w-[700px]">
+          <table className="w-full text-left text-xs min-w-[850px]">
             <thead>
               <tr className="border-b border-[#EDE6DD] text-[#8C827A] font-medium text-[11px]">
-                <th className="pb-3 pl-4 sm:pl-2">Book Details</th>
+                <th className="pb-3 pl-4 sm:pl-2">Book Title &amp; Details</th>
                 <th className="pb-3">Status</th>
-                <th className="pb-3">ISBN</th>
+                <th className="pb-3">ISBN &amp; Pub Date</th>
+                <th className="pb-3 text-right">MRP</th>
                 <th className="pb-3 text-right">Copies Sold</th>
                 <th className="pb-3 text-right">Royalty Earned</th>
+                <th className="pb-3 text-right">Royalty Paid</th>
                 <th className="pb-3 text-right">Royalty Pending</th>
                 <th className="pb-3 text-center pr-4 sm:pr-2">Actions</th>
               </tr>
@@ -303,20 +359,23 @@ export function AuthorDashboardOverviewView({
                 };
                 const coverSrc = coverMap[book.book_id] || "/images/book-silent-path.jpg";
 
-                const subtitleMap: Record<string, string> = {
-                  BK001: "A journey of love, loss and finding home in unexpected places.",
-                  BK002: "Small-town dreams. Extraordinary beginnings.",
-                  BK003: "Transformative habits for modern holistic living.",
-                  BK004: "Epic poetry of destiny, resilience and courage.",
-                };
-                const subtitle = subtitleMap[book.book_id] || "Official BookLeaf published edition.";
+                const royaltyEarned = book.total_royalty_earned || 0;
+                const royaltyPending = book.royalty_pending || 0;
+                const royaltyPaid = Math.max(0, royaltyEarned - royaltyPending);
+                const pubDateStr = book.publication_date
+                  ? new Date(book.publication_date).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "In Production";
 
                 return (
                   <tr
                     key={book.book_id}
                     className="hover:bg-[#FAF7F2] transition group"
                   >
-                    {/* Book Details */}
+                    {/* Book Title & Genre */}
                     <td className="py-4 pl-4 sm:pl-2">
                       <div className="flex items-center gap-3.5">
                         <Image
@@ -330,9 +389,11 @@ export function AuthorDashboardOverviewView({
                           <span className="font-serif font-bold text-sm text-[#2C2825] block truncate group-hover:text-[#A65B43] transition-colors">
                             {book.title}
                           </span>
-                          <span className="text-[11px] text-[#7D756F] block truncate max-w-xs">
-                            {subtitle}
-                          </span>
+                          <div className="flex items-center gap-2 pt-0.5">
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#FAF0EB] text-[#A65B43] font-semibold border border-[#F2DDD2]">
+                              {book.genre || "Fiction"}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -341,28 +402,43 @@ export function AuthorDashboardOverviewView({
                     <td className="py-4">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-[#EAF5EE] text-[#246B48] border border-[#CCE8D4] whitespace-nowrap">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#246B48]" />
-                        <span>Published &amp; Live</span>
+                        <span>{book.status || "Published"}</span>
                       </span>
                     </td>
 
-                    {/* ISBN */}
-                    <td className="py-4 font-mono text-[11px] text-[#5A524C]">
-                      {book.isbn || "978-93-6102-458-7"}
+                    {/* ISBN & Publication Date */}
+                    <td className="py-4">
+                      <span className="font-mono text-[11px] text-[#5A524C] block">
+                        {book.isbn || "978-93-6102-458-7"}
+                      </span>
+                      <span className="text-[10px] text-[#8C827A] block">
+                        {pubDateStr}
+                      </span>
+                    </td>
+
+                    {/* MRP */}
+                    <td className="py-4 text-right font-semibold text-slate-800">
+                      ₹{book.mrp || 399}
                     </td>
 
                     {/* Copies Sold */}
                     <td className="py-4 text-right font-medium">
-                      {book.total_copies_sold || 321}
+                      {(book.total_copies_sold || 0).toLocaleString("en-IN")}
                     </td>
 
                     {/* Royalty Earned */}
                     <td className="py-4 text-right font-medium text-[#2C2825]">
-                      ₹{(book.total_royalty_earned || 12804).toLocaleString("en-IN")}
+                      ₹{royaltyEarned.toLocaleString("en-IN")}
+                    </td>
+
+                    {/* Royalty Paid */}
+                    <td className="py-4 text-right font-medium text-[#2D7A58]">
+                      ₹{royaltyPaid.toLocaleString("en-IN")}
                     </td>
 
                     {/* Royalty Pending */}
                     <td className="py-4 text-right font-semibold text-[#A65B43]">
-                      ₹{(book.royalty_pending || 2320).toLocaleString("en-IN")}
+                      ₹{royaltyPending.toLocaleString("en-IN")}
                     </td>
 
                     {/* Actions Menu */}
