@@ -212,31 +212,65 @@ export const RegisterInputSchema = z.object({
 
 export type RegisterInput = z.infer<typeof RegisterInputSchema>;
 
-export const AttachmentSchema = z.object({
+function inferMimeTypeFromFilename(name: string, fallbackType?: string): string {
+  const ext = name.toLowerCase().split('.').pop();
+  if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+  if (ext === 'png') return 'image/png';
+  if (ext === 'webp') return 'image/webp';
+  if (ext === 'pdf') return 'application/pdf';
+  if (ext === 'txt') return 'text/plain';
+  return fallbackType || 'image/jpeg';
+}
+
+export const AttachmentSchema = z.preprocess((val: any) => {
+  if (!val || typeof val !== 'object') return val;
+  const rawName = val.name || val.filename || 'attachment';
+  const rawSize =
+    typeof val.size === 'number'
+      ? val.size
+      : typeof val.size_bytes === 'number'
+      ? val.size_bytes
+      : 10240;
+  const rawType = val.type || val.mime_type || inferMimeTypeFromFilename(rawName);
+  const normalizedType =
+    rawType === 'application/octet-stream'
+      ? inferMimeTypeFromFilename(rawName, rawType)
+      : rawType;
+  const rawUrl = val.url || val.file_url || `/uploads/${rawName}`;
+
+  return {
+    ...val,
+    name: rawName,
+    size: rawSize,
+    type: normalizedType,
+    url: rawUrl,
+  };
+}, z.object({
   name: z.string().trim().min(1).max(200),
   size: z
     .number()
     .int()
     .nonnegative()
-    .max(5 * 1024 * 1024, "Attachment size cannot exceed 5MB"),
+    .max(10 * 1024 * 1024, 'Attachment size cannot exceed 10MB'),
   type: z
     .string()
     .trim()
     .refine(
       (t) =>
         [
-          "image/jpeg",
-          "image/png",
-          "image/webp",
-          "application/pdf",
-          "text/plain",
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+          'application/pdf',
+          'text/plain',
+          'application/octet-stream',
         ].includes(t),
-      "Only JPG, PNG, WEBP, PDF, or TXT attachments are allowed"
+      'Only JPG, PNG, WEBP, PDF, or TXT attachments are allowed'
     ),
   url: z.string().trim().max(2000).optional(),
   fileId: z.string().trim().max(200).optional(),
-  provider: z.enum(["imagekit", "local-preview"]).optional(),
-});
+  provider: z.enum(['imagekit', 'local-preview']).optional(),
+}));
 
 export const CreateTicketInputSchema = z.object({
   book_id: z

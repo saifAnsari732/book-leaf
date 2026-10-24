@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       sameSite: "lax",
       secure: isProd,
       path: "/",
-      maxAge: ACCESS_TOKEN_MAX_AGE_SECONDS,
+      maxAge: REFRESH_TOKEN_MAX_AGE_SECONDS,
     });
 
     return applySecurityHeaders(response, { isApiRoute: true });

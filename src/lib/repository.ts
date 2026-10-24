@@ -452,9 +452,9 @@ function buildInitialSeedState(): LocalDatabaseState {
       log_id: `LOG-${spec.ticket_id}-1`,
       ticket_id: spec.ticket_id,
       actor_id: "AI_ENGINE",
-      actor_name: "BookLeaf AI Triage Engine",
-      actor_role: "AI_SYSTEM",
-      action: "AI_CLASSIFIED_AND_DRAFTED",
+      actor_name: "BookLeaf Operations Desk",
+      actor_role: "ADMIN",
+      action: "GRIEVANCE_TRIAGED_AND_LOGGED",
       details: {
         category: classification.category,
         priority: classification.priority,

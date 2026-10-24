@@ -583,7 +583,23 @@ export function renderStatusUpdateEmail(params: {
 }
 
 /**
- * Dispatches an instant grievance notification to HR@bookleafpub.in and COMPLAINT_RECEIVER_EMAIL
+ * Resolves the operational complaint receiver email address.
+ * In production (NODE_ENV === "production"), defaults to HR@bookleafpub.in.
+ * In development, uses COMPLAINT_RECEIVER_EMAIL or falls back to test account.
+ */
+export function getComplaintReceiverEmail(): string {
+  if (process.env.NODE_ENV === "production") {
+    return process.env.COMPLAINT_RECEIVER_EMAIL || "HR@bookleafpub.in";
+  }
+  return (
+    process.env.COMPLAINT_RECEIVER_EMAIL ||
+    process.env.SMTP_USER ||
+    "ansarisaifuddin732@gmail.com"
+  );
+}
+
+/**
+ * Dispatches an instant grievance notification to HR@bookleafpub.in (production recipient) and admin desk
  */
 export async function sendAdminGrievanceAlert(params: {
   ticketId: string;
@@ -597,38 +613,37 @@ export async function sendAdminGrievanceAlert(params: {
   bookTitle?: string;
   status: string;
 }): Promise<EmailActivityRecord> {
-  // Configured primary HR grievance recipient as requested
+  const isProduction = process.env.NODE_ENV === "production";
+  const primaryReceiver = getComplaintReceiverEmail();
   const hrRecipient = "HR@bookleafpub.in";
-  const adminRecipient =
-    process.env.COMPLAINT_RECEIVER_EMAIL ||
-    process.env.SMTP_USER ||
-    "ansarisaifuddin732@gmail.com";
 
   const { subject, html, text } = renderAdminTicketAlertEmail({
     ...params,
     timestamp: new Date().toISOString(),
   });
 
-  // 1. Always send official notification to HR@bookleafpub.in
-  sendEmail({
-    to: hrRecipient,
-    name: "BookLeaf HR Desk",
-    subject: `[HR Grievance Alert] ${subject}`,
-    category: "TICKET_UPDATE",
-    html,
-    text,
-    meta: {
-      type: "ADMIN_GRIEVANCE_ALERT",
-      recipient: "HR",
-      ticketId: params.ticketId,
-      authorEmail: params.authorEmail,
-    },
-  }).catch((err) => console.warn("[HR Alert Dispatch Error]", err));
+  // If in development/testing and primaryReceiver is not HR, also dispatch copy to HR
+  if (primaryReceiver.toLowerCase() !== hrRecipient.toLowerCase()) {
+    sendEmail({
+      to: hrRecipient,
+      name: "BookLeaf HR Desk",
+      subject: `[HR Grievance Alert] ${subject}`,
+      category: "TICKET_UPDATE",
+      html,
+      text,
+      meta: {
+        type: "ADMIN_GRIEVANCE_ALERT",
+        recipient: "HR",
+        ticketId: params.ticketId,
+        authorEmail: params.authorEmail,
+      },
+    }).catch((err) => console.warn("[HR Alert Dispatch Error]", err));
+  }
 
-  // 2. Send to Admin Support Desk (returns the primary admin record)
+  // Primary receipt dispatch (HR@bookleafpub.in in production)
   return sendEmail({
-    to: adminRecipient,
-    name: "Admin Support Desk",
+    to: primaryReceiver,
+    name: isProduction ? "BookLeaf HR Operations Desk" : "Admin Support Desk",
     subject,
     category: "TICKET_UPDATE",
     html,
@@ -731,10 +746,7 @@ export async function sendAuthorReplyToAdmin(params: {
   replyContent: string;
 }): Promise<EmailActivityRecord> {
   const hrRecipient = "HR@bookleafpub.in";
-  const adminRecipient =
-    process.env.COMPLAINT_RECEIVER_EMAIL ||
-    process.env.SMTP_USER ||
-    "ansarisaifuddin732@gmail.com";
+  const adminRecipient = getComplaintReceiverEmail();
 
   const subject = `[BookLeaf] [${params.ticketId}] Author Replied: ${params.authorName}`;
   const html = wrapEmailHtml(`

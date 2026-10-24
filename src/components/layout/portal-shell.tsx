@@ -32,6 +32,8 @@ interface PortalShellProps {
   lastSyncedAt?: string | null;
   onManualRefresh?: () => void;
   isRefreshing?: boolean;
+  fullWidth?: boolean;
+  contentClassName?: string;
 }
 
 export function PortalShell({
@@ -40,6 +42,8 @@ export function PortalShell({
   lastSyncedAt,
   onManualRefresh,
   isRefreshing = false,
+  fullWidth = false,
+  contentClassName = "",
 }: PortalShellProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -405,7 +409,13 @@ export function PortalShell({
         )}
 
         {/* Page Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1500px] w-full mx-auto">
+        <main
+          className={`flex-1 w-full ${
+            fullWidth
+              ? "max-w-none px-4 sm:px-6 lg:px-8 py-6"
+              : "max-w-[1800px] 2xl:max-w-[1920px] mx-auto p-4 sm:p-6 lg:p-8"
+          } ${contentClassName}`}
+        >
           {children}
         </main>
       </div>

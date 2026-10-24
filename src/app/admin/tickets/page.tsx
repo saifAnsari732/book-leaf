@@ -332,8 +332,8 @@ function AdminTicketQueueContent() {
     debouncedSearch.length > 0;
 
   return (
-    <PortalShell user={admin}>
-      <div className="space-y-6 max-w-[1500px] mx-auto animate-fade-in font-sans">
+    <PortalShell user={admin} fullWidth>
+      <div className="space-y-6 w-full animate-fade-in font-sans">
         {/* ================================================================
             PAGE HEADER: Support Operations Telemetry & Quick Sync
             ================================================================ */}
@@ -595,7 +595,7 @@ function AdminTicketQueueContent() {
             </div>
 
             {/* Instant Search Bar */}
-            <div className="relative w-full md:w-80">
+            <div className="relative w-full md:w-96 lg:w-[440px]">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
@@ -734,11 +734,11 @@ function AdminTicketQueueContent() {
           </div>
 
           {/* Table matching Ticket Queue requirements */}
-          <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-2xs">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-2xs w-full">
             <table className="w-full text-left text-xs min-w-[1100px]">
               <thead>
                 <tr className="border-b border-slate-200/90 text-slate-500 font-bold uppercase tracking-wider text-[10px] bg-slate-50/90">
-                  <th className="py-3.5 pl-4 sm:pl-3 w-8">
+                  <th className="py-3.5 pl-4 sm:pl-3 w-10">
                     <input
                       type="checkbox"
                       checked={allSelected}
@@ -746,16 +746,16 @@ function AdminTicketQueueContent() {
                       className="rounded border-slate-300 text-[#0F4C3A] focus:ring-[#0F4C3A] cursor-pointer"
                     />
                   </th>
-                  <th className="py-3.5">Priority</th>
-                  <th className="py-3.5">Ticket ID</th>
-                  <th className="py-3.5">Author</th>
-                  <th className="py-3.5">Book Title</th>
-                  <th className="py-3.5">Subject</th>
-                  <th className="py-3.5">Category</th>
-                  <th className="py-3.5">Status</th>
-                  <th className="py-3.5">Assigned Admin</th>
-                  <th className="py-3.5">Created</th>
-                  <th className="py-3.5 pr-4 text-right">Action</th>
+                  <th className="py-3.5 px-3 whitespace-nowrap">Priority</th>
+                  <th className="py-3.5 px-3 whitespace-nowrap">Ticket ID</th>
+                  <th className="py-3.5 px-3 whitespace-nowrap min-w-[190px]">Author</th>
+                  <th className="py-3.5 px-3 whitespace-nowrap min-w-[180px]">Book Title</th>
+                  <th className="py-3.5 px-3 min-w-[300px]">Subject</th>
+                  <th className="py-3.5 px-3 whitespace-nowrap">Category</th>
+                  <th className="py-3.5 px-3 whitespace-nowrap">Status</th>
+                  <th className="py-3.5 px-3 whitespace-nowrap min-w-[170px]">Assigned Admin</th>
+                  <th className="py-3.5 px-3 whitespace-nowrap">Created</th>
+                  <th className="py-3.5 pr-4 pl-3 text-right whitespace-nowrap">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -810,7 +810,7 @@ function AdminTicketQueueContent() {
                       {/* Checkbox */}
                       <td
                         onClick={(e) => e.stopPropagation()}
-                        className="py-3.5 pl-4 sm:pl-3"
+                        className="py-3.5 pl-4 sm:pl-3 w-10"
                       >
                         <input
                           type="checkbox"
@@ -821,7 +821,7 @@ function AdminTicketQueueContent() {
                       </td>
 
                       {/* Priority */}
-                      <td className="py-3.5">
+                      <td className="py-3.5 px-3 whitespace-nowrap">
                         <div className="space-y-0.5">
                           <span className={`px-2.5 py-0.5 rounded-full text-[10px] tracking-wide inline-block ${priorityClass}`}>
                             {t.priority}
@@ -833,14 +833,14 @@ function AdminTicketQueueContent() {
                       </td>
 
                       {/* Ticket ID */}
-                      <td className="py-3.5 font-mono font-bold text-slate-900">
+                      <td className="py-3.5 px-3 font-mono font-bold text-slate-900 whitespace-nowrap">
                         {formattedTicketId}
                       </td>
 
                       {/* Author Name & Email */}
-                      <td className="py-3.5 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#0F4C3A] to-[#10B981] text-white font-bold text-[10px] flex items-center justify-center shrink-0">
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#0F4C3A] to-[#10B981] text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                             {t.author_name ? t.author_name[0] : "A"}
                           </div>
                           <div>
@@ -853,53 +853,54 @@ function AdminTicketQueueContent() {
                       </td>
 
                       {/* Book Name */}
-                      <td className="py-3.5">
-                        <span className="font-semibold text-slate-800 block max-w-xs truncate">
+                      <td className="py-3.5 px-3">
+                        <span className="font-semibold text-slate-800 block truncate max-w-xs xl:max-w-sm 2xl:max-w-md" title={t.book_title || "General Publishing"}>
                           {t.book_title || "General Publishing"}
                         </span>
                       </td>
 
                       {/* Subject */}
-                      <td className="py-3.5">
-                        <span className="font-bold text-slate-900 block max-w-xs truncate">
+                      <td className="py-3.5 px-3">
+                        <span className="font-bold text-slate-900 block truncate max-w-md xl:max-w-xl 2xl:max-w-3xl" title={t.subject}>
                           {t.subject}
                         </span>
                       </td>
 
                       {/* Category */}
-                      <td className="py-3.5 text-slate-600 font-medium whitespace-nowrap">
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold text-[11px] border border-slate-200">
+                      <td className="py-3.5 px-3 text-slate-600 font-medium whitespace-nowrap">
+                        <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold text-[11px] border border-slate-200">
                           {t.category}
                         </span>
                       </td>
 
                       {/* Status */}
-                      <td className="py-3.5">
+                      <td className="py-3.5 px-3 whitespace-nowrap">
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${statusClass}`}>
                           {t.status}
                         </span>
                       </td>
 
                       {/* Assigned Admin */}
-                      <td className="py-3.5 text-slate-700 font-medium whitespace-nowrap">
+                      <td className="py-3.5 px-3 text-slate-700 font-medium whitespace-nowrap">
                         {t.assigned_to ? (
-                          <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md font-bold text-[11px] border border-emerald-200">
+                          <span className="inline-flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg font-bold text-[11px] border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                             {t.assigned_to}
                           </span>
                         ) : (
-                          <span className="text-slate-400 italic text-[11px]">Unassigned</span>
+                          <span className="text-slate-400 italic text-[11px] px-2 py-0.5">Unassigned</span>
                         )}
                       </td>
 
                       {/* Created Date */}
-                      <td className="py-3.5 text-slate-600 font-mono text-[11px] whitespace-nowrap">
+                      <td className="py-3.5 px-3 text-slate-600 font-mono text-[11px] whitespace-nowrap">
                         <div className="font-sans font-medium text-slate-800">{createdDateFormatted}</div>
                         <div className="text-[10px] text-slate-400 font-mono">({age})</div>
                       </td>
 
                       {/* View Action */}
-                      <td className="py-3.5 pr-4 text-right">
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-100 text-slate-800 group-hover:bg-[#0F4C3A] group-hover:text-white text-xs font-bold transition shadow-2xs">
+                      <td className="py-3.5 pr-4 pl-3 text-right whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-800 group-hover:bg-[#0F4C3A] group-hover:text-white text-xs font-bold transition shadow-2xs">
                           <span>View &amp; Draft</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </span>

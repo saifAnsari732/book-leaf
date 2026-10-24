@@ -214,7 +214,7 @@ SMTP_PORT=465
 SMTP_USER=ansarisaifuddin732@gmail.com
 SMTP_PASS=ambrwhkxszxfnuhp
 SMTP_FROM="BookLeaf Publishing <ansarisaifuddin732@gmail.com>"
-COMPLAINT_RECEIVER_EMAIL=ansarisaifuddin732@gmail.com
+COMPLAINT_RECEIVER_EMAIL=HR@bookleafpub.in
 ```
 
 #### Automated Email Lifecycle Flows:
@@ -438,7 +438,7 @@ SMTP_PORT=465
 SMTP_USER="ansarisaifuddin732@gmail.com"
 SMTP_PASS="ambrwhkxszxfnuhp"
 SMTP_FROM="BookLeaf Publishing <ansarisaifuddin732@gmail.com>"
-COMPLAINT_RECEIVER_EMAIL="ansarisaifuddin732@gmail.com"
+COMPLAINT_RECEIVER_EMAIL="HR@bookleafpub.in"
 
 # ImageKit.io CDN Cloud Storage (Optional: local preview fallback available)
 NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT="https://ik.imagekit.io/bookleaf"

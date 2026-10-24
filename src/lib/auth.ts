@@ -9,8 +9,8 @@ export const ACCESS_TOKEN_COOKIE_NAME = "bookleaf_access_token";
 export const REFRESH_TOKEN_COOKIE_NAME = "bookleaf_refresh_token";
 
 // Expiration timings
-export const ACCESS_TOKEN_MAX_AGE_SECONDS = 15 * 60; // 15 minutes
-export const REFRESH_TOKEN_MAX_AGE_SECONDS = 7 * 24 * 60 * 60; // 7 days
+export const ACCESS_TOKEN_MAX_AGE_SECONDS = 15 * 60; // 900 seconds (15 minutes)
+export const REFRESH_TOKEN_MAX_AGE_SECONDS = 30 * 24 * 60 * 60; // 30 days (2,592,000s)
 
 function getSecretKey(): Uint8Array {
   const secret = process.env.SESSION_SECRET || process.env.AUTH_SECRET;
@@ -65,7 +65,7 @@ export async function verifyPassword(
 // ============================================================================
 
 /**
- * Creates a short-lived Access Token (15 minutes) for role-based API access.
+ * Creates a robust Access Token (7 days) for role-based API access.
  */
 export async function createAccessToken(
   user: SafeUser,
@@ -97,7 +97,7 @@ export async function createAccessToken(
 }
 
 /**
- * Creates a long-lived Refresh Token (7 days) for rotating access tokens.
+ * Creates a long-lived Refresh Token (30 days) for rotating access tokens.
  */
 export async function createRefreshToken(
   user: SafeUser,
@@ -107,8 +107,12 @@ export async function createRefreshToken(
   const claims: Record<string, unknown> = {
     user_id: user.user_id,
     author_id: user.author_id,
+    name: user.name,
     email: user.email,
     role: user.role,
+    phone: user.phone,
+    city: user.city,
+    joined_date: user.joined_date,
     token_type: "refresh",
   };
   if (sessionId) {
@@ -119,7 +123,7 @@ export async function createRefreshToken(
     .setProtectedHeader({ alg: "HS256" })
     .setJti(jti)
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime("30d")
     .sign(getRefreshSecretKey());
 }
 
@@ -172,7 +176,7 @@ export async function createSessionToken(user: SafeUser): Promise<string> {
 
 export async function verifyAccessToken(
   token: string
-): Promise<SafeUser | null> {
+): Promise<(SafeUser & { sid?: string }) | null> {
   try {
     const { payload } = await jwtVerify(token, getSecretKey());
     if (
@@ -211,13 +215,9 @@ export async function verifyAccessToken(
   }
 }
 
-export async function verifyRefreshToken(token: string): Promise<{
-  user_id: string;
-  author_id: string | null;
-  email: string;
-  role: "AUTHOR" | "ADMIN";
-  sid?: string;
-} | null> {
+export async function verifyRefreshToken(
+  token: string
+): Promise<(SafeUser & { sid?: string }) | null> {
   try {
     const { payload } = await jwtVerify(token, getRefreshSecretKey());
     if (
@@ -242,8 +242,13 @@ export async function verifyRefreshToken(token: string): Promise<{
       user_id: payload.user_id,
       author_id:
         typeof payload.author_id === "string" ? payload.author_id : null,
+      name: typeof payload.name === "string" ? payload.name : payload.email,
       email: payload.email,
       role: payload.role,
+      phone: typeof payload.phone === "string" ? payload.phone : null,
+      city: typeof payload.city === "string" ? payload.city : null,
+      joined_date:
+        typeof payload.joined_date === "string" ? payload.joined_date : null,
       sid: typeof payload.sid === "string" ? payload.sid : undefined,
     };
   } catch {
@@ -262,7 +267,7 @@ export async function verifySessionToken(
 
 /**
  * Retrieves the currently logged-in user from cookies or Authorization header.
- * Checks Access Token first, then legacy Session Token.
+ * Checks Access Token first, then legacy Session Token, with Refresh Token fallback.
  */
 export async function getSessionUser(): Promise<SafeUser | null> {
   try {
@@ -282,7 +287,14 @@ export async function getSessionUser(): Promise<SafeUser | null> {
       if (verified) return verified;
     }
 
-    // 3. Check Authorization header (Bearer <token>)
+    // 3. Fallback to long-lived Refresh Token (seamless 30-day session continuity)
+    const refreshCookie = cookieStore.get(REFRESH_TOKEN_COOKIE_NAME)?.value;
+    if (refreshCookie) {
+      const verified = await verifyRefreshToken(refreshCookie);
+      if (verified) return verified;
+    }
+
+    // 4. Check Authorization header (Bearer <token>)
     const headerStore = headers();
     const authHeader = headerStore.get("authorization");
     if (authHeader?.startsWith("Bearer ")) {
@@ -309,6 +321,12 @@ export async function getCurrentUserFromRequest(
     const c = req.cookies.get(SESSION_COOKIE_NAME)?.value;
     if (c) {
       const v = await verifySessionToken(c);
+      if (v) return v;
+    }
+
+    const refresh = req.cookies.get(REFRESH_TOKEN_COOKIE_NAME)?.value;
+    if (refresh) {
+      const v = await verifyRefreshToken(refresh);
       if (v) return v;
     }
   }

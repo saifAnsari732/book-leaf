@@ -53,9 +53,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Silent refresh scheduled ~12 minutes (before 15m expiration)
   const scheduleSilentRefresh = useCallback(
-    (expiresInSeconds = 900) => {
+    (expiresInSeconds = 7 * 24 * 60 * 60) => {
       clearTimer();
-      const refreshDelayMs = Math.max(10_000, (expiresInSeconds - 120) * 1000);
+      const refreshDelayMs = Math.min(4 * 60 * 60 * 1000, Math.max(30_000, (expiresInSeconds / 2) * 1000));
       refreshTimerRef.current = setTimeout(() => {
         refreshSessionRef.current().catch(() => {});
       }, refreshDelayMs);
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (data.accessToken) {
             setAccessToken(data.accessToken);
           }
-          scheduleSilentRefresh(data.expiresIn || 900);
+          scheduleSilentRefresh(data.expiresIn || 7 * 24 * 60 * 60);
           return;
         }
       }
@@ -125,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (data.success && data.user) {
           setUser(data.user);
           setAccessToken(data.accessToken);
-          scheduleSilentRefresh(data.expiresIn || 900);
+          scheduleSilentRefresh(data.expiresIn || 7 * 24 * 60 * 60);
           return true;
         }
       }
@@ -161,7 +161,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(data.user);
       setAccessToken(data.accessToken);
-      scheduleSilentRefresh(data.expiresIn || 900);
+      scheduleSilentRefresh(data.expiresIn || 7 * 24 * 60 * 60);
 
       // Notify other browser tabs
       try {
@@ -210,7 +210,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(data.user);
       setAccessToken(data.accessToken);
-      scheduleSilentRefresh(data.expiresIn || 900);
+      scheduleSilentRefresh(data.expiresIn || 7 * 24 * 60 * 60);
 
       try {
         localStorage.setItem("bookleaf_auth_event", `register_${Date.now()}`);

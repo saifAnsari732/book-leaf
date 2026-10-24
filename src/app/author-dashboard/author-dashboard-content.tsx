@@ -465,7 +465,7 @@ export function AuthorDashboardContent() {
       });
       const result = await res.json();
       if (result.success) {
-        toast.success("Welcome, Priya Sharma!", "Author session established successfully.");
+        toast.success(`Welcome, ${result.user?.name || "Author"}!`, "Author session established successfully.");
         window.location.reload();
       } else {
         toast.error("Sign In Failed", result.error || "Please sign in manually.");
@@ -529,8 +529,8 @@ export function AuthorDashboardContent() {
                 </>
               ) : (
                 <>
-                  <Zap className="w-4 h-4 text-amber-200" />
-                  <span>1-Click Instant Login (Priya Sharma)</span>
+                  <Lock className="w-4 h-4 text-white" />
+                  <span>{user?.name ? `Quick Reconnect (${user.name})` : "1-Click Quick Re-Authenticate"}</span>
                 </>
               )}
             </button>

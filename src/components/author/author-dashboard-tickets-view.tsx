@@ -651,6 +651,8 @@ export function AuthorDashboardRaiseQueryView({
   const [attachment, setAttachment] = useState<{
     filename: string;
     size: string;
+    sizeBytes: number;
+    mimeType: string;
     dataUrl?: string;
   } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -702,11 +704,29 @@ export function AuthorDashboardRaiseQueryView({
   function handleAttachmentChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File Too Large", "Maximum attachment size is 10MB.");
+      return;
+    }
     const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
     const sizeText = file.size > 1024 * 1024 ? `${sizeMb} MB` : `${Math.round(file.size / 1024)} KB`;
+
+    const ext = file.name.toLowerCase().split('.').pop();
+    let mimeType = file.type;
+    if (!mimeType || mimeType === 'application/octet-stream') {
+      if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
+      else if (ext === 'png') mimeType = 'image/png';
+      else if (ext === 'webp') mimeType = 'image/webp';
+      else if (ext === 'pdf') mimeType = 'application/pdf';
+      else if (ext === 'txt') mimeType = 'text/plain';
+      else mimeType = 'image/jpeg';
+    }
+
     setAttachment({
       filename: file.name,
       size: sizeText,
+      sizeBytes: file.size,
+      mimeType,
     });
   }
 
@@ -733,12 +753,10 @@ export function AuthorDashboardRaiseQueryView({
           attachments: attachment
             ? [
                 {
-                  attachment_id: `att_${Date.now()}`,
-                  filename: attachment.filename,
-                  file_url: `/uploads/${attachment.filename}`,
-                  mime_type: "application/octet-stream",
-                  size_bytes: 10240,
-                  uploaded_at: new Date().toISOString(),
+                  name: attachment.filename,
+                  size: attachment.sizeBytes || 10240,
+                  type: attachment.mimeType || "image/jpeg",
+                  url: `/uploads/${attachment.filename}`,
                 },
               ]
             : [],
@@ -747,7 +765,11 @@ export function AuthorDashboardRaiseQueryView({
 
       const resJson = await res.json();
       if (!res.ok || !resJson.success) {
-        throw new Error(resJson.error || "Failed to submit support ticket");
+        const detailMsg =
+          (Array.isArray(resJson.details) && resJson.details[0]?.message) ||
+          resJson.error ||
+          "Failed to submit support ticket";
+        throw new Error(detailMsg);
       }
 
       toast.success(
