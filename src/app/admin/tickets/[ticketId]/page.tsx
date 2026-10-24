@@ -30,15 +30,24 @@ import {
   TicketPriorityBadge,
   TicketStatusBadge,
 } from "@/components/ui/badges";
+import { useToast } from "@/context/ToastContext";
 import {
   AlertCircle,
   ArrowLeft,
+  Bookmark,
   BookOpen,
   CheckCircle2,
-  FileEdit,
+  ChevronRight,
+  Clock,
+  Copy,
+  ExternalLink,
   EyeOff,
+  FileEdit,
+  FileText,
   Lock,
+  Mail,
   Paperclip,
+  Phone,
   RefreshCw,
   Send,
   ShieldCheck,
@@ -57,10 +66,42 @@ interface AdminTicketDetailResponse {
   auditLogs: AuditLogRecord[];
 }
 
+const CANNED_TEMPLATES = [
+  {
+    id: "royalty",
+    title: "Royalty & Payout",
+    icon: FileText,
+    generate: (ticket: TicketRecord, book: BookRecord | null) =>
+      `Dear ${ticket.author_name},\n\nWe have thoroughly reviewed your royalty account inquiry for "${ticket.book_title || book?.title || "your book"}". Our finance desk has reconciled the sales ledger and verified the pending balance. Please ensure that your registered bank account and IFSC code on the BookLeaf portal are current so our automated payout run can process smoothly.\n\nWarm regards,\nBookLeaf Publishing Accounts Desk`,
+  },
+  {
+    id: "isbn",
+    title: "ISBN & Metadata",
+    icon: Bookmark,
+    generate: (ticket: TicketRecord, book: BookRecord | null) =>
+      `Dear ${ticket.author_name},\n\nRegarding the metadata and ISBN listing for "${ticket.book_title || book?.title || "your book"}", we have updated the Bowker and Ingram distribution feeds. Channel synchronization typically reflects across Amazon, Flipkart, and the BookLeaf Global Store within 24 to 48 hours.\n\nWarm regards,\nBookLeaf Publishing Distribution Team`,
+  },
+  {
+    id: "quality",
+    title: "Print Quality Batch",
+    icon: CheckCircle2,
+    generate: (ticket: TicketRecord, book: BookRecord | null) =>
+      `Dear ${ticket.author_name},\n\nThank you for bringing this print quality observation to our attention. We have logged this with our manufacturing and fulfillment partner (Repro India). A complimentary replacement copy is being expedited to your registered shipping address.\n\nWarm regards,\nBookLeaf Production Operations`,
+  },
+  {
+    id: "resolved",
+    title: "Resolution & Closure",
+    icon: ShieldCheck,
+    generate: (ticket: TicketRecord, _book: BookRecord | null) =>
+      `Dear ${ticket.author_name},\n\nWe are pleased to inform you that your support ticket (#${ticket.ticket_id}) has been addressed and resolved by our editorial team. Should you require any further assistance, feel free to reply directly to this thread.\n\nThank you for publishing with BookLeaf!\n\nWarm regards,\nBookLeaf Author Support Desk`,
+  },
+];
+
 export default function AdminTicketDetailWorkbenchPage() {
   const params = useParams<{ ticketId: string }>();
   const ticketId = params.ticketId;
   const router = useRouter();
+  const toast = useToast();
 
   const sessionQuery = useFastQuery<{ success: boolean; user: SafeUser }>(
     "auth:session",
@@ -83,7 +124,7 @@ export default function AdminTicketDetailWorkbenchPage() {
   const [internalNoteText, setInternalNoteText] = useState("");
 
   const [isUpdatingMeta, setIsUpdatingMeta] = useState(false);
-  const [isRegeneratingAI, setIsRegeneratingAI] = useState(false);
+  const [isRefreshingDraft, setIsRefreshingDraft] = useState(false);
   const [isSendingReply, setIsSendingReply] = useState(false);
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [feedbackBanner, setFeedbackBanner] = useState<{
@@ -187,8 +228,8 @@ export default function AdminTicketDetailWorkbenchPage() {
     }
   }
 
-  async function handleRegenerateAIDraft() {
-    setIsRegeneratingAI(true);
+  async function handleRefreshEditorialDraft() {
+    setIsRefreshingDraft(true);
     setFeedbackBanner(null);
     try {
       const res = await fetch(`/api/admin/tickets/${ticketId}/draft-reply`, {
@@ -202,18 +243,20 @@ export default function AdminTicketDetailWorkbenchPage() {
       if (!res.ok || !json.success) {
         setFeedbackBanner({
           type: "error",
-          text: json.error || "Failed to regenerate AI draft",
+          text: json.error || "Failed to refresh editorial draft response",
         });
+        toast.error("Draft Error", json.error || "Failed to refresh draft response.");
         return;
       }
       setDraftContent(json.ai_metadata.draft_reply);
       detailQuery.refresh();
       setFeedbackBanner({
         type: "success",
-        text: `AI Draft regenerated (${json.ai_metadata.provider} • ${json.ai_metadata.model}). Review and edit before sending.`,
+        text: "Editorial draft response refreshed successfully. Review and edit before sending.",
       });
+      toast.success("Draft Refreshed", "Loaded updated editorial draft response.");
     } finally {
-      setIsRegeneratingAI(false);
+      setIsRefreshingDraft(false);
     }
   }
 
@@ -453,8 +496,187 @@ export default function AdminTicketDetailWorkbenchPage() {
           </div>
         )}
 
+        {/* ================================================================
+            4-STEP INTERACTIVE TICKET RESOLUTION LIFECYCLE STEPPER
+            ================================================================ */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Ticket Resolution Lifecycle
+              </span>
+              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-sky-50 text-[#0288D1] border border-sky-200 font-bold">
+                Status: {ticket.status}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-slate-400 font-medium">Quick Transition:</span>
+              {ticket.status !== "In Progress" && (
+                <button
+                  type="button"
+                  onClick={() => handleUpdateTicketField({ status: "In Progress" })}
+                  disabled={isUpdatingMeta}
+                  className="px-3 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition cursor-pointer"
+                >
+                  Mark In Progress
+                </button>
+              )}
+              {ticket.status !== "Resolved" && (
+                <button
+                  type="button"
+                  onClick={() => handleUpdateTicketField({ status: "Resolved" })}
+                  disabled={isUpdatingMeta}
+                  className="px-3 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold transition cursor-pointer"
+                >
+                  Mark Resolved
+                </button>
+              )}
+              {ticket.status !== "Closed" && (
+                <button
+                  type="button"
+                  onClick={() => handleUpdateTicketField({ status: "Closed" })}
+                  disabled={isUpdatingMeta}
+                  className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-bold transition cursor-pointer"
+                >
+                  Close Ticket
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Stepper Steps Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {/* Step 1: Logged */}
+            <div className="flex items-center gap-3 p-3 rounded-xl border border-emerald-200 bg-emerald-50/50">
+              <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">
+                  Step 1 • Logged
+                </span>
+                <span className="text-xs font-bold text-slate-900 block truncate">
+                  Author Submitted
+                </span>
+                <span className="text-[10px] text-slate-500 font-mono">
+                  {formatDateTime(ticket.created_at).slice(0, 11)}
+                </span>
+              </div>
+            </div>
+
+            {/* Step 2: Under Review */}
+            <div
+              className={`flex items-center gap-3 p-3 rounded-xl border ${
+                ticket.assigned_to || ticket.status !== "Open"
+                  ? "border-emerald-200 bg-emerald-50/50"
+                  : "border-sky-200 bg-sky-50/50"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white ${
+                  ticket.assigned_to || ticket.status !== "Open"
+                    ? "bg-emerald-600"
+                    : "bg-[#0288D1]"
+                }`}
+              >
+                {ticket.assigned_to || ticket.status !== "Open" ? (
+                  <CheckCircle2 className="w-4 h-4" />
+                ) : (
+                  <Clock className="w-4 h-4" />
+                )}
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                  Step 2 • Triage
+                </span>
+                <span className="text-xs font-bold text-slate-900 block truncate">
+                  {ticket.assigned_to ? "Admin Assigned" : "Awaiting Triage"}
+                </span>
+                <span className="text-[10px] text-slate-500 truncate block">
+                  {ticket.assigned_to || "Unassigned"}
+                </span>
+              </div>
+            </div>
+
+            {/* Step 3: Action / In Progress */}
+            <div
+              className={`flex items-center gap-3 p-3 rounded-xl border ${
+                ticket.status === "In Progress"
+                  ? "border-amber-300 bg-amber-50/60 ring-2 ring-amber-400/30"
+                  : ticket.status === "Resolved" || ticket.status === "Closed"
+                  ? "border-emerald-200 bg-emerald-50/50"
+                  : "border-slate-200 bg-slate-50 opacity-60"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white ${
+                  ticket.status === "Resolved" || ticket.status === "Closed"
+                    ? "bg-emerald-600"
+                    : ticket.status === "In Progress"
+                    ? "bg-amber-500"
+                    : "bg-slate-400"
+                }`}
+              >
+                {ticket.status === "Resolved" || ticket.status === "Closed" ? (
+                  <CheckCircle2 className="w-4 h-4" />
+                ) : (
+                  <FileText className="w-4 h-4" />
+                )}
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                  Step 3 • Action
+                </span>
+                <span className="text-xs font-bold text-slate-900 block truncate">
+                  {ticket.status === "In Progress"
+                    ? "Desk In Progress"
+                    : ticket.status === "Resolved" || ticket.status === "Closed"
+                    ? "Action Complete"
+                    : "Pending Action"}
+                </span>
+                <span className="text-[10px] text-slate-500 truncate block">
+                  {ticket.category}
+                </span>
+              </div>
+            </div>
+
+            {/* Step 4: Resolution */}
+            <div
+              className={`flex items-center gap-3 p-3 rounded-xl border ${
+                ticket.status === "Resolved" || ticket.status === "Closed"
+                  ? "border-emerald-300 bg-emerald-50 ring-2 ring-emerald-500/30"
+                  : "border-slate-200 bg-slate-50 opacity-60"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white ${
+                  ticket.status === "Resolved" || ticket.status === "Closed"
+                    ? "bg-emerald-600"
+                    : "bg-slate-400"
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                  Step 4 • Closure
+                </span>
+                <span className="text-xs font-bold text-slate-900 block truncate">
+                  {ticket.status === "Resolved" || ticket.status === "Closed"
+                    ? "Resolved & Notified"
+                    : "Pending Closure"}
+                </span>
+                <span className="text-[10px] text-slate-500 truncate block">
+                  {ticket.status === "Resolved" ? "Email Delivered" : "Awaiting Result"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column (8 cols): Ticket Header, AI Draft Workbench, External Thread & Internal Notes */}
+          {/* Left Column (8 cols): Ticket Header, Editorial Draft Workbench, External Thread & Internal Notes */}
           <div className="lg:col-span-8 space-y-6">
             {/* Ticket Summary & Override Controls */}
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
@@ -509,7 +731,7 @@ export default function AdminTicketDetailWorkbenchPage() {
                     htmlFor="admin-category-select"
                     className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1"
                   >
-                    Category (Override AI)
+                    Category (Manual Classification)
                   </label>
                   <select
                     id="admin-category-select"
@@ -535,7 +757,7 @@ export default function AdminTicketDetailWorkbenchPage() {
                     htmlFor="admin-priority-select"
                     className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1"
                   >
-                    Priority (Override AI)
+                    Priority (Manual Triage)
                   </label>
                   <select
                     id="admin-priority-select"
@@ -558,7 +780,7 @@ export default function AdminTicketDetailWorkbenchPage() {
               </div>
             </div>
 
-            {/* AI-Drafted Response Editor (Knowledge Base + Book Grounded) */}
+            {/* Editorial Draft Response Editor (Knowledge Base + Book Grounded) */}
             <div className="rounded-2xl border-2 border-sky-200 bg-white overflow-hidden shadow-sm">
               <div className="bg-[#0E2842] px-6 py-4 text-white flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
@@ -578,25 +800,24 @@ export default function AdminTicketDetailWorkbenchPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 text-[11px]">
-                  <span className="rounded-full bg-white/10 border border-white/15 px-2.5 py-0.5 font-mono text-sky-200">
-                    {ticket.ai_metadata.provider === "gemini"
-                      ? `Gemini (${ticket.ai_metadata.model})`
-                      : "Policy Fallback Engine"}
+                  <span className="rounded-full bg-white/10 border border-white/15 px-2.5 py-0.5 font-semibold text-sky-200 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-sky-300" />
+                    Editorial Desk Active
                   </span>
-                  <span className="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-2.5 py-0.5 font-semibold text-emerald-300">
-                    ~{ticket.ai_metadata.tokens_estimated} tokens (Saved{" "}
-                    {ticket.ai_metadata.tokens_saved_pct}%)
+                  <span className="rounded-full bg-emerald-500/20 border border-emerald-400/30 px-2.5 py-0.5 font-semibold text-emerald-300 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
+                    Gmail SMTP Auto-Dispatch
                   </span>
                 </div>
               </div>
 
               <div className="p-6 space-y-4">
-                {/* AI Classification Rationale Bar */}
+                {/* Publishing Desk Diagnostic Summary Bar */}
                 <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-3.5 text-xs space-y-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-bold text-[#1B4D7E] flex items-center gap-1.5">
                       <ShieldCheck className="h-3.5 w-3.5 text-sky-600" aria-hidden="true" />
-                      Ticket Triage Rationale:
+                      Publishing Desk Diagnostic Summary:
                     </span>
                     <span className="text-[11px] text-slate-600">
                       Suggested:{" "}
@@ -617,38 +838,66 @@ export default function AdminTicketDetailWorkbenchPage() {
                     type="text"
                     value={customInstruction}
                     onChange={(e) => setCustomInstruction(e.target.value)}
-                    placeholder="Optional guidance for AI regeneration (e.g., 'Ask author to confirm IFSC code')..."
+                    placeholder="Optional guidance to tailor draft response (e.g., 'Ask author to confirm IFSC code')..."
                     className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-800 focus:border-[#1B4D7E] focus:bg-white focus:outline-none"
                   />
                   <button
                     type="button"
-                    onClick={handleRegenerateAIDraft}
-                    disabled={isRegeneratingAI}
+                    onClick={handleRefreshEditorialDraft}
+                    disabled={isRefreshingDraft}
                     className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-sky-300 bg-sky-50 px-3.5 py-2 text-xs font-semibold text-[#1B4D7E] hover:bg-sky-100 transition-colors cursor-pointer shrink-0"
                   >
                     <RefreshCw
                       className={`h-3.5 w-3.5 ${
-                        isRegeneratingAI ? "animate-spin" : ""
+                        isRefreshingDraft ? "animate-spin" : ""
                       }`}
                       aria-hidden="true"
                     />
-                    {isRegeneratingAI
+                    {isRefreshingDraft
                       ? "Refreshing..."
                       : "Refresh Response Draft"}
                   </button>
+                </div>
+
+                {/* Quick Canned Response Templates */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Quick Editorial Snippets
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      Click template to populate draft response
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {CANNED_TEMPLATES.map((tpl) => (
+                      <button
+                        key={tpl.id}
+                        type="button"
+                        onClick={() => {
+                          setDraftContent(tpl.generate(ticket, book));
+                          toast.success("Template Loaded", `Loaded "${tpl.title}" template.`);
+                        }}
+                        className="flex items-center gap-1.5 p-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-sky-50 hover:border-sky-300 text-slate-700 text-left text-xs font-semibold transition cursor-pointer"
+                      >
+                        <tpl.icon className="w-3.5 h-3.5 text-[#0288D1] shrink-0" />
+                        <span className="truncate">{tpl.title}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Editable Draft Textarea + Send Form */}
                 <form onSubmit={handleSendApprovedReply} className="space-y-3">
                   <div>
                     <label
-                      htmlFor="ai-draft-textarea"
+                      htmlFor="editorial-draft-textarea"
                       className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5"
                     >
-                      Review & Edit Draft Response Before Sending to Author:
+                      Review &amp; Edit Response Before Sending to Author:
                     </label>
                     <textarea
-                      id="ai-draft-textarea"
+                      id="editorial-draft-textarea"
                       rows={9}
                       required
                       value={draftContent}
@@ -694,8 +943,16 @@ export default function AdminTicketDetailWorkbenchPage() {
                       ) : (
                         <Send className="h-4 w-4" aria-hidden="true" />
                       )}
-                      Approve & Send Response to {ticket.author_name}
+                      Approve &amp; Send Response to {ticket.author_name}
                     </button>
+                  </div>
+
+                  {/* Gmail SMTP Dispatch Indicator */}
+                  <div className="flex items-center gap-2 text-[11px] text-slate-500 bg-slate-50 rounded-xl p-2.5 border border-slate-200">
+                    <Mail className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>
+                      An official branded update email will be dispatched to <strong>{ticket.author_email}</strong> via Gmail SMTP upon approval.
+                    </span>
                   </div>
                 </form>
               </div>
@@ -844,42 +1101,85 @@ export default function AdminTicketDetailWorkbenchPage() {
           {/* Right Column (4 cols): Author & Book Database Context Inspector */}
           <div className="lg:col-span-4 space-y-5">
             {/* Author Profile Card */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#1B4D7E] block">
-                Author Account Context
-              </span>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#1B4D7E] block">
+                  Author Account Context
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Verified Author
+                </span>
+              </div>
+
               <div>
                 <h3 className="text-base font-bold text-slate-900">
                   {ticket.author_name}
                 </h3>
-                <p className="text-xs font-mono text-slate-500">
-                  {ticket.author_id} • {ticket.author_email}
+                <p className="text-xs font-mono text-slate-500 mb-2">
+                  ID: {ticket.author_id}
                 </p>
+
+                <div className="space-y-1.5 text-xs">
+                  {ticket.author_email && (
+                    <a
+                      href={`mailto:${ticket.author_email}?subject=[BookLeaf] Support Ticket #${ticket.ticket_id}: ${ticket.subject}`}
+                      className="flex items-center gap-2 text-[#0288D1] hover:underline"
+                    >
+                      <Mail className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                      <span className="truncate">{ticket.author_email}</span>
+                    </a>
+                  )}
+                  {author?.phone && (
+                    <a
+                      href={`tel:${author.phone}`}
+                      className="flex items-center gap-2 text-slate-700 hover:underline"
+                    >
+                      <Phone className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                      <span>{author.phone}</span>
+                    </a>
+                  )}
+                </div>
               </div>
+
+              {/* Copy Tracking URL button */}
+              <button
+                type="button"
+                onClick={() => {
+                  const url = `${window.location.origin}/author/tickets?track=${ticket.ticket_id}`;
+                  navigator.clipboard.writeText(url);
+                  toast.success("URL Copied", "Author direct tracking link copied to clipboard.");
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition cursor-pointer"
+              >
+                <Copy className="w-3.5 h-3.5 text-slate-500" />
+                <span>Copy Author Tracking Link</span>
+              </button>
+
               {author && (
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs">
                   <div>
-                    <span className="text-slate-400 block">City</span>
+                    <span className="text-slate-400 block text-[10px]">City</span>
                     <span className="font-semibold text-slate-800">
                       {author.city || "N/A"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">Phone</span>
+                    <span className="text-slate-400 block text-[10px]">Phone</span>
                     <span className="font-semibold text-slate-800">
                       {author.phone || "N/A"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">Joined Date</span>
+                    <span className="text-slate-400 block text-[10px]">Joined Date</span>
                     <span className="font-semibold text-slate-800">
-                      {formatDateTime(author.joined_date)}
+                      {formatDateTime(author.joined_date).slice(0, 11)}
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block">Total Books</span>
+                    <span className="text-slate-400 block text-[10px]">Published Titles</span>
                     <span className="font-semibold text-slate-800">
-                      {authorAllBooks.length} Title(s)
+                      {authorAllBooks.length} Book(s)
                     </span>
                   </div>
                 </div>

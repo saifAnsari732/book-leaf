@@ -2303,7 +2303,7 @@ export async function saveProcessedPayment(
 
 
 // ============================================================================
-// Public Ticket Tracking (Adapted from IT Academics Grievance Portal)
+// Public Ticket Tracking (BookLeaf Grievance & Support Portal)
 // ============================================================================
 
 function maskEmail(email: string): string {

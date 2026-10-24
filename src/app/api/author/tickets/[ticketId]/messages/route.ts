@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 import { AuthorReplyInputSchema } from "@/types/domain";
 import { addAuthorMessageToTicket } from "@/lib/repository";
 import { invalidateTicketCaches } from "@/lib/redis";
+import { sendAuthorReplyToAdmin } from "@/lib/email";
 
 export async function POST(
   req: NextRequest,
@@ -78,6 +79,14 @@ export async function POST(
       ticketId,
       authorId: user.author_id,
     });
+
+    // Notify Admin Desk of author reply via Nodemailer
+    sendAuthorReplyToAdmin({
+      ticketId,
+      authorName: user.name,
+      authorEmail: user.email,
+      replyContent: parsed.data.content,
+    }).catch((err) => console.warn("[Author Reply Email Error]", err));
 
     return NextResponse.json(
       {

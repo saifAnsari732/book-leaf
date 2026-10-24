@@ -12,7 +12,7 @@ import {
 import { NextRequest } from "next/server";
 import { GET as getTrackTicket, POST as postTrackTicket } from "@/app/api/tickets/track/route";
 
-describe("Ticket Tracking & IT Academics Dual Email Notifications", () => {
+describe("Ticket Tracking & BookLeaf Dual Email Notifications", () => {
   it("renders Admin Grievance Alert email template with full metadata", () => {
     const rendered = renderAdminTicketAlertEmail({
       ticketId: "TICK-TEST-999",
@@ -28,7 +28,7 @@ describe("Ticket Tracking & IT Academics Dual Email Notifications", () => {
       timestamp: new Date().toISOString(),
     });
 
-    expect(rendered.subject).toContain("[IT Academics]");
+    expect(rendered.subject).toContain("[BookLeaf]");
     expect(rendered.subject).toContain("TICK-TEST-999");
     expect(rendered.html).toContain("Anisha Karmalkar");
     expect(rendered.html).toContain("anisha@example.com");

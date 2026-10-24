@@ -161,17 +161,16 @@ export function RealtimeTicketProvider({
       es.onerror = () => {
         if (unmountedRef.current) return;
         setMode("OFFLINE");
-        if (es.readyState === EventSource.CLOSED) {
-          try { es.close(); } catch {}
-          sseRef.current = null;
-          if (!reconnectTimeoutRef.current) {
-            reconnectTimeoutRef.current = setTimeout(() => {
-              reconnectTimeoutRef.current = null;
-              if (!unmountedRef.current && modeRef.current === "OFFLINE") {
-                connectSSE();
-              }
-            }, 15000);
-          }
+        // Always close immediately on error to stop browser native auto-reconnect storm
+        try { es.close(); } catch {}
+        sseRef.current = null;
+        if (!reconnectTimeoutRef.current) {
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectTimeoutRef.current = null;
+            if (!unmountedRef.current && modeRef.current === "OFFLINE") {
+              connectSSE();
+            }
+          }, 15000);
         }
       };
     } catch {

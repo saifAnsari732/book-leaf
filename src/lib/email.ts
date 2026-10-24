@@ -350,7 +350,7 @@ export function renderSecurityAlertEmail(params: {
 
 /**
  * 6. Template: Admin Grievance / Ticket Notification (Dual Notification)
- * Adapted from IT Academics Grievance Portal
+ * BookLeaf Publishing Grievance Portal
  */
 export function renderAdminTicketAlertEmail(params: {
   ticketId: string;
@@ -366,7 +366,7 @@ export function renderAdminTicketAlertEmail(params: {
   timestamp: string;
   portalUrl?: string;
 }): { subject: string; html: string; text: string } {
-  const subject = `[IT Academics] [${params.ticketId}] New Complaint / Ticket: ${params.subject}`;
+  const subject = `[BookLeaf] [${params.ticketId}] New Complaint / Ticket: ${params.subject}`;
   const portalLink = params.portalUrl || `/admin/tickets/${params.ticketId}`;
 
   const html = wrapEmailHtml(`
@@ -444,7 +444,7 @@ export function renderAdminTicketAlertEmail(params: {
 
 /**
  * 7. Template: Complainant / Author Registration Confirmation
- * Adapted from IT Academics Grievance Portal
+ * BookLeaf Publishing Grievance Portal
  */
 export function renderComplainantAcknowledgementEmail(params: {
   name: string;
@@ -518,7 +518,7 @@ export function renderComplainantAcknowledgementEmail(params: {
 
 /**
  * 8. Template: Status Update Email Notification
- * Adapted from IT Academics Grievance Portal
+ * BookLeaf Publishing Grievance Portal
  */
 export function renderStatusUpdateEmail(params: {
   name: string;
@@ -530,7 +530,7 @@ export function renderStatusUpdateEmail(params: {
   adminNote?: string;
   trackingUrl?: string;
 }): { subject: string; html: string; text: string } {
-  const emailSubject = `[IT Academics] Ticket Status Update: [${params.ticketId}] is now ${params.newStatus}`;
+  const emailSubject = `[BookLeaf] Ticket Status Update: [${params.ticketId}] is now ${params.newStatus}`;
   const trackUrl = params.trackingUrl || `/track?id=${params.ticketId}`;
 
   const html = wrapEmailHtml(`
@@ -698,6 +698,59 @@ export async function sendStatusUpdateEmail(params: {
       ticketId: params.ticketId,
       oldStatus: params.oldStatus,
       newStatus: params.newStatus,
+    },
+  });
+}
+
+/**
+ * Dispatches an instant admin alert when author sends a reply message to a ticket
+ */
+export async function sendAuthorReplyToAdmin(params: {
+  ticketId: string;
+  authorName: string;
+  authorEmail: string;
+  replyContent: string;
+}): Promise<EmailActivityRecord> {
+  const adminRecipient =
+    process.env.COMPLAINT_RECEIVER_EMAIL ||
+    process.env.SMTP_USER ||
+    "ansarisaifuddin732@gmail.com";
+
+  const subject = `[BookLeaf] [${params.ticketId}] Author Replied: ${params.authorName}`;
+  const html = wrapEmailHtml(`
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+      <span style="background-color: #fef3c7; color: #92400e; padding: 6px 14px; border-radius: 9999px; font-size: 12px; font-weight: 700; text-transform: uppercase;">
+        Author Reply Received
+      </span>
+      <span style="color: #64748b; font-size: 13px; font-family: monospace;">Ref: ${params.ticketId}</span>
+    </div>
+    <h2 style="color: #0f172a; font-size: 18px; margin: 0 0 12px 0;">New Message from Author</h2>
+    <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 16px 0;">
+      Author <strong>${params.authorName}</strong> (${params.authorEmail}) has replied to ticket <strong>${params.ticketId}</strong>:
+    </p>
+    <div style="background-color: #f8fafc; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 6px; font-size: 14px; line-height: 1.6; color: #1e293b; margin: 16px 0;">
+      ${params.replyContent.replace(/\n/g, '<br/>')}
+    </div>
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="/admin/tickets/${params.ticketId}" style="display: inline-block; background-color: #0f172a; color: #ffffff; padding: 12px 28px; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 8px;">
+        Open Admin Console to Reply &rarr;
+      </a>
+    </div>
+  `);
+
+  const text = `Author ${params.authorName} (${params.authorEmail}) replied to ticket ${params.ticketId}: ${params.replyContent}`;
+
+  return sendEmail({
+    to: adminRecipient,
+    name: "Support Desk Admin",
+    subject,
+    category: "TICKET_UPDATE",
+    html,
+    text,
+    meta: {
+      type: "AUTHOR_REPLY_ALERT",
+      ticketId: params.ticketId,
+      authorEmail: params.authorEmail,
     },
   });
 }

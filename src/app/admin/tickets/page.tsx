@@ -24,12 +24,18 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Download,
   Filter,
+  Layers,
+  Mail,
   MessageSquare,
+  RefreshCw,
   RotateCcw,
   Search,
   Ticket,
+  User,
   UserCheck,
+  X,
 } from "lucide-react";
 
 interface AdminQueueResponse {
@@ -198,6 +204,86 @@ function AdminTicketQueueContent() {
     return `${days}d`;
   }
 
+  const [isBatchUpdating, setIsBatchUpdating] = useState(false);
+
+  async function handleBatchUpdateStatus(newStatus: TicketStatus) {
+    const ids = Object.keys(selectedIds).filter((id) => selectedIds[id]);
+    if (!ids.length) return;
+    setIsBatchUpdating(true);
+    try {
+      await Promise.all(
+        ids.map((id) =>
+          fetch(`/api/admin/tickets/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: newStatus }),
+          })
+        )
+      );
+      toast.success(
+        "Batch Update Success",
+        `Updated ${ids.length} ticket${ids.length > 1 ? "s" : ""} to ${newStatus}.`
+      );
+      setSelectedIds({});
+      queueQuery.refresh();
+      overviewQuery.refresh();
+    } catch {
+      toast.error("Batch Update Error", "Failed to update selected tickets.");
+    } finally {
+      setIsBatchUpdating(false);
+    }
+  }
+
+  function handleExportCsv() {
+    const list = queueQuery.data?.tickets || [];
+    if (!list.length) {
+      toast.warning("No Data", "No tickets found to export.");
+      return;
+    }
+    const headers = [
+      "Ticket ID",
+      "Priority",
+      "Author Name",
+      "Author Email",
+      "Book Title",
+      "Category",
+      "Subject",
+      "Status",
+      "Assigned To",
+      "Created At",
+    ];
+    const rows = list.map((t) => [
+      t.ticket_id,
+      t.priority,
+      `"${t.author_name.replace(/"/g, '""')}"`,
+      t.author_email || "",
+      `"${(t.book_title || "General").replace(/"/g, '""')}"`,
+      `"${t.category.replace(/"/g, '""')}"`,
+      `"${t.subject.replace(/"/g, '""')}"`,
+      t.status,
+      t.assigned_to || "Unassigned",
+      new Date(t.created_at).toISOString(),
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `BookLeaf_Tickets_Report_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(
+      "Export Complete",
+      `Exported ${list.length} tickets to CSV format.`
+    );
+  }
+
   if (sessionQuery.error || queueQuery.error) {
     return (
       <div className="min-h-screen bg-[#F9FAF7] flex items-center justify-center p-6">
@@ -248,7 +334,7 @@ function AdminTicketQueueContent() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <span className="text-[11px] font-bold tracking-[0.2em] text-[#0288D1] uppercase block">
-              SUPPORT
+              BOOKLEAF SUPPORT &amp; GRIEVANCE OPERATIONS
             </span>
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-3xl sm:text-4xl font-bold text-[#0E2842] tracking-tight">
@@ -257,10 +343,75 @@ function AdminTicketQueueContent() {
               <RealtimeStatusBadge />
             </div>
             <p className="text-xs sm:text-sm text-slate-500">
-              Help authors succeed, one story at a time.
+              Manage author inquiries, royalty claims, book production tickets &amp; grievances.
             </p>
           </div>
+
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-2xs hover:shadow-xs transition cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                queueQuery.refresh();
+                overviewQuery.refresh();
+                toast.info("Refreshed", "Queue synchronized with live database.");
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0E2842] hover:bg-[#153a5e] text-white text-xs font-bold shadow-2xs hover:shadow-xs transition cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Sync Tickets</span>
+            </button>
+          </div>
         </div>
+
+        {/* Floating Batch Action Toolbar */}
+        {Object.values(selectedIds).filter(Boolean).length > 0 && (
+          <div className="sticky top-20 z-20 bg-[#0E2842] text-white rounded-2xl p-4 shadow-xl border border-white/10 flex flex-wrap items-center justify-between gap-3 animate-fade-in">
+            <div className="flex items-center gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center">
+                {Object.values(selectedIds).filter(Boolean).length}
+              </span>
+              <span className="text-xs font-semibold text-slate-200">
+                Ticket{Object.values(selectedIds).filter(Boolean).length > 1 ? "s" : ""} Selected
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleBatchUpdateStatus("In Progress")}
+                disabled={isBatchUpdating}
+                className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/30 text-xs font-bold transition flex items-center gap-1"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Mark In Progress</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBatchUpdateStatus("Resolved")}
+                disabled={isBatchUpdating}
+                className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 text-xs font-bold transition flex items-center gap-1"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Mark Resolved</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedIds({})}
+                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-medium transition"
+              >
+                Cancel Selection
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ================================================================
             4 TOP STATUS METRIC CARDS (Exact match to Screenshot 1)
@@ -359,7 +510,7 @@ function AdminTicketQueueContent() {
             ================================================================ */}
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-2xs p-6 space-y-5">
           {/* Queue Title & Showing Counter */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
             <div className="flex items-center gap-3 flex-wrap">
               <h2 className="text-xl font-bold text-slate-900 tracking-tight inline-block relative pb-1">
                 Ticket Queue
@@ -370,6 +521,68 @@ function AdminTicketQueueContent() {
             <span className="text-xs font-medium text-slate-400">
               Showing 1-{tickets.length} of {total} tickets
             </span>
+          </div>
+
+          {/* Quick Status Filter Tabs & Search Bar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1 border-b border-slate-100 pb-4">
+            {/* Quick Status Tabs */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {[
+                { id: "ALL", label: "All Complaints", count: total },
+                { id: "Open", label: "Open", count: openCount },
+                { id: "In Progress", label: "In Progress", count: inProgressCount },
+                { id: "Resolved", label: "Resolved", count: resolvedCount },
+                { id: "Closed", label: "Closed" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    setStatus(tab.id);
+                    setPage(1);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    status === tab.id
+                      ? "bg-[#0E2842] text-white shadow-xs"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  {tab.count !== undefined && (
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                        status === tab.id
+                          ? "bg-white/20 text-white"
+                          : "bg-white text-slate-600"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Instant Search Bar */}
+            <div className="relative w-full md:w-80">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search author, book, ref ID (#BL-...)..."
+                className="w-full pl-10 pr-9 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-800 focus:bg-white focus:border-[#0288D1] focus:outline-none transition shadow-2xs"
+              />
+              {searchInput && (
+                <button
+                  type="button"
+                  onClick={() => setSearchInput("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Filter Bar with Dropdowns and Clear Filters */}
@@ -391,7 +604,6 @@ function AdminTicketQueueContent() {
                   <option value="ALL">All Statuses</option>
                   <option value="Open">Open</option>
                   <option value="In Progress">In Progress</option>
-                  <option value="Waiting on Author">Waiting on Author</option>
                   <option value="Resolved">Resolved</option>
                   <option value="Closed">Closed</option>
                 </select>
@@ -489,7 +701,7 @@ function AdminTicketQueueContent() {
 
           {/* Table matching Ticket Queue requirements */}
           <div className="overflow-x-auto -mx-6 sm:mx-0">
-            <table className="w-full text-left text-xs min-w-[980px]">
+            <table className="w-full text-left text-xs min-w-[1060px]">
               <thead>
                 <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase tracking-wider text-[10px] bg-slate-50/50">
                   <th className="py-3 pl-4 sm:pl-2 w-8">
@@ -508,7 +720,8 @@ function AdminTicketQueueContent() {
                   <th className="py-3">Category</th>
                   <th className="py-3">Status</th>
                   <th className="py-3">Assigned Admin</th>
-                  <th className="py-3 pr-4 sm:pr-2">Created Date</th>
+                  <th className="py-3">Created Date</th>
+                  <th className="py-3 pr-4 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -554,7 +767,7 @@ function AdminTicketQueueContent() {
                     <tr
                       key={t.ticket_id}
                       onClick={() => router.push(`/admin/tickets/${t.ticket_id}`)}
-                      className={`hover:bg-[#F0F9FF]/60 cursor-pointer transition ${
+                      className={`hover:bg-[#F0F9FF]/60 cursor-pointer transition group ${
                         isCritical
                           ? "bg-[#FEF2F2]/60 border-l-4 border-l-[#EF4444]"
                           : isChecked
@@ -565,7 +778,7 @@ function AdminTicketQueueContent() {
                       {/* Checkbox */}
                       <td
                         onClick={(e) => e.stopPropagation()}
-                        className="py-4 pl-4 sm:pl-2"
+                        className="py-3.5 pl-4 sm:pl-2"
                       >
                         <input
                           type="checkbox"
@@ -576,50 +789,59 @@ function AdminTicketQueueContent() {
                       </td>
 
                       {/* Priority */}
-                      <td className="py-4">
-                        <span className={`px-2.5 py-1 rounded-md text-[10px] tracking-wide ${priorityClass}`}>
-                          {t.priority}
-                        </span>
+                      <td className="py-3.5">
+                        <div className="space-y-0.5">
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] tracking-wide inline-block ${priorityClass}`}>
+                            {t.priority}
+                          </span>
+                          <span className="block text-[9px] font-mono text-slate-400">
+                            {t.priority === "Critical" ? "4h SLA" : t.priority === "High" ? "8h SLA" : "24h SLA"}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Ticket ID */}
-                      <td className="py-4 font-mono font-bold text-slate-800">
+                      <td className="py-3.5 font-mono font-bold text-slate-800">
                         {formattedTicketId}
                       </td>
 
-                      {/* Author Name */}
-                      <td className="py-4 font-semibold text-slate-900 whitespace-nowrap">
-                        {t.author_name}
+                      {/* Author Name & Email */}
+                      <td className="py-3.5 whitespace-nowrap">
+                        <div className="font-semibold text-slate-900">{t.author_name}</div>
+                        <div className="text-[11px] text-slate-400 flex items-center gap-1 font-normal">
+                          <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span className="truncate max-w-[150px]">{t.author_email || "No email"}</span>
+                        </div>
                       </td>
 
                       {/* Book Name */}
-                      <td className="py-4">
+                      <td className="py-3.5">
                         <span className="font-medium text-slate-800 block max-w-xs truncate">
                           {t.book_title || "General Inquiry"}
                         </span>
                       </td>
 
                       {/* Subject */}
-                      <td className="py-4">
+                      <td className="py-3.5">
                         <span className="font-semibold text-slate-900 block max-w-xs truncate">
                           {t.subject}
                         </span>
                       </td>
 
                       {/* Category */}
-                      <td className="py-4 text-slate-600 font-medium whitespace-nowrap">
+                      <td className="py-3.5 text-slate-600 font-medium whitespace-nowrap">
                         {t.category}
                       </td>
 
                       {/* Status */}
-                      <td className="py-4">
+                      <td className="py-3.5">
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap ${statusClass}`}>
                           {t.status}
                         </span>
                       </td>
 
                       {/* Assigned Admin */}
-                      <td className="py-4 text-slate-700 font-medium whitespace-nowrap">
+                      <td className="py-3.5 text-slate-700 font-medium whitespace-nowrap">
                         {t.assigned_to ? (
                           <span className="inline-flex items-center gap-1 text-[#0288D1] bg-sky-50 px-2 py-0.5 rounded-md font-semibold text-[11px] border border-sky-100">
                             {t.assigned_to}
@@ -630,9 +852,17 @@ function AdminTicketQueueContent() {
                       </td>
 
                       {/* Created Date */}
-                      <td className="py-4 pr-4 sm:pr-2 text-slate-600 font-mono text-[11px] whitespace-nowrap">
+                      <td className="py-3.5 text-slate-600 font-mono text-[11px] whitespace-nowrap">
                         <div className="font-sans font-medium text-slate-800">{createdDateFormatted}</div>
                         <div className="text-[10px] text-slate-400 font-mono">({age})</div>
+                      </td>
+
+                      {/* View Action */}
+                      <td className="py-3.5 pr-4 text-right">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 text-[#0288D1] group-hover:bg-[#0288D1] group-hover:text-white text-xs font-semibold transition">
+                          <span>View</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </span>
                       </td>
                     </tr>
                   );
