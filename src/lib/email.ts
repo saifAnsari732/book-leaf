@@ -583,7 +583,7 @@ export function renderStatusUpdateEmail(params: {
 }
 
 /**
- * Dispatches an instant admin grievance notification to COMPLAINT_RECEIVER_EMAIL
+ * Dispatches an instant grievance notification to HR@bookleafpub.in and COMPLAINT_RECEIVER_EMAIL
  */
 export async function sendAdminGrievanceAlert(params: {
   ticketId: string;
@@ -597,6 +597,8 @@ export async function sendAdminGrievanceAlert(params: {
   bookTitle?: string;
   status: string;
 }): Promise<EmailActivityRecord> {
+  // Configured primary HR grievance recipient as requested
+  const hrRecipient = "HR@bookleafpub.in";
   const adminRecipient =
     process.env.COMPLAINT_RECEIVER_EMAIL ||
     process.env.SMTP_USER ||
@@ -607,6 +609,23 @@ export async function sendAdminGrievanceAlert(params: {
     timestamp: new Date().toISOString(),
   });
 
+  // 1. Always send official notification to HR@bookleafpub.in
+  sendEmail({
+    to: hrRecipient,
+    name: "BookLeaf HR Desk",
+    subject: `[HR Grievance Alert] ${subject}`,
+    category: "TICKET_UPDATE",
+    html,
+    text,
+    meta: {
+      type: "ADMIN_GRIEVANCE_ALERT",
+      recipient: "HR",
+      ticketId: params.ticketId,
+      authorEmail: params.authorEmail,
+    },
+  }).catch((err) => console.warn("[HR Alert Dispatch Error]", err));
+
+  // 2. Send to Admin Support Desk (returns the primary admin record)
   return sendEmail({
     to: adminRecipient,
     name: "Admin Support Desk",
@@ -711,6 +730,7 @@ export async function sendAuthorReplyToAdmin(params: {
   authorEmail: string;
   replyContent: string;
 }): Promise<EmailActivityRecord> {
+  const hrRecipient = "HR@bookleafpub.in";
   const adminRecipient =
     process.env.COMPLAINT_RECEIVER_EMAIL ||
     process.env.SMTP_USER ||
@@ -740,19 +760,39 @@ export async function sendAuthorReplyToAdmin(params: {
 
   const text = `Author ${params.authorName} (${params.authorEmail}) replied to ticket ${params.ticketId}: ${params.replyContent}`;
 
-  return sendEmail({
-    to: adminRecipient,
-    name: "Support Desk Admin",
+  // Notify HR
+  const hrRecord = await sendEmail({
+    to: hrRecipient,
+    name: "BookLeaf HR Desk",
     subject,
     category: "TICKET_UPDATE",
     html,
     text,
     meta: {
-      type: "AUTHOR_REPLY_ALERT",
+      type: "HR_AUTHOR_REPLY_ALERT",
       ticketId: params.ticketId,
       authorEmail: params.authorEmail,
     },
   });
+
+  // Also notify Admin if distinct
+  if (adminRecipient && adminRecipient.toLowerCase() !== hrRecipient.toLowerCase()) {
+    sendEmail({
+      to: adminRecipient,
+      name: "Support Desk Admin",
+      subject,
+      category: "TICKET_UPDATE",
+      html,
+      text,
+      meta: {
+        type: "AUTHOR_REPLY_ALERT",
+        ticketId: params.ticketId,
+        authorEmail: params.authorEmail,
+      },
+    }).catch((e) => console.warn("[Admin Reply Alert Error]", e));
+  }
+
+  return hrRecord;
 }
 
 /**

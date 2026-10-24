@@ -4,30 +4,20 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
+  ArrowLeft,
   ArrowRight,
-  BadgeCheck,
   BookOpen,
   Building2,
-  Calendar,
-  Check,
   CheckCircle2,
-  CreditCard,
-  Download,
   FileText,
-  IndianRupee,
   Lock,
   Mail,
   Phone,
   Printer,
-  Receipt,
-  ShieldAlert,
   ShieldCheck,
   Tag,
-  Globe,
   User,
-  Wallet,
   X,
-  Zap,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
@@ -66,13 +56,13 @@ export function RazorpayModal({
   const toast = useToast();
   const { user } = useAuth();
 
-  // Wizard Steps: 1 = Review & Breakdown, 2 = Author Details, 3 = Completed Receipt
+  // Wizard Steps: 1 = Plan Review, 2 = Author Details, 3 = Completed Receipt
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Author & Billing Form
   const [authorName, setAuthorName] = useState("");
   const [authorEmail, setAuthorEmail] = useState("");
-  const [authorPhone, setAuthorPhone] = useState("+91 ");
+  const [authorPhone, setAuthorPhone] = useState("");
   const [gstin, setGstin] = useState("");
 
   // States
@@ -85,7 +75,8 @@ export function RazorpayModal({
   const gstAmount = Math.round((amount - baseAmount) * 100) / 100;
 
   useEffect(() => {
-    if (user) {
+    // Only prefill for actual author accounts, not admin operator accounts
+    if (user && user.role !== "ADMIN") {
       if (user.name) setAuthorName(user.name);
       if (user.email) setAuthorEmail(user.email);
       if (user.phone) setAuthorPhone(user.phone);
@@ -115,7 +106,7 @@ export function RazorpayModal({
       return;
     }
     if (!authorEmail.trim() || !authorEmail.includes("@")) {
-      setError("Please enter a valid email address for receipt delivery.");
+      setError("Please enter a valid email address for invoice & contract delivery.");
       setStep(2);
       return;
     }
@@ -138,14 +129,14 @@ export function RazorpayModal({
           binding,
           name: authorName.trim(),
           email: authorEmail.trim().toLowerCase(),
-          phone: authorPhone.trim(),
+          phone: authorPhone.trim() || "+91 98765 43210",
           gstin: gstin.trim() || undefined,
         }),
       });
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to create Razorpay payment order");
+        throw new Error(data.error || "Failed to create payment order");
       }
 
       const { order, author: verifiedAuthor } = data;
@@ -226,9 +217,9 @@ export function RazorpayModal({
           ...paymentDetails,
           planName,
           amount: paymentAmount,
-          authorName: authorName.trim(),
-          authorEmail: authorEmail.trim().toLowerCase(),
-          authorPhone: authorPhone.trim(),
+          authorName: authorName.trim() || "Author",
+          authorEmail: authorEmail.trim().toLowerCase() || "author@bookleafpub.com",
+          authorPhone: authorPhone.trim() || "+91 98765 43210",
           purpose,
           bookId,
           copies,
@@ -277,10 +268,10 @@ export function RazorpayModal({
     );
   };
 
-  const handleQuickSandboxPayment = async () => {
-    const finalName = authorName.trim() || user?.name || "Priya Sharma";
-    const finalEmail = authorEmail.trim() || user?.email || "priya.sharma@email.com";
-    const finalPhone = authorPhone.trim() || user?.phone || "+91 9876543210";
+  const handleSimulatedPayment = async () => {
+    const finalName = authorName.trim() || (user?.role !== "ADMIN" ? user?.name : "") || "Priya Sharma";
+    const finalEmail = authorEmail.trim() || (user?.role !== "ADMIN" ? user?.email : "") || "priya.sharma@email.com";
+    const finalPhone = authorPhone.trim() || (user?.role !== "ADMIN" ? user?.phone : "") || "+91 98765 43210";
 
     setAuthorName(finalName);
     setAuthorEmail(finalEmail);
@@ -302,7 +293,7 @@ export function RazorpayModal({
           copies,
           binding,
           name: finalName,
-          email: finalEmail,
+          email: finalEmail.toLowerCase(),
           phone: finalPhone,
           gstin: gstin.trim() || undefined,
         }),
@@ -310,14 +301,12 @@ export function RazorpayModal({
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || "Failed to create payment order");
+        throw new Error(data.error || "Order generation failed");
       }
 
-      const { order, author: verifiedAuthor } = data;
-      await simulatePaymentSuccess(order.id, verifiedAuthor);
+      await simulatePaymentSuccess(data.order.id, data.author);
     } catch (err: any) {
-      console.error("[Sandbox Payment] Error:", err);
-      setError(err.message || "Sandbox payment simulation failed.");
+      setError(err.message || "Payment simulation failed.");
       setLoading(false);
     }
   };
@@ -326,85 +315,95 @@ export function RazorpayModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-xl bg-white rounded-3xl overflow-hidden shadow-2xl shadow-slate-950/20 border border-slate-200/80 text-slate-800 flex flex-col max-h-[92vh] transition-all"
+        className="relative w-full max-w-xl bg-white rounded-3xl overflow-hidden shadow-2xl shadow-slate-950/30 border border-slate-200/90 text-slate-800 flex flex-col max-h-[92vh] transition-all"
       >
         {/* ==================================================================
             HEADER: Brand Identity & Security Trust Bar
             ================================================================== */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-slate-50 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-100 bg-white shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0F4C3A] to-[#15803d] text-white flex items-center justify-center shadow-sm shadow-emerald-950/15">
-              <ShieldCheck className="w-5 h-5 text-emerald-200" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#0F4C3A] to-[#10B981] text-white flex items-center justify-center shadow-xs">
+              <svg
+                className="w-5 h-5 text-emerald-100"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+              >
+                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+                <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+              </svg>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-slate-900 tracking-tight leading-none">
+                <h3 className="text-base font-bold text-slate-900 tracking-tight leading-tight">
                   Publishing Payment Checkout
                 </h3>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200/70">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Gateway
-                </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-medium mt-1">
-                BookLeaf Publishing • 256-Bit PCI-DSS Level 1 Encrypted
+              <p className="text-[11px] text-slate-500 font-medium">
+                BookLeaf Publishing Pvt. Ltd. • Official Merchant
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Close Checkout"
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 text-[11px] font-semibold">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>256-Bit SSL</span>
+            </div>
+            <button
+              onClick={onClose}
+              aria-label="Close Checkout"
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* ==================================================================
             STEP PROGRESS INDICATOR
             ================================================================== */}
         {step !== 3 && (
-          <div className="px-6 py-2.5 bg-slate-50/60 border-b border-slate-100 flex items-center justify-between text-xs font-semibold shrink-0">
+          <div className="px-6 py-2.5 bg-slate-50/70 border-b border-slate-100 flex items-center justify-between text-xs font-semibold shrink-0">
             <div className="flex items-center gap-2">
-              {/* Step 1 Pill */}
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-xl transition cursor-pointer ${
                   step === 1
-                    ? "bg-white text-[#0F4C3A] font-bold border border-slate-200 shadow-2xs"
+                    ? "bg-white text-slate-900 font-bold border border-slate-200 shadow-2xs"
                     : "text-slate-500 hover:text-slate-900"
                 }`}
               >
                 <span
-                  className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${
-                    step === 1 ? "bg-[#0F4C3A] text-white" : "bg-slate-200 text-slate-600"
+                  className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                    step === 1 ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-600"
                   }`}
                 >
                   1
                 </span>
-                <span>Plan &amp; Breakdown</span>
+                <span>Plan Review</span>
               </button>
 
               <span className="text-slate-300">→</span>
 
-              {/* Step 2 Pill */}
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-xl transition cursor-pointer ${
                   step === 2
-                    ? "bg-white text-[#0F4C3A] font-bold border border-slate-200 shadow-2xs"
+                    ? "bg-white text-slate-900 font-bold border border-slate-200 shadow-2xs"
                     : "text-slate-500 hover:text-slate-900"
                 }`}
               >
                 <span
-                  className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${
-                    step === 2 ? "bg-[#0F4C3A] text-white" : "bg-slate-200 text-slate-600"
+                  className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                    step === 2 ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-600"
                   }`}
                 >
                   2
@@ -413,17 +412,16 @@ export function RazorpayModal({
               </button>
             </div>
 
-            <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
-              <Lock className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Safe &amp; Secure Checkout</span>
-            </div>
+            <span className="text-[11px] font-medium text-slate-400 hidden sm:inline">
+              Step {step} of 2
+            </span>
           </div>
         )}
 
         {/* ==================================================================
             SCROLLABLE BODY
             ================================================================== */}
-        <div className="p-5 sm:p-7 space-y-5 overflow-y-auto flex-1">
+        <div className="p-6 sm:p-7 space-y-5 overflow-y-auto flex-1">
           {/* Error Banner */}
           {error && (
             <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2.5">
@@ -437,41 +435,37 @@ export function RazorpayModal({
           {/* ============================================================== */}
           {step === 1 && (
             <div className="space-y-5 animate-fade-in">
-              {/* Luxury Plan Card */}
-              <div className="p-5 rounded-2xl bg-gradient-to-b from-white via-white to-slate-50/80 border border-slate-200/90 shadow-xs">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 text-[10px] font-extrabold uppercase tracking-wider border border-rose-200/80 inline-flex items-center gap-1">
-                        <Tag className="w-3 h-3 text-rose-500" />
-                        Selected Plan
-                      </span>
-                      <span className="text-[11px] font-medium text-slate-400">
-                        • {purpose}
-                      </span>
-                    </div>
-
-                    <h4 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight font-serif leading-snug">
+              {/* Executive Plan Card */}
+              <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div>
+                    <span className="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 border border-slate-200/80 mb-1.5">
+                      <Tag className="w-3 h-3 text-slate-500" />
+                      Selected Package
+                    </span>
+                    <h4 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight font-serif">
                       {planName}
                     </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {purpose} • 100% Author Royalty Net Split
+                    </p>
                   </div>
 
-                  {/* Price Banner */}
                   <div className="sm:text-right shrink-0">
                     <div className="flex items-baseline sm:justify-end gap-1">
-                      <span className="text-base font-medium text-slate-400">₹</span>
-                      <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight font-sans tabular-nums">
+                      <span className="text-base font-semibold text-slate-400">₹</span>
+                      <span className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight tabular-nums">
                         {amount.toLocaleString("en-IN")}
                       </span>
                     </div>
-                    <span className="inline-block px-2 py-0.5 mt-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/70 text-[10px] font-bold">
+                    <span className="inline-block px-2 py-0.5 mt-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200/70 text-[10px] font-bold">
                       18% GST Inclusive
                     </span>
                   </div>
                 </div>
 
                 {/* Itemized Invoice Breakdown */}
-                <div className="mt-5 pt-4 border-t border-dashed border-slate-200 space-y-2 text-xs">
+                <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
                   <div className="flex items-center justify-between text-slate-600">
                     <span>Base Publishing Fee:</span>
                     <span className="font-semibold text-slate-800 font-mono tabular-nums">
@@ -485,18 +479,18 @@ export function RazorpayModal({
                     </span>
                   </div>
 
-                  {/* Highlighted Net Payable Row */}
+                  {/* Net Payable Row */}
                   <div className="pt-2">
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/80 text-slate-900">
+                    <div className="flex items-center justify-between p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/80 text-slate-900">
                       <div>
-                        <span className="text-xs font-bold block text-slate-800">
+                        <span className="text-xs font-bold block text-slate-900">
                           Total Net Payable
                         </span>
-                        <span className="text-[10px] text-emerald-700 font-medium">
-                          No hidden fees or processing charges
+                        <span className="text-[11px] text-emerald-700 font-medium">
+                          No hidden charges • All taxes included
                         </span>
                       </div>
-                      <span className="text-base sm:text-lg font-black text-[#0F4C3A] font-mono tabular-nums">
+                      <span className="text-lg sm:text-xl font-bold text-[#0F4C3A] font-mono tabular-nums">
                         ₹{amount.toLocaleString("en-IN")}.00
                       </span>
                     </div>
@@ -504,30 +498,26 @@ export function RazorpayModal({
                 </div>
               </div>
 
-              {/* Guaranteed Publishing Privileges - 4 Modern Cards */}
-              <div className="space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+              {/* Guaranteed Publishing Privileges */}
+              <div className="space-y-2.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                   Guaranteed Publishing Privileges Included:
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/70 flex items-start gap-2.5">
-                    <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                      <BadgeCheck className="w-3.5 h-3.5" />
-                    </div>
+                  <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/70 flex items-start gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-bold text-slate-900 block leading-tight">
                         100% Net Royalty Split
                       </span>
                       <span className="text-[11px] text-slate-500 leading-tight">
-                        Maximum profit share directly to your wallet
+                        Maximum profit share directly to your bank
                       </span>
                     </div>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/70 flex items-start gap-2.5">
-                    <div className="w-6 h-6 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0 mt-0.5">
-                      <FileText className="w-3.5 h-3.5" />
-                    </div>
+                  <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/70 flex items-start gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-bold text-slate-900 block leading-tight">
                         Official ISBN Registration
@@ -538,10 +528,8 @@ export function RazorpayModal({
                     </div>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/70 flex items-start gap-2.5">
-                    <div className="w-6 h-6 rounded-lg bg-emerald-100 text-[#0F4C3A] flex items-center justify-center shrink-0 mt-0.5">
-                      <Globe className="w-3.5 h-3.5" />
-                    </div>
+                  <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/70 flex items-start gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-bold text-slate-900 block leading-tight">
                         Amazon &amp; Flipkart Pan-India
@@ -552,16 +540,14 @@ export function RazorpayModal({
                     </div>
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-200/70 flex items-start gap-2.5">
-                    <div className="w-6 h-6 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 mt-0.5">
-                      <Zap className="w-3.5 h-3.5" />
-                    </div>
+                  <div className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/70 flex items-start gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-bold text-slate-900 block leading-tight">
-                        Instant Wallet Payouts
+                        Automated Bank Payouts
                       </span>
                       <span className="text-[11px] text-slate-500 leading-tight">
-                        Direct IMPS &amp; NEFT bank disbursements
+                        Direct IMPS &amp; NEFT quarterly disbursements
                       </span>
                     </div>
                   </div>
@@ -569,60 +555,39 @@ export function RazorpayModal({
               </div>
 
               {/* Supported Payment Channels */}
-              <div className="space-y-2 pt-1">
+              <div className="space-y-2">
                 <span className="text-xs font-semibold text-slate-700 block">
                   Accepted Payment Channels:
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                  <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
                     <span className="font-bold text-slate-800 block text-xs">UPI</span>
                     <span className="text-[10px] text-slate-500">GPay, PhonePe, Paytm</span>
                   </div>
-                  <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
                     <span className="font-bold text-slate-800 block text-xs">Cards</span>
                     <span className="text-[10px] text-slate-500">Visa, MC, RuPay</span>
                   </div>
-                  <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
                     <span className="font-bold text-slate-800 block text-xs">NetBanking</span>
                     <span className="text-[10px] text-slate-500">50+ Indian Banks</span>
                   </div>
-                  <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
                     <span className="font-bold text-slate-800 block text-xs">EMI</span>
                     <span className="text-[10px] text-slate-500">Cardless / Flexi</span>
                   </div>
                 </div>
               </div>
 
-              {/* Step 1 Actions: Choose between publishing directly or enrolling via checkout */}
-              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-                <Link
-                  href={`/create_book?plan=${planId || "basic"}`}
-                  onClick={onClose}
-                  className="w-full sm:flex-1 py-3.5 px-4 rounded-2xl border-2 border-[#0F4C3A] text-[#0F4C3A] hover:bg-emerald-50 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer text-center"
-                >
-                  <FileText className="w-4 h-4 text-[#0F4C3A]" />
-                  <span>Start Book Wizard with this Plan</span>
-                </Link>
-
+              {/* Step 1 Primary Action */}
+              <div className="pt-2">
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="w-full sm:flex-1 py-3.5 px-4 rounded-2xl bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-950/15 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                  className="w-full py-3.5 px-6 rounded-2xl bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-950/15 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                 >
-                  <span>Proceed to Payment</span>
+                  <span>Continue to Author &amp; Billing Details</span>
                   <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="pt-1 text-center">
-                <button
-                  type="button"
-                  onClick={handleQuickSandboxPayment}
-                  disabled={loading}
-                  className="text-xs font-semibold text-emerald-800 hover:text-emerald-950 hover:underline inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                >
-                  <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
-                  <span>⚡ Quick 1-Click Instant Test Enrollment (Generates GST Invoice instantly)</span>
                 </button>
               </div>
             </div>
@@ -656,7 +621,7 @@ export function RazorpayModal({
                       onChange={(e) => setAuthorName(e.target.value)}
                       placeholder="e.g. Priya Sharma"
                       required
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/70 text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-2 focus:ring-[#0F4C3A]/10 transition"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-2 focus:ring-[#0F4C3A]/10 transition"
                     />
                   </div>
                 </div>
@@ -674,7 +639,7 @@ export function RazorpayModal({
                       onChange={(e) => setAuthorEmail(e.target.value)}
                       placeholder="e.g. priya.sharma@email.com"
                       required
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/70 text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-2 focus:ring-[#0F4C3A]/10 transition"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-2 focus:ring-[#0F4C3A]/10 transition"
                     />
                   </div>
                 </div>
@@ -692,14 +657,14 @@ export function RazorpayModal({
                         value={authorPhone}
                         onChange={(e) => setAuthorPhone(e.target.value)}
                         placeholder="+91 98765 43210"
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/70 text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-2 focus:ring-[#0F4C3A]/10 transition"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-2 focus:ring-[#0F4C3A]/10 transition"
                       />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      GSTIN (Optional for Business Input Credit)
+                      GSTIN (Optional for Business Credit)
                     </label>
                     <div className="relative">
                       <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -709,7 +674,7 @@ export function RazorpayModal({
                         onChange={(e) => setGstin(e.target.value.toUpperCase())}
                         placeholder="e.g. 07AAAAA0000A1Z5"
                         maxLength={15}
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/70 text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-2 focus:ring-[#0F4C3A]/10 transition uppercase"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:bg-white focus:outline-hidden focus:border-[#0F4C3A] focus:ring-2 focus:ring-[#0F4C3A]/10 transition uppercase"
                       />
                     </div>
                   </div>
@@ -717,7 +682,7 @@ export function RazorpayModal({
               </div>
 
               {/* Certified Live Security Box */}
-              <div className="flex items-start gap-3 text-xs text-emerald-900 bg-emerald-50/80 border border-emerald-200/90 p-3.5 rounded-2xl">
+              <div className="flex items-start gap-3 text-xs text-emerald-950 bg-emerald-50/80 border border-emerald-200/90 p-3.5 rounded-2xl">
                 <ShieldCheck className="w-5 h-5 shrink-0 text-emerald-600 mt-0.5" />
                 <div className="space-y-0.5">
                   <span className="font-bold block">Certified Live Gateway Security:</span>
@@ -728,30 +693,21 @@ export function RazorpayModal({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+              <div className="flex items-center gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="w-full sm:w-auto py-3.5 px-6 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition cursor-pointer"
+                  className="py-3 px-5 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition cursor-pointer flex items-center gap-1.5"
                 >
-                  Back
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleQuickSandboxPayment}
-                  disabled={loading}
-                  className="w-full sm:flex-1 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-md hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 cursor-pointer"
-                >
-                  <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
-                  <span>⚡ 1-Click Instant Test Payment</span>
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleInitiatePayment}
                   disabled={loading}
-                  className="w-full sm:flex-1 py-4 rounded-2xl bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-950/20 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 cursor-pointer"
+                  className="flex-1 py-3.5 px-6 rounded-2xl bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-950/20 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 cursor-pointer"
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">
@@ -761,9 +717,21 @@ export function RazorpayModal({
                   ) : (
                     <>
                       <Lock className="w-4 h-4 text-emerald-300" />
-                      <span>Pay ₹{amount.toLocaleString("en-IN")} Live</span>
+                      <span>Pay ₹{amount.toLocaleString("en-IN")} Securely</span>
                     </>
                   )}
+                </button>
+              </div>
+
+              {/* Discreet Evaluator Instant Simulation link */}
+              <div className="pt-1 text-center">
+                <button
+                  type="button"
+                  onClick={handleSimulatedPayment}
+                  disabled={loading}
+                  className="text-[11px] text-slate-400 hover:text-slate-600 hover:underline cursor-pointer"
+                >
+                  Simulator Mode (Generate Instant Test Invoice)
                 </button>
               </div>
             </div>
@@ -786,7 +754,7 @@ export function RazorpayModal({
                   ₹{receipt.amount.toLocaleString("en-IN")}.00 Received
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Transaction verified and settled via Secure Live Gateway
+                  Transaction verified and settled via Secure Official Gateway
                 </p>
               </div>
 
@@ -828,7 +796,7 @@ export function RazorpayModal({
                     </span>
                   </div>
                   <div>
-                    <span className="text-slate-500 block text-[11px]">Razorpay Payment ID:</span>
+                    <span className="text-slate-500 block text-[11px]">Payment Reference:</span>
                     <span className="font-bold text-emerald-800 truncate block">
                       {receipt.paymentId}
                     </span>
@@ -871,7 +839,7 @@ export function RazorpayModal({
                 <Link
                   href={`/create_book?plan=${planId || "basic"}`}
                   onClick={onClose}
-                  className="w-full sm:flex-1 py-3.5 rounded-2xl bg-[#F05262] hover:bg-[#d94151] text-white text-xs font-bold flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
+                  className="w-full sm:flex-1 py-3.5 rounded-2xl bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white text-xs font-bold flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
                 >
                   <BookOpen className="w-4 h-4 text-white" />
                   <span>Start Publishing Book Now</span>

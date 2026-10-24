@@ -169,7 +169,6 @@ export default function HomePage() {
     logout,
     login,
   } = useAuth();
-  const [loggingInAs, setLoggingInAs] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [faqSearchQuery, setFaqSearchQuery] = useState("");
   const [selectedFaqCategory, setSelectedFaqCategory] = useState<string>("All");
@@ -185,34 +184,6 @@ export default function HomePage() {
     planName: string;
     amount: number;
   } | null>(null);
-
-  const handleQuickLogin = async (email: string, role: "AUTHOR" | "ADMIN") => {
-    try {
-      setLoggingInAs(email);
-      const res = await login(
-        email,
-        role === "ADMIN" ? "admin123" : "author123"
-      );
-      if (res.success) {
-        toast.success(
-          `Signed in as ${res.user?.name || (role === "ADMIN" ? "Operations Admin" : "Author")}`,
-          `Opening ${role === "ADMIN" ? "Operations Console" : "Author Dashboard"}...`
-        );
-        if (role === "ADMIN") {
-          router.push("/admin");
-        } else {
-          router.push("/author-dashboard");
-        }
-      } else {
-        toast.error("Sign In", res.error || "Authentication failed");
-        router.push("/login");
-      }
-    } catch {
-      router.push("/login");
-    } finally {
-      setLoggingInAs(null);
-    }
-  };
 
   const handleNewsletter = (e: React.FormEvent) => {
     e.preventDefault();
@@ -326,9 +297,6 @@ export default function HomePage() {
             </Link>
             <Link href="#calculator" className="hover:text-[#F05262] transition">
               Royalty Calculator
-            </Link>
-            <Link href="#portals" className="hover:text-[#F05262] transition">
-              Support Portals
             </Link>
             <Link href="#author-stories" className="hover:text-[#F05262] transition">
               Author Stories
@@ -598,43 +566,7 @@ export default function HomePage() {
                     </span>
                   </div>
                 </div>
-              </div>
-
-              {/* Quick Launch Buttons for Pair Programming Technical Evaluation */}
-              <div id="portals" className="pt-6 border-t border-slate-200/80 w-full scroll-mt-24">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-3">
-                  1-Click Portal Sandboxes:
-                </span>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    disabled={Boolean(loggingInAs)}
-                    onClick={() => handleQuickLogin("priya.sharma@email.com", "AUTHOR")}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 text-[#0F4C3A] border border-emerald-300 text-xs font-bold hover:bg-emerald-100 transition cursor-pointer disabled:opacity-60 shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    {loggingInAs === "priya.sharma@email.com" ? (
-                      <div className="w-3.5 h-3.5 border-2 border-[#0F4C3A] border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <BookOpen className="w-3.5 h-3.5 text-emerald-700" />
-                    )}
-                    <span>Launch Author Desk (Priya Sharma)</span>
-                  </button>
-                  <button
-                    type="button"
-                    disabled={Boolean(loggingInAs)}
-                    onClick={() => handleQuickLogin("admin@bookleafpub.com", "ADMIN")}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white border border-slate-800 text-xs font-bold hover:bg-slate-800 transition cursor-pointer disabled:opacity-60 shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    {loggingInAs === "admin@bookleafpub.com" ? (
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    )}
-                    <span>Launch Admin Triage &amp; Operations</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+              </div></div>
 
             {/* Right Side: Floating Author Photo Collage (Exact Match to Screenshot 1) */}
             <div className="lg:col-span-6 relative">

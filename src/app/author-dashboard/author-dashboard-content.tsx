@@ -750,8 +750,8 @@ export function AuthorDashboardContent() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setCreateBookOpen(true)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#F26979] hover:bg-[#e04555] text-white font-bold text-xs transition shadow-sm hover:shadow"
+              onClick={() => router.push("/create_book")}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#F26979] hover:bg-[#e04555] text-white font-bold text-xs transition shadow-sm hover:shadow cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Start a New Book</span>
@@ -842,7 +842,7 @@ export function AuthorDashboardContent() {
                   onOpenTicket={(_ticketId) => {
                     navigateMenu("Support Tickets");
                   }}
-                  onAddNewBook={() => setCreateBookOpen(true)}
+                  onAddNewBook={() => router.push("/create_book")}
                 />
               )}
 
@@ -1496,8 +1496,8 @@ export function AuthorDashboardContent() {
                   </p>
                 </div>
                 <button
-                  onClick={() => setCreateBookOpen(true)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#F05262] via-[#F26979] to-[#E03A4B] hover:from-[#e04555] hover:to-[#c92f3f] text-white font-bold text-xs transition shadow-sm hover:shadow"
+                  onClick={() => router.push("/create_book")}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#F05262] via-[#F26979] to-[#E03A4B] hover:from-[#e04555] hover:to-[#c92f3f] text-white font-bold text-xs transition shadow-sm hover:shadow cursor-pointer"
                 >
                   <PlusCircle className="w-4 h-4" />
                   <span>Publish a New Title</span>
@@ -2105,7 +2105,7 @@ export function AuthorDashboardContent() {
             <div className="animate-fade-in">
               <AIBookWriterStudio
                 onOpenCreateBook={(_init) => {
-                  setCreateBookOpen(true);
+                  router.push("/create_book");
                 }}
               />
             </div>
