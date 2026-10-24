@@ -716,9 +716,11 @@ export function AuthorDashboardOverviewView({
                       <td className="py-3.5 text-right">
                         <button
                           type="button"
-                          className="p-1 rounded-md text-[#A8A099] group-hover:text-[#2C2825] transition"
+                          onClick={() => onOpenTicket(t.ticket_id)}
+                          title="View Ticket"
+                          className="p-1 rounded-md text-[#7D756F] hover:bg-[#EDE6DD] hover:text-[#2C2825] transition cursor-pointer"
                         >
-                          <MoreVertical className="w-3.5 h-3.5" />
+                          <ChevronRight className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>

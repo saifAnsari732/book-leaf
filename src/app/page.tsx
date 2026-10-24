@@ -48,6 +48,7 @@ import { RoyaltyCalculator } from "@/components/calculator/royalty-calculator";
 import AuthorVideoReel from "@/components/AuthorVideoReel";
 import { RazorpayModal } from "@/components/payment/RazorpayModal";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 
 interface BookstoreBook {
   id: string;
@@ -159,12 +160,14 @@ const BESTSELLER_BOOKS: BookstoreBook[] = [
 
 export default function HomePage() {
   const router = useRouter();
+  const toast = useToast();
   const {
     user,
     role: currentRole,
     isAuthenticated,
     isLoading: authLoading,
     logout,
+    login,
   } = useAuth();
   const [loggingInAs, setLoggingInAs] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -186,21 +189,22 @@ export default function HomePage() {
   const handleQuickLogin = async (email: string, role: "AUTHOR" | "ADMIN") => {
     try {
       setLoggingInAs(email);
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password: role === "ADMIN" ? "admin123" : "author123",
-        }),
-      });
-      if (res.ok) {
+      const res = await login(
+        email,
+        role === "ADMIN" ? "admin123" : "author123"
+      );
+      if (res.success) {
+        toast.success(
+          `Signed in as ${res.user?.name || (role === "ADMIN" ? "Operations Admin" : "Author")}`,
+          `Opening ${role === "ADMIN" ? "Operations Console" : "Author Dashboard"}...`
+        );
         if (role === "ADMIN") {
           router.push("/admin");
         } else {
-          router.push("/author");
+          router.push("/author-dashboard");
         }
       } else {
+        toast.error("Sign In", res.error || "Authentication failed");
         router.push("/login");
       }
     } catch {
@@ -603,18 +607,30 @@ export default function HomePage() {
                 </span>
                 <div className="flex flex-wrap gap-3">
                   <button
+                    type="button"
+                    disabled={Boolean(loggingInAs)}
                     onClick={() => handleQuickLogin("priya.sharma@email.com", "AUTHOR")}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 text-[#0F4C3A] border border-emerald-200 text-xs font-bold hover:bg-emerald-100 transition"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 text-[#0F4C3A] border border-emerald-300 text-xs font-bold hover:bg-emerald-100 transition cursor-pointer disabled:opacity-60 shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    <BookOpen className="w-3.5 h-3.5" />
+                    {loggingInAs === "priya.sharma@email.com" ? (
+                      <div className="w-3.5 h-3.5 border-2 border-[#0F4C3A] border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <BookOpen className="w-3.5 h-3.5 text-emerald-700" />
+                    )}
                     <span>Launch Author Desk (Priya Sharma)</span>
                   </button>
                   <button
+                    type="button"
+                    disabled={Boolean(loggingInAs)}
                     onClick={() => handleQuickLogin("admin@bookleafpub.com", "ADMIN")}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 text-slate-800 border border-slate-200 text-xs font-bold hover:bg-slate-200 transition"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 text-white border border-slate-800 text-xs font-bold hover:bg-slate-800 transition cursor-pointer disabled:opacity-60 shadow-2xs hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Launch Admin Triage & AI Desk</span>
+                    {loggingInAs === "admin@bookleafpub.com" ? (
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    )}
+                    <span>Launch Admin Triage &amp; Operations</span>
                   </button>
                 </div>
               </div>

@@ -6,6 +6,7 @@ import {
   AlertCircle,
   ArrowRight,
   BadgeCheck,
+  BookOpen,
   Building2,
   Calendar,
   Check,
@@ -274,6 +275,51 @@ export function RazorpayModal({
       },
       amount
     );
+  };
+
+  const handleQuickSandboxPayment = async () => {
+    const finalName = authorName.trim() || user?.name || "Priya Sharma";
+    const finalEmail = authorEmail.trim() || user?.email || "priya.sharma@email.com";
+    const finalPhone = authorPhone.trim() || user?.phone || "+91 9876543210";
+
+    setAuthorName(finalName);
+    setAuthorEmail(finalEmail);
+    setAuthorPhone(finalPhone);
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/payment/razorpay/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId,
+          planName,
+          amount,
+          purpose,
+          bookId,
+          copies,
+          binding,
+          name: finalName,
+          email: finalEmail,
+          phone: finalPhone,
+          gstin: gstin.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to create payment order");
+      }
+
+      const { order, author: verifiedAuthor } = data;
+      await simulatePaymentSuccess(order.id, verifiedAuthor);
+    } catch (err: any) {
+      console.error("[Sandbox Payment] Error:", err);
+      setError(err.message || "Sandbox payment simulation failed.");
+      setLoading(false);
+    }
   };
 
   return (
@@ -547,15 +593,38 @@ export function RazorpayModal({
                 </div>
               </div>
 
-              {/* Step 1 Next CTA */}
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="w-full py-4 rounded-2xl bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-950/15 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
-              >
-                <span>Continue to Author &amp; Billing Details</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              {/* Step 1 Actions: Choose between publishing directly or enrolling via checkout */}
+              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                <Link
+                  href={`/create_book?plan=${planId || "basic"}`}
+                  onClick={onClose}
+                  className="w-full sm:flex-1 py-3.5 px-4 rounded-2xl border-2 border-[#0F4C3A] text-[#0F4C3A] hover:bg-emerald-50 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer text-center"
+                >
+                  <FileText className="w-4 h-4 text-[#0F4C3A]" />
+                  <span>Start Book Wizard with this Plan</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="w-full sm:flex-1 py-3.5 px-4 rounded-2xl bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-950/15 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                >
+                  <span>Proceed to Payment</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="pt-1 text-center">
+                <button
+                  type="button"
+                  onClick={handleQuickSandboxPayment}
+                  disabled={loading}
+                  className="text-xs font-semibold text-emerald-800 hover:text-emerald-950 hover:underline inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
+                  <span>⚡ Quick 1-Click Instant Test Enrollment (Generates GST Invoice instantly)</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -659,30 +728,40 @@ export function RazorpayModal({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="py-3.5 px-6 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition cursor-pointer"
+                  className="w-full sm:w-auto py-3.5 px-6 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs transition cursor-pointer"
                 >
                   Back
                 </button>
 
                 <button
                   type="button"
+                  onClick={handleQuickSandboxPayment}
+                  disabled={loading}
+                  className="w-full sm:flex-1 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-md hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 cursor-pointer"
+                >
+                  <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
+                  <span>⚡ 1-Click Instant Test Payment</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleInitiatePayment}
                   disabled={loading}
-                  className="flex-1 py-4 rounded-2xl bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-950/20 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 cursor-pointer"
+                  className="w-full sm:flex-1 py-4 rounded-2xl bg-[#0F4C3A] hover:bg-[#0A3B2D] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-950/20 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 cursor-pointer"
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Connecting Secure Gateway...</span>
+                      <span>Connecting Gateway...</span>
                     </div>
                   ) : (
                     <>
                       <Lock className="w-4 h-4 text-emerald-300" />
-                      <span>Pay ₹{amount.toLocaleString("en-IN")} Securely</span>
+                      <span>Pay ₹{amount.toLocaleString("en-IN")} Live</span>
                     </>
                   )}
                 </button>
@@ -789,22 +868,31 @@ export function RazorpayModal({
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                <Link
+                  href={`/create_book?plan=${planId || "basic"}`}
+                  onClick={onClose}
+                  className="w-full sm:flex-1 py-3.5 rounded-2xl bg-[#F05262] hover:bg-[#d94151] text-white text-xs font-bold flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
+                >
+                  <BookOpen className="w-4 h-4 text-white" />
+                  <span>Start Publishing Book Now</span>
+                </Link>
+
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="w-full sm:flex-1 py-3.5 rounded-2xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2 transition cursor-pointer"
+                  className="w-full sm:w-auto py-3.5 px-5 rounded-2xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2 transition cursor-pointer"
                 >
                   <Printer className="w-4 h-4 text-slate-500" />
-                  <span>Print Tax Invoice</span>
+                  <span>Print Invoice</span>
                 </button>
 
                 <Link
                   href="/author-dashboard?menu=Royalty%20Withdrawal"
                   onClick={onClose}
-                  className="w-full sm:flex-1 py-3.5 rounded-2xl bg-[#0F4C3A] text-white text-xs font-bold hover:bg-[#0A3B2D] flex items-center justify-center gap-2 transition shadow-sm cursor-pointer"
+                  className="w-full sm:w-auto py-3.5 px-5 rounded-2xl border border-slate-300 text-slate-800 text-xs font-bold hover:bg-slate-50 flex items-center justify-center gap-2 transition cursor-pointer"
                 >
-                  <span>Open Author Dashboard</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>Dashboard</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
