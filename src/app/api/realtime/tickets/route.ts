@@ -1,3 +1,4 @@
+// Realtime SSE Ticket Events Stream - BookLeaf Publishing
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
